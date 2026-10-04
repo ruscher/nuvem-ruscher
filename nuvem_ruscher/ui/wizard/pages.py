@@ -23,11 +23,12 @@ from nuvem_ruscher.constants import HEALTH_TIMEOUT_S
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.helper_protocol import HelperEvent, human_error
 from nuvem_ruscher.core.immich_api import ApiError
-from nuvem_ruscher.core.releases import Release
+from nuvem_ruscher.core.releases import Release, br_date
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.core.validation import is_valid_email, password_strength
 from nuvem_ruscher.i18n import N_, _
 from nuvem_ruscher.ui.common import (
+    StatusBlock,
     confirm,
     illustration,
     label,
@@ -268,8 +269,7 @@ class StoragePage(WizardPage):
         loading.append(spinner)
         loading.append(label(_("Procurando o disco…"), css=("dim-label",), xalign=0.5))
         self.stack.add_named(loading, "loading")
-        self.missing = Adw.StatusPage(icon_name="drive-harddisk-usb-symbolic")
-        self.missing.add_css_class("compact")
+        self.missing = StatusBlock("drive-harddisk-usb-symbolic")
         retry = pill_button(_("Procurar de novo"), lambda *_: self.inspect(self.ctx.photo_path), suggested=True)
         self.missing.set_child(retry)
         self.stack.add_named(self.missing, "missing")
@@ -654,7 +654,7 @@ class ConfigurePage(WizardPage):
             if index == 0:
                 labels.append(_("{tag} — mais recente").format(tag=release.tag))
             else:
-                labels.append(f"{release.tag} ({release.published})")
+                labels.append(f"{release.tag} ({br_date(release.published)})")
         self.version.set_model(Gtk.StringList.new(labels))
         self.version.set_selected(0)
         self.version.set_subtitle(_("Recomendamos a mais recente"))
@@ -1045,12 +1045,10 @@ class AccountPage(WizardPage):
         form.append(browser)
         self.stack.add_named(form, "form")
 
-        exists = Adw.StatusPage(
-            icon_name="avatar-default-symbolic",
-            title=_("Sua conta já existe"),
-            description=_(
-                "Encontramos a conta da instalação anterior. Use o mesmo e-mail e senha no app do celular e no site."
-            ),
+        exists = StatusBlock(
+            "avatar-default-symbolic",
+            _("Sua conta já existe"),
+            _("Encontramos a conta da instalação anterior. Use o mesmo e-mail e senha no app do celular e no site."),
         )
         exists_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, halign=Gtk.Align.CENTER)
         self.connect_button = pill_button(_("Mostrar contagem de fotos no painel"), self._connect_stats)

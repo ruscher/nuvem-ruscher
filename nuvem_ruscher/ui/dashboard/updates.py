@@ -10,10 +10,10 @@ from nuvem_ruscher.async_utils import Operation, run_async
 from nuvem_ruscher.backend.base import Backend, HelperResult
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.helper_protocol import HelperEvent, human_error
-from nuvem_ruscher.core.releases import Release, UpdateInfo, simple_markdown_to_pango, update_info
+from nuvem_ruscher.core.releases import Release, UpdateInfo, br_date, simple_markdown_to_pango, update_info
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.i18n import N_, _
-from nuvem_ruscher.ui.common import confirm, label, open_uri, pill_button, status_icon
+from nuvem_ruscher.ui.common import StatusBlock, confirm, label, open_uri, pill_button, status_icon
 from nuvem_ruscher.ui.dashboard.monitor import ServerMonitor
 from nuvem_ruscher.ui.widgets.rows import InstallStep
 
@@ -201,8 +201,7 @@ class UpdatesPage(Gtk.Box):
         scroller.set_child(Adw.Clamp(maximum_size=760, child=self.body))
         self.append(scroller)
 
-        self.status = Adw.StatusPage(icon_name="software-update-available-symbolic")
-        self.status.add_css_class("compact")
+        self.status = StatusBlock("software-update-available-symbolic")
         buttons = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER)
         self.check_button = pill_button(_("Verificar agora"), lambda *_: self.refresh(force=True))
         self.update_button = pill_button(_("Atualizar com segurança"), self._ask_update, suggested=True)
@@ -274,7 +273,7 @@ class UpdatesPage(Gtk.Box):
         self.status.set_icon_name("software-update-available-symbolic")
         self.status.set_title(_("A versão {v} está disponível").format(v=latest.tag))
         self.status.set_description(
-            _("Você está na {cur}. Publicada em {date}.").format(cur=info.current, date=latest.published)
+            _("Você está na {cur}. Publicada em {date}.").format(cur=info.current, date=br_date(latest.published))
         )
         self.update_button.set_visible(True)
 
@@ -296,7 +295,7 @@ class UpdatesPage(Gtk.Box):
 
         self.notes.set_visible(True)
         for release in info.pending[:8]:
-            expander = Adw.ExpanderRow(title=release.tag, subtitle=release.published)
+            expander = Adw.ExpanderRow(title=release.tag, subtitle=br_date(release.published))
             expander.add_row(self._text_row(simple_markdown_to_pango(release.body), markup=True))
             link = Adw.ActionRow(title=_("Ver no GitHub"), activatable=True)
             link.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))

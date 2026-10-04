@@ -159,6 +159,10 @@ class TestReleases:
         assert releases.update_info("v2.7.5", rels).major_change
         assert not releases.update_info("v3.2.4", rels).available
 
+    def test_br_date(self):
+        assert releases.br_date("2026-09-28") == "28/09/2026"
+        assert releases.br_date("ontem") == "ontem"
+
     def test_markdown_is_escaped(self):
         out = releases.simple_markdown_to_pango("## Novidades\n* <b>x</b> & **forte** `cod`")
         assert "&lt;b&gt;" in out

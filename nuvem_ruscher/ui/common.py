@@ -180,6 +180,39 @@ def confirm(
     return dialog
 
 
+class StatusBlock(Gtk.Box):
+    """Como o AdwStatusPage, mas sem rolagem própria (pode ficar dentro de outra rolagem)."""
+
+    def __init__(self, icon_name: str, title: str = "", description: str = "") -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=12, halign=Gtk.Align.FILL)
+        self.set_margin_top(12)
+        self.icon = Gtk.Image.new_from_icon_name(icon_name)
+        self.icon.set_pixel_size(96)
+        self.icon.add_css_class("dim-label")
+        self.icon.set_accessible_role(Gtk.AccessibleRole.PRESENTATION)
+        self.append(self.icon)
+        self.title = label(title, css=("title-2",), xalign=0.5)
+        self.title.set_accessible_role(Gtk.AccessibleRole.HEADING)
+        self.append(self.title)
+        self.description = label(description, css=("dim-label",), xalign=0.5)
+        self.description.set_visible(bool(description))
+        self.append(self.description)
+
+    def set_icon_name(self, name: str) -> None:
+        self.icon.set_from_icon_name(name)
+
+    def set_title(self, text: str) -> None:
+        self.title.set_text(text)
+
+    def set_description(self, text: str | None) -> None:
+        self.description.set_text(text or "")
+        self.description.set_visible(bool(text))
+
+    def set_child(self, child: Gtk.Widget) -> None:
+        child.set_margin_top(6)
+        self.append(child)
+
+
 def animations_enabled(widget: Gtk.Widget) -> bool:
     settings = widget.get_settings()
     return bool(settings.get_property("gtk-enable-animations"))

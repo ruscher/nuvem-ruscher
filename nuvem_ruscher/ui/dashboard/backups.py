@@ -10,7 +10,7 @@ from nuvem_ruscher.async_utils import run_async
 from nuvem_ruscher.backend.base import Backend, BackupFile, HelperResult
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.i18n import _
-from nuvem_ruscher.ui.common import icon_button, label, show_error, show_in_folder, toast
+from nuvem_ruscher.ui.common import StatusBlock, icon_button, label, show_error, show_in_folder, toast
 from nuvem_ruscher.ui.dashboard.monitor import ServerMonitor
 
 MONTHS = ("jan.", "fev.", "mar.", "abr.", "maio", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez.")
@@ -59,12 +59,11 @@ class BackupsPage(Gtk.Box):
         body.append(head)
 
         self.list = Adw.PreferencesGroup()
-        self.empty = Adw.StatusPage(
-            icon_name="document-save-symbolic",
-            title=_("Nenhum backup ainda"),
-            description=_("O primeiro backup automático acontece esta noite. Se quiser, faça um agora."),
+        self.empty = StatusBlock(
+            "document-save-symbolic",
+            _("Nenhum backup ainda"),
+            _("O primeiro backup automático acontece esta noite. Se quiser, faça um agora."),
         )
-        self.empty.add_css_class("compact")
         body.append(self.empty)
         body.append(self.list)
 
