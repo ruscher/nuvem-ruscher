@@ -127,10 +127,15 @@ class PullProgress:
         """Fração monotônica (nunca volta, mesmo quando surgem camadas novas)."""
         if not self.layers:
             return self._best_fraction
-        by_layers = sum(1 for layer in self.layers.values() if layer.done) / len(self.layers)
-        by_bytes = self.downloaded / self.total if self.total else 0.0
-        # Bytes são mais fiéis, mas só conhecemos o total das camadas já iniciadas.
-        value = 0.7 * by_bytes + 0.3 * by_layers if self.total else by_layers
+        # Cada camada vale o mesmo; as que estão baixando contam pela fração já recebida.
+        # (Somar bytes superestima: o tamanho de uma camada só aparece quando ela começa.)
+        parts = 0.0
+        for layer in self.layers.values():
+            if layer.done:
+                parts += 1.0
+            elif layer.total:
+                parts += layer.current / layer.total
+        value = parts / len(self.layers)
         self._best_fraction = max(self._best_fraction, min(value, 0.999))
         return self._best_fraction
 

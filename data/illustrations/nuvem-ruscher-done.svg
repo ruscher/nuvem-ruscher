@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ilustração original do Nuvem Ruscher: nuvem pronta, celular conectado. CC-BY-SA 4.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="50%" r="55%">
+      <stop offset="0" stop-color="#57e389" stop-opacity="0.35"/>
+      <stop offset="0.6" stop-color="#3584e4" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#3584e4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e6edf7"/>
+    </linearGradient>
+    <linearGradient id="check" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#57e389"/>
+      <stop offset="1" stop-color="#26a269"/>
+    </linearGradient>
+    <linearGradient id="phone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d3846"/>
+      <stop offset="1" stop-color="#241f31"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#99c1f1"/>
+      <stop offset="1" stop-color="#3584e4"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="160" cy="124" rx="150" ry="108" fill="url(#halo)"/>
+
+  <!-- linha pontilhada de sincronização -->
+  <path d="M96 150 C 110 110, 140 104, 160 112" fill="none" stroke="#3584e4" stroke-width="3"
+        stroke-linecap="round" stroke-dasharray="1 8" opacity="0.8"/>
+
+  <!-- nuvem -->
+  <g>
+    <path d="M132 150 h120 a32 32 0 0 0 3 -63.8 a42 42 0 0 0 -79 -16.8 a30 30 0 0 0 -48 21.6 a29.5 29.5 0 0 0 4 59z" fill="#1c3f73" opacity="0.10" transform="translate(0 6)"/>
+    <path d="M132 150 h120 a32 32 0 0 0 3 -63.8 a42 42 0 0 0 -79 -16.8 a30 30 0 0 0 -48 21.6 a29.5 29.5 0 0 0 4 59z" fill="#1c3f73" opacity="0.08" transform="translate(0 3)"/>
+    <path d="M132 150 h120 a32 32 0 0 0 3 -63.8 a42 42 0 0 0 -79 -16.8 a30 30 0 0 0 -48 21.6 a29.5 29.5 0 0 0 4 59z"
+          fill="url(#cloud)"/>
+  </g>
+  <g transform="translate(196 112)">
+    <circle r="24" cy="3" fill="#1c5f3a" opacity="0.18"/>
+    <circle r="24" fill="url(#check)"/>
+    <path d="M-10 0 l7 7 l14 -15" fill="none" stroke="#ffffff" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- celular -->
+  <g transform="translate(82 168) rotate(-8)">
+    <rect x="-22" y="-40" width="48" height="88" rx="10" fill="#1c3f73" opacity="0.18"/>
+    <rect x="-24" y="-44" width="48" height="88" rx="9" fill="url(#phone)"/>
+    <rect x="-20" y="-38" width="40" height="74" rx="5" fill="url(#screen)"/>
+    <rect x="-16" y="-32" width="14" height="14" rx="2" fill="#ffffff" opacity="0.9"/>
+    <rect x="2" y="-32" width="14" height="14" rx="2" fill="#f6d32d"/>
+    <rect x="-16" y="-14" width="14" height="14" rx="2" fill="#57e389"/>
+    <rect x="2" y="-14" width="14" height="14" rx="2" fill="#ffffff" opacity="0.9"/>
+    <rect x="-16" y="4" width="14" height="14" rx="2" fill="#dc8add"/>
+    <rect x="2" y="4" width="14" height="14" rx="2" fill="#ffbe6f"/>
+  </g>
+
+  <!-- brilhos -->
+  <g fill="#f6d32d">
+    <path d="M254 54 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z"/>
+    <path d="M118 52 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z"/>
+    <path d="M268 170 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"/>
+  </g>
+  <circle cx="230" cy="190" r="3" fill="#99c1f1"/>
+  <circle cx="58" cy="76" r="2.5" fill="#99c1f1"/>
+</svg>

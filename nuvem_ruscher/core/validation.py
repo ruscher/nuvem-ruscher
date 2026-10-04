@@ -69,9 +69,7 @@ def validate_photo_path(path: str) -> str:
         raise ValidationError(_("O nome da pasta tem caracteres invisíveis não suportados."))
     bad = sorted(FORBIDDEN_PATH_CHARS.intersection(path))
     if bad:
-        raise ValidationError(
-            _("O nome da pasta não pode conter os caracteres: {chars}").format(chars=" ".join(bad))
-        )
+        raise ValidationError(_("O nome da pasta não pode conter os caracteres: {chars}").format(chars=" ".join(bad)))
     parts = path.split("/")[1:]
     if any(p in ("", ".", "..") for p in parts):
         raise ValidationError(_("O caminho da pasta não pode ter “.”, “..” ou barras duplas."))

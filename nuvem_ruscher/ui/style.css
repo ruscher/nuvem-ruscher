@@ -1,0 +1,128 @@
+/* Nuvem Ruscher — só complementa o libadwaita; cores vêm das variáveis do tema. */
+
+.hero-title {
+  font-size: 2.1em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  font-size: 1.1em;
+}
+
+/* Indicador de etapas do assistente */
+.step-dot {
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  transition: all 250ms ease-out;
+}
+.step-dot.done {
+  background: color-mix(in srgb, var(--accent-bg-color) 55%, transparent);
+}
+.step-dot.current {
+  min-width: 26px;
+  background: var(--accent-bg-color);
+}
+
+/* Ícones de estado (sempre acompanhados de texto) */
+.status-icon.ok { color: var(--success-color); }
+.status-icon.warning { color: var(--warning-color); }
+.status-icon.error { color: var(--error-color); }
+.status-icon.info { color: var(--accent-color); }
+.status-icon.pending, .status-icon.skip { opacity: 0.35; }
+
+/* Cartão de destaque do painel */
+.hero-card {
+  padding: 18px;
+}
+.status-dot {
+  min-width: 14px;
+  min-height: 14px;
+  border-radius: 999px;
+  background: alpha(currentColor, 0.3);
+}
+.status-dot.ok {
+  background: var(--success-color);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--success-color) 22%, transparent);
+}
+.status-dot.busy {
+  background: var(--accent-bg-color);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent-bg-color) 22%, transparent);
+}
+.status-dot.warning {
+  background: var(--warning-color);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--warning-color) 22%, transparent);
+}
+.status-dot.stopped { background: color-mix(in srgb, currentColor 35%, transparent); }
+
+.stat-card {
+  padding: 14px 18px;
+}
+.stat-value {
+  font-size: 1.9em;
+  font-weight: 800;
+}
+
+/* Etiquetas de saúde dos containers */
+.pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 700;
+}
+.pill.ok { background: color-mix(in srgb, var(--success-color) 18%, transparent); color: var(--success-color); }
+.pill.busy { background: color-mix(in srgb, var(--accent-bg-color) 18%, transparent); color: var(--accent-color); }
+.pill.warning { background: color-mix(in srgb, var(--warning-color) 20%, transparent); color: var(--warning-color); }
+.pill.error { background: color-mix(in srgb, var(--error-color) 18%, transparent); color: var(--error-color); }
+.pill.stopped { background: color-mix(in srgb, currentColor 10%, transparent); }
+
+/* QR code: sempre preto no branco, para qualquer câmera ler */
+.qr-frame {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.qr-card {
+  padding: 18px;
+}
+.address {
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+/* Barra de ações do assistente */
+.wizard-actions {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-color);
+  background: var(--headerbar-bg-color);
+}
+
+/* Logs */
+.log-view {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+.log-view text {
+  background: transparent;
+}
+.log-frame {
+  border-radius: 12px;
+}
+
+.fstab-line {
+  font-family: monospace;
+  font-size: 0.85em;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.install-step.pending .step-title { opacity: 0.55; }
+.install-step .step-title { font-weight: 700; }
+
+.big-number {
+  font-feature-settings: "tnum";
+}

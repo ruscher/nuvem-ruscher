@@ -217,9 +217,7 @@ class TestSetup:
         assert not Path(sim.photos).exists(), "nunca criar a pasta sem o disco"
 
     def test_read_only_disk(self, sim):
-        proc = sim.run(
-            "setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu", SIM_OPTIONS="ro,nosuid"
-        )
+        proc = sim.run("setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu", SIM_OPTIONS="ro,nosuid")
         assert sim.error(proc) == "storage-unsafe"
 
     def test_ml_off_uses_profile(self, sim):
@@ -229,9 +227,7 @@ class TestSetup:
         assert "/dev/dri" not in override
 
     def test_download_failure_is_clean(self, sim):
-        proc = sim.run(
-            "setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu", SIM_DOWNLOAD_FAIL="1"
-        )
+        proc = sim.run("setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu", SIM_DOWNLOAD_FAIL="1")
         assert sim.error(proc) == "download-failed"
         assert not (sim.stack / "docker-compose.yml").exists()
 
@@ -339,9 +335,7 @@ class TestFstab:
         add = sim.run("fstab-add", UUID, sim.mountpoint)
         assert sim.results(add)["boot"] == "auto"
         assert any(c.startswith("systemctl enable nuvem-ruscher-immich.service") for c in sim.calls())
-        wants = list(
-            (sim.root / "etc" / "systemd" / "system").glob("*.mount.wants/nuvem-ruscher-immich.service")
-        )
+        wants = list((sim.root / "etc" / "systemd" / "system").glob("*.mount.wants/nuvem-ruscher-immich.service"))
         assert len(wants) == 1
 
 

@@ -184,9 +184,7 @@ def build_volume(
         hotplug=_to_bool(parent.get("hotplug", part.get("hotplug"))),
         rotational=_to_bool(parent.get("rota", part.get("rota"))),
         transport=str(parent.get("tran") or part.get("tran") or ""),
-        model=" ".join(
-            str(x).strip() for x in (parent.get("vendor"), parent.get("model")) if x and str(x).strip()
-        ),
+        model=" ".join(str(x).strip() for x in (parent.get("vendor"), parent.get("model")) if x and str(x).strip()),
         is_system_disk=mount.target == "/" or mount.source in system_sources,
     )
 
@@ -279,17 +277,22 @@ def detect_library(path: str) -> LibraryInfo:
     return LibraryInfo(bool(folders), folders, backups, other)
 
 
-def human_size(num_bytes: float) -> str:
-    """Tamanho legível em pt-BR (base 1000, como os gerenciadores de arquivos)."""
+def human_size(num_bytes: float, binary: bool = False) -> str:
+    """Tamanho legível em pt-BR.
+
+    Base 1000 para discos (como os gerenciadores de arquivos); ``binary=True`` para
+    memória, que o sistema mostra em base 1024 (46 GB, e não 49,4 GB).
+    """
     units = ("B", "kB", "MB", "GB", "TB", "PB")
+    base = 1024 if binary else 1000
     value = float(num_bytes)
     for unit in units:
-        if abs(value) < 1000 or unit == units[-1]:
+        if abs(value) < base or unit == units[-1]:
             if unit == "B":
                 return f"{int(value)} B"
             text = f"{value:.1f}" if value < 100 else f"{value:.0f}"
             return f"{text.replace('.', ',')} {unit}"
-        value /= 1000
+        value /= base
     return f"{value} PB"  # pragma: no cover
 
 

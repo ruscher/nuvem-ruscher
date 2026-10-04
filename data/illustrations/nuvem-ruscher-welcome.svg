@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ilustração original do Nuvem Ruscher: nuvem com fotos em leque. CC-BY-SA 4.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="55%" r="55%">
+      <stop offset="0" stop-color="#62a0ea" stop-opacity="0.45"/>
+      <stop offset="0.6" stop-color="#3584e4" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#3584e4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#f1f5fb"/>
+      <stop offset="1" stop-color="#dbe6f5"/>
+    </linearGradient>
+    <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffbe6f"/>
+      <stop offset="1" stop-color="#ff7800"/>
+    </linearGradient>
+    <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#99c1f1"/>
+      <stop offset="1" stop-color="#62a0ea"/>
+    </linearGradient>
+    <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dc8add"/>
+      <stop offset="1" stop-color="#9141ac"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="160" cy="132" rx="150" ry="104" fill="url(#halo)"/>
+
+  <!-- brilhos -->
+  <g fill="#f6d32d">
+    <path d="M54 58 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z"/>
+    <path d="M268 46 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z"/>
+    <path d="M282 150 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" opacity="0.8"/>
+  </g>
+  <circle cx="74" cy="168" r="3" fill="#99c1f1"/>
+  <circle cx="246" cy="92" r="2.5" fill="#99c1f1"/>
+
+  <!-- nuvem -->
+  <g>
+    <path d="M86 196 h150 a38 38 0 0 0 4 -75.8 a50 50 0 0 0 -94 -20 a36 36 0 0 0 -58 26 a35 35 0 0 0 -2 69.8z" fill="#1c3f73" opacity="0.10" transform="translate(0 6)"/>
+    <path d="M86 196 h150 a38 38 0 0 0 4 -75.8 a50 50 0 0 0 -94 -20 a36 36 0 0 0 -58 26 a35 35 0 0 0 -2 69.8z" fill="#1c3f73" opacity="0.08" transform="translate(0 3)"/>
+    <path d="M86 196 h150 a38 38 0 0 0 4 -75.8 a50 50 0 0 0 -94 -20 a36 36 0 0 0 -58 26 a35 35 0 0 0 -2 69.8z"
+          fill="url(#cloud)"/>
+  </g>
+
+  <!-- fotos em leque -->
+  <g>
+    <g transform="translate(112 150) rotate(-14)">
+      <rect x="-28" y="-36" width="60" height="70" rx="6" fill="#1c3f73" opacity="0.16"/>
+      <rect x="-30" y="-40" width="60" height="70" rx="5" fill="#ffffff"/>
+      <rect x="-25" y="-35" width="50" height="46" rx="3" fill="url(#sky2)"/>
+      <path d="M-25 11 l14 -18 10 11 8 -9 18 16z" fill="#26a269"/>
+      <path d="M-25 11 l14 -18 7 8 -9 10z" fill="#2ec27e"/>
+      <circle cx="12" cy="-22" r="6" fill="#ffffff" opacity="0.85"/>
+    </g>
+    <g transform="translate(208 150) rotate(14)">
+      <rect x="-28" y="-36" width="60" height="70" rx="6" fill="#1c3f73" opacity="0.16"/>
+      <rect x="-30" y="-40" width="60" height="70" rx="5" fill="#ffffff"/>
+      <rect x="-25" y="-35" width="50" height="46" rx="3" fill="url(#sky3)"/>
+      <circle cx="-4" cy="-14" r="9" fill="#f9f06b"/>
+      <path d="M-25 11 c10 -10 18 -10 26 -4 c8 -8 16 -8 24 0 v4z" fill="#613583"/>
+    </g>
+    <g transform="translate(160 136)">
+      <rect x="-32" y="-42" width="68" height="80" rx="7" fill="#1c3f73" opacity="0.18"/>
+      <rect x="-34" y="-46" width="68" height="80" rx="6" fill="#ffffff"/>
+      <rect x="-28" y="-40" width="56" height="52" rx="3" fill="url(#sky1)"/>
+      <circle cx="10" cy="-20" r="10" fill="#f9f06b"/>
+      <path d="M-28 12 l18 -24 12 14 10 -11 22 21z" fill="#c64600"/>
+      <path d="M-28 12 l18 -24 9 11 -12 13z" fill="#e66100"/>
+      <rect x="-20" y="18" width="30" height="4" rx="2" fill="#deddda"/>
+    </g>
+  </g>
+
+  <!-- seta de envio -->
+  <g transform="translate(160 214)">
+    <circle r="15" fill="#3584e4"/>
+    <path d="M0 -7 l7 7 h-4.5 v7 h-5 v-7 h-4.5z" fill="#ffffff"/>
+  </g>
+</svg>

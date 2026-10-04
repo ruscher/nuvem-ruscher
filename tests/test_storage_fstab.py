@@ -35,8 +35,7 @@ def test_findmnt_and_lsblk_real_output():
 
 def test_btrfs_subvolume_source():
     text = (
-        '{"filesystems":[{"target":"/home","source":"/dev/nvme0n1p2[/@home]",'
-        '"fstype":"btrfs","options":"rw,noatime"}]}'
+        '{"filesystems":[{"target":"/home","source":"/dev/nvme0n1p2[/@home]","fstype":"btrfs","options":"rw,noatime"}]}'
     )
     mount = storage.parse_findmnt(text)
     assert mount.source == "/dev/nvme0n1p2"
@@ -136,9 +135,7 @@ class TestFstab:
 
     def test_parse_and_find(self):
         text = fixture_text("fstab-biglinux.txt")
-        text += (
-            "\n" + fstab.MARKER + "\n" + fstab.fstab_line("F22A6D342A6CF74F", MOUNTPOINT, "ntfs", 1000, 1007)
-        )
+        text += "\n" + fstab.MARKER + "\n" + fstab.fstab_line("F22A6D342A6CF74F", MOUNTPOINT, "ntfs", 1000, 1007)
         entries = fstab.parse_fstab(text)
         found = fstab.find_entry(entries, "F22A6D342A6CF74F", MOUNTPOINT)
         assert found is not None

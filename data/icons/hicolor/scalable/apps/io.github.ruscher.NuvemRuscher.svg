@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ícone original do Nuvem Ruscher. CC-BY-SA 4.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="cloud" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#62a0ea"/>
+      <stop offset="1" stop-color="#1c71d8"/>
+    </linearGradient>
+    <linearGradient id="cloudSide" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a5fb4"/>
+      <stop offset="1" stop-color="#174e96"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffbe6f"/>
+      <stop offset="1" stop-color="#ff7800"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8ff0a4"/>
+      <stop offset="1" stop-color="#33d17a"/>
+    </linearGradient>
+  </defs>
+  <!-- corpo da nuvem (com "espessura" inferior, estilo GNOME) -->
+  <path d="M26 104 h76 a20 20 0 0 0 2 -39.9 a27 27 0 0 0 -50.6 -11 a19 19 0 0 0 -30.4 13.8 a18.5 18.5 0 0 0 3 37.1z"
+        fill="url(#cloudSide)" transform="translate(0 4)"/>
+  <path d="M26 104 h76 a20 20 0 0 0 2 -39.9 a27 27 0 0 0 -50.6 -11 a19 19 0 0 0 -30.4 13.8 a18.5 18.5 0 0 0 3 37.1z"
+        fill="url(#cloud)"/>
+  <!-- fotos -->
+  <g transform="translate(50 82) rotate(-12)">
+    <rect x="-15" y="-19" width="30" height="35" rx="3" fill="#ffffff"/>
+    <rect x="-12" y="-16" width="24" height="22" rx="1.5" fill="url(#leaf)"/>
+    <path d="M-12 6 l8 -10 6 6 4 -4 6 8z" fill="#26a269"/>
+  </g>
+  <g transform="translate(78 82) rotate(12)">
+    <rect x="-15" y="-19" width="30" height="35" rx="3" fill="#ffffff"/>
+    <rect x="-12" y="-16" width="24" height="22" rx="1.5" fill="#dc8add"/>
+    <circle cx="-2" cy="-8" r="4.5" fill="#f9f06b"/>
+  </g>
+  <g transform="translate(64 76)">
+    <rect x="-17" y="-22" width="34" height="40" rx="3" fill="#ffffff"/>
+    <rect x="-14" y="-19" width="28" height="26" rx="1.5" fill="url(#sun)"/>
+    <circle cx="5" cy="-10" r="5" fill="#f9f06b"/>
+    <path d="M-14 7 l9 -12 6 7 5 -5 8 10z" fill="#c64600"/>
+  </g>
+</svg>

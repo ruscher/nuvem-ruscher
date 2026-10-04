@@ -23,9 +23,7 @@ class TestDocker:
         assert redis.state == "exited" and not redis.running
 
     def test_health_from_status_when_field_missing(self):
-        line = json.dumps(
-            {"Names": "immich_server", "State": "running", "Status": "Up 1 minute (health: starting)"}
-        )
+        line = json.dumps({"Names": "immich_server", "State": "running", "Status": "Up 1 minute (health: starting)"})
         assert docker.parse_ps([line])[0].health is Health.STARTING
 
     def test_parse_stats(self):
@@ -127,9 +125,7 @@ class TestPullProgress:
     def test_error_is_collected(self):
         progress = compose.PullProgress()
         progress.feed(
-            json.dumps(
-                {"id": "x", "parent_id": "s", "status": "Error", "text": "falhou", "details": "timeout"}
-            )
+            json.dumps({"id": "x", "parent_id": "s", "status": "Error", "text": "falhou", "details": "timeout"})
         )
         assert progress.errors == ["timeout"]
         assert not progress.feed("texto comum")
@@ -240,9 +236,7 @@ class TestConfigAndProtocol:
     def test_protocol(self):
         p = helper_protocol.parse_line
         assert p("@@STEP download").kind == "step"
-        assert p("@@RESULT file=/a b/c.sql.gz") == helper_protocol.HelperEvent(
-            "result", "file", "/a b/c.sql.gz"
-        )
+        assert p("@@RESULT file=/a b/c.sql.gz") == helper_protocol.HelperEvent("result", "file", "/a b/c.sql.gz")
         err = p("@@ERROR storage-missing disco ausente")
         assert (err.kind, err.key, err.value) == ("error", "storage-missing", "disco ausente")
         assert p("texto livre").kind == "log"

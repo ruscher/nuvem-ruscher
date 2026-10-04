@@ -13,6 +13,9 @@ from typing import Any
 
 from nuvem_ruscher.constants import API_KEY_PERMISSIONS
 
+# Serviços do hwaccel.transcoding.yml → enum TranscodeHWAccel da API (v3.2.4).
+TRANSCODE_TO_ACCEL = {"vaapi": "vaapi", "quicksync": "qsv", "nvenc": "nvenc"}
+
 
 class ApiError(Exception):
     def __init__(self, status: int, message: str) -> None:
@@ -107,6 +110,21 @@ class ImmichClient:
             token=token,
         )
         return str(result["secret"])
+
+    def apply_initial_settings(self, token: str, transcode: str, ml_enabled: bool) -> None:
+        """Liga a transcodificação por hardware escolhida e, se pedido, desliga o ML.
+
+        O override só expõe a GPU ao container; o Immich também precisa ser avisado.
+        """
+        accel = TRANSCODE_TO_ACCEL.get(transcode)
+        if accel is None and ml_enabled:
+            return
+        config = dict(self._request("GET", "/system-config", token=token) or {})
+        if accel is not None:
+            config.setdefault("ffmpeg", {})["accel"] = accel
+        if not ml_enabled:
+            config.setdefault("machineLearning", {})["enabled"] = False
+        self._request("PUT", "/system-config", config, token=token)
 
     def statistics(self, api_key: str) -> ServerStats:
         s = self._request("GET", "/server/statistics", api_key=api_key)
