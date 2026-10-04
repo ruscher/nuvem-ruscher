@@ -59,15 +59,23 @@ mensagens humanas.
 - [x] Instalação real (Immich v3.2.4); API em `http://localhost:2283` → `{"res":"pong"}`
 - [x] O Immich criou `library/`, `upload/`, `thumbs/`, `encoded-video/`, `profile/`, `backups/`
       (com `.immich`) em `/run/media/ruscher/Novo volume/immich-ruscher/`; o container vê `/data`
-      como FUSE (o NTFS). Envio de foto pelo celular: depende da conta, que fica com o usuário.
+      como FUSE (o NTFS).
+- [x] Conta de administrador criada pelo código do app (`admin-sign-up`), com chave só de
+      estatísticas (arquivo 600) e `ffmpeg.accel=vaapi` aplicado via `/api/system-config`
+- [x] Foto de teste enviada pela API (`POST /api/assets`): original (95.936 bytes) gravado em
+      `immich-ruscher/upload/…/ef3ed6bb….jpg` e miniaturas em `thumbs/`; o painel passou a contar 1 foto
 - [x] Banco em `/var/lib/nuvem-ruscher/immich/postgres` (314 MB, NVMe interno, btrfs)
 - [x] Download das imagens pelo código do app: 1,1 GB em 36 s, sem erros
 - [x] Interface real retomou a instalação e chegou à tela de Conta; painel real com métricas
 - [x] Montagem no boot: linha no fstab (backup `/etc/fstab.nuvem-ruscher-20261004-013247.bak`),
       `findmnt --verify` sem erros, unidade gerada com `SourcePath=/etc/fstab`, serviço habilitado
 - [x] Backup real do banco: 18,6 MB, `gzip -t` ok, gravado no disco das fotos
-- [ ] Reboot com disco: sobe — **a fazer pelo usuário** (roteiro abaixo)
-- [ ] Reboot sem disco: não sobe e não cria pasta — **a fazer pelo usuário**
+- [x] **Sem o disco** (simulado sem reiniciar: desmontagem + `usb unbind` do SSD):
+      `systemctl start` falha por dependência após 15 s; o app responde `storage-missing`;
+      `docker start immich_server` é recusado (`bind source path does not exist`); nenhuma pasta criada
+- [x] **Disco reconectado** (`usb bind`): o systemd montou no mesmo caminho em 2 s e o serviço
+      ligou sozinho; API em 12 s; foto de teste intacta
+- [ ] Reboot literal com e sem o disco — pelo usuário quando quiser (o painel mostra o estado)
 
 ### Problemas encontrados na instalação real (e corrigidos)
 
