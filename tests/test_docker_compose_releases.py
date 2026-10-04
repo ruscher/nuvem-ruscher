@@ -118,6 +118,7 @@ class TestPullProgress:
         assert progress.downloaded == 200
         assert progress.total == 200
         assert progress.services["immich-server"] == "Pulled"
+        assert progress.unpacking
         assert progress.speed() > 0
         progress.finish()
         assert progress.fraction == 1.0

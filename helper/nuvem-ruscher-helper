@@ -473,7 +473,14 @@ write_override() {
             "        source: \${UPLOAD_LOCATION}" \
             "        target: /data" \
             "        bind:" \
-            "          create_host_path: false"
+            "          create_host_path: false" \
+            "    # O oficial só ordena a subida. Esperar o banco saudável evita que o servidor" \
+            "    # caia na primeira vez, quando o Postgres reinicia ao terminar o initdb." \
+            "    depends_on:" \
+            "      database:" \
+            "        condition: service_healthy" \
+            "      redis:" \
+            "        condition: service_started"
         case $transcode in
             vaapi | quicksync)
                 printf '%s\n' "    devices:" "      - /dev/dri:/dev/dri"
@@ -543,8 +550,8 @@ write_unit() {
         fi
         printf 'RequiresMountsFor="%s" "%s"\n' "$upload" "$STACK_DIR"
         printf '%s\n' \
-            "StartLimitIntervalSec=10min" \
-            "StartLimitBurst=5" \
+            "StartLimitIntervalSec=15min" \
+            "StartLimitBurst=10" \
             "" \
             "[Service]" \
             "Type=exec" \
@@ -557,7 +564,7 @@ write_unit() {
             "ExecStart=/usr/bin/docker compose up --pull never --abort-on-container-exit --remove-orphans" \
             "ExecStop=/usr/bin/docker compose stop" \
             "Restart=always" \
-            "RestartSec=15s" \
+            "RestartSec=10s" \
             "TimeoutStopSec=3min" \
             "" \
             "[Install]" \

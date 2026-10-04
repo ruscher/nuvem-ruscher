@@ -885,7 +885,9 @@ class InstallPage(WizardPage):
 
         def progress(p: PullProgress, line: str) -> None:
             step.set_fraction(p.fraction)
-            if p.total:
+            if p.unpacking:
+                step.set_detail(_("Descompactando os componentes…"))
+            elif p.total:
                 speed = p.speed()
                 text = _("{percent}% · {done} baixados").format(
                     percent=int(p.fraction * 100), done=human_size(p.downloaded)

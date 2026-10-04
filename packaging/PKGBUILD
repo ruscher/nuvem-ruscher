@@ -27,7 +27,7 @@ depends=(
   'gzip'
 )
 makedepends=('gettext')
-checkdepends=('python-pytest' 'shellcheck')
+checkdepends=('python-pytest')
 optdepends=(
   'ntfs-3g: discos formatados no Windows (NTFS)'
   'exfatprogs: discos exFAT'

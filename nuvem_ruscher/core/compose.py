@@ -139,6 +139,11 @@ class PullProgress:
         self._best_fraction = max(self._best_fraction, min(value, 0.999))
         return self._best_fraction
 
+    @property
+    def unpacking(self) -> bool:
+        """Tudo baixado, mas o Docker ainda descompacta (0 B/s perto do fim)."""
+        return bool(self.layers) and all(layer.done for layer in self.layers.values()) and self._best_fraction < 1
+
     def speed(self) -> float:
         """Bytes por segundo nos últimos segundos."""
         if len(self._samples) < 2:

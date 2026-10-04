@@ -196,6 +196,10 @@ class TestSetup:
         assert all(svc.get("restart") == "no" for svc in services.values())
         assert services["immich-server"]["environment"]["UPLOAD_LOCATION"] == sim.photos
         assert services["immich-server"]["image"].endswith(":v3.2.4")
+        # O servidor espera o banco saudável (o oficial só ordena a subida).
+        depends = services["immich-server"]["depends_on"]
+        assert depends["database"]["condition"] == "service_healthy"
+        assert depends["redis"]["condition"] == "service_started"
 
     def test_second_setup_preserves_password(self, sim):
         sim.setup()

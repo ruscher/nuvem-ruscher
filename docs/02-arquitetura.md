@@ -153,8 +153,8 @@ Wants=network-online.target
 BindsTo=run-media-ruscher-Novo\x20volume.mount
 After=run-media-ruscher-Novo\x20volume.mount
 RequiresMountsFor="/run/media/ruscher/Novo volume/immich-ruscher" /var/lib/nuvem-ruscher/immich
-StartLimitIntervalSec=10min
-StartLimitBurst=5
+StartLimitIntervalSec=15min
+StartLimitBurst=10
 
 [Service]
 Type=exec
@@ -164,7 +164,7 @@ ExecStartPre=/usr/bin/test -d "/run/media/ruscher/Novo volume/immich-ruscher"
 ExecStart=/usr/bin/docker compose up --pull never --abort-on-container-exit --remove-orphans
 ExecStop=/usr/bin/docker compose stop
 Restart=always
-RestartSec=15s
+RestartSec=10s
 TimeoutStopSec=3min
 
 [Install]
@@ -178,7 +178,11 @@ WantedBy=multi-user.target
 - `ExecStartPre` com `mountpoint` e `test -d`: barreira extra, sem depender do app.
 - `--pull never`: o boot nunca depende de internet.
 - `--abort-on-container-exit` + `Restart=always`: se qualquer container morrer, o
-  systemd reinicia o conjunto todo (com limite de 5 tentativas em 10 min).
+  systemd reinicia o conjunto todo (com limite de 10 tentativas em 15 min).
+- O override faz o `immich-server` esperar o banco **saudável** (`depends_on` com
+  `condition: service_healthy`). Descoberto na instalação real: sem isso, na primeira subida
+  o Postgres reinicia ao terminar o `initdb`, o servidor recebe “connection refused” e cai
+  (no compose oficial o Docker o reiniciaria; aqui quem reinicia é o systemd).
 - A unidade não chama o helper: o servidor continua funcionando mesmo se o app for
   removido.
 - Quando a pasta de fotos está no disco do sistema, as linhas `BindsTo`/`mountpoint`
