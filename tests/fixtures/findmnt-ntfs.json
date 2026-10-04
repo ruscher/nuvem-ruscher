@@ -1,0 +1,10 @@
+{
+   "filesystems": [
+      {
+         "target": "/run/media/ruscher/Novo volume",
+         "source": "/dev/sdd1",
+         "fstype": "fuseblk",
+         "options": "rw,nosuid,nodev,relatime,user_id=0,group_id=0,default_permissions,allow_other,blksize=4096"
+      }
+   ]
+}

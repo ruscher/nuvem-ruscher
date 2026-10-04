@@ -1,0 +1,39 @@
+[project]
+name = "nuvem-ruscher"
+version = "1.0.0"
+description = "Instala, configura e cuida do Immich no BigLinux"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+
+# Não há build Python: o app é instalado pelo Makefile/PKGBUILD (ADR-001).
+# Este arquivo existe apenas para configurar ruff e pytest.
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "PL", "S", "ANN"]
+ignore = [
+    "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR2004",
+    "S603", "S607",          # subprocess sem shell, com listas — é o padrão do projeto
+    "S104",                  # bind em 0.0.0.0 é só o teste de porta livre
+    "S310",                  # URLs fixas (GitHub/localhost)
+    "RUF001", "RUF002", "RUF003",  # texto em pt-BR com aspas tipográficas
+    "ANN401",
+    "PLW0603",               # globais intencionais (i18n)
+    "PLC0415",               # imports tardios: a janela precisa abrir em < 1 s
+    "SIM105",                # try/except/pass é mais legível aqui que contextlib.suppress
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ANN", "S108", "PLC0415", "S105", "S106"]
+"nuvem_ruscher/ui/*" = ["ANN"]
+"nuvem_ruscher/backend/simulated.py" = ["S311"]
+"nuvem_ruscher/core/validation.py" = ["S108"]   # lista de pastas proibidas
+"nuvem_ruscher/core/compose.py" = ["S105"]      # senha fictícia, documentada
+"nuvem_ruscher/ui/widgets/confetti.py" = ["S311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

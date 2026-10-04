@@ -1,0 +1,15 @@
+{
+   "blockdevices": [
+      {
+         "name": "sdd",
+         "path": "/dev/sdd",
+         "rm": false,
+         "hotplug": true,
+         "rota": false,
+         "tran": "usb",
+         "model": "Portable SSD",
+         "vendor": "SanDisk ",
+         "size": 2000398934016
+      }
+   ]
+}

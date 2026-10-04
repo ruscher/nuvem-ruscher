@@ -1,0 +1,3 @@
+{"BlockIO":"19.3MB / 643kB","CPUPerc":"2.15%","Container":"aaa111","ID":"aaa111","MemPerc":"0.86%","MemUsage":"410.5MiB / 46.42GiB","Name":"immich_server","NetIO":"1.11MB / 126B","PIDs":"30"}
+{"BlockIO":"10.5MB / 0B","CPUPerc":"0.00%","Container":"bbb222","ID":"bbb222","MemPerc":"2.4%","MemUsage":"1.104GiB / 46.42GiB","Name":"immich_machine_learning","NetIO":"1.11MB / 126B","PIDs":"6"}
+{"BlockIO":"10.5MB / 0B","CPUPerc":"--","Container":"ccc333","ID":"ccc333","MemPerc":"--","MemUsage":"-- / --","Name":"immich_postgres","NetIO":"--","PIDs":"0"}

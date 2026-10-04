@@ -1,0 +1,23 @@
+{
+   "blockdevices": [
+      {
+         "name": "sdd1",
+         "path": "/dev/sdd1",
+         "uuid": "F22A6D342A6CF74F",
+         "label": "Novo volume",
+         "fstype": "ntfs",
+         "size": 2000397795328,
+         "fsavail": 1986854027264,
+         "fsused": 13543763968,
+         "mountpoints": [
+             "/run/media/ruscher/Novo volume"
+         ],
+         "rm": false,
+         "hotplug": true,
+         "rota": false,
+         "tran": null,
+         "model": null,
+         "pkname": "sdd"
+      }
+   ]
+}
