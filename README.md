@@ -52,7 +52,13 @@ que você escolher e o celular Android pronto para enviar tudo sozinho.
 </p>
 
 Tema claro e escuro, cor de destaque do sistema e janelas estreitas (as abas vão para baixo).
-As capturas foram feitas no modo `--simular` com `tools/tour.py`.
+As capturas acima foram feitas no modo `--simular` com `tools/tour.py`. Abaixo, o painel real
+nesta máquina, logo após a instalação (antes de criar a conta, por isso sem contagem de fotos):
+
+<p align="center">
+<img src="screenshots/real-09-painel.png" width="49%" alt="Painel real com o servidor no ar">
+<img src="screenshots/real-13-mais.png" width="49%" alt="Aba Mais real, com Tailscale e montagem automática">
+</p>
 
 ## Instalação
 
