@@ -60,8 +60,17 @@ make lint        # ruff + shellcheck
 | 24 | Reboot sem disco | serviço não sobe; nenhuma pasta criada | real |
 
 ## Checklist de QA visual
-- [ ] Todas as telas em claro e escuro
-- [ ] Janela 360 px de largura (breakpoint)
-- [ ] Navegação só com teclado do início ao fim
-- [ ] Nenhum texto cortado; nenhuma tela “crua”
-- [ ] Cor de destaque do sistema refletida
+- [x] Todas as telas em claro e escuro (`tools/tour.py --escuro`)
+- [x] Janela estreita, 390 px (`--estreito`): abas vão para a barra inferior, cartões empilham
+- [x] Navegação por teclado: botão padrão de cada etapa com Enter, Tab em todos os controles,
+      Ctrl+1…6 / F5 / Ctrl+F no painel, Ctrl+Q, Ctrl+? (atalhos)
+- [x] Nenhum texto cortado nas capturas (abas encurtadas: “Início”, “Atualizar”)
+- [x] Cor de destaque do sistema (variáveis `--accent-*` do libadwaita)
+
+## Ferramentas
+
+- `tools/tour.py`: percorre o app em modo simulado e salva PNG de cada tela, renderizado pelo
+  próprio GTK (não depende de foco nem do compositor). Opções `--escuro`, `--estreito`,
+  `--cenario`, `--somente`, `--ate`.
+- `tests/sim-bin/`: comandos falsos (systemctl, docker, curl, blkid, findmnt…) usados pelo helper
+  em modo simulado. O helper confere que **todos** os comandos perigosos resolvem para eles.

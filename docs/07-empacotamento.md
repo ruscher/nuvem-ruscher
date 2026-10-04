@@ -26,7 +26,7 @@ pkgname=nuvem-ruscher
 pkgver=1.0.0
 pkgrel=1
 arch=('any')
-depends=(python python-gobject gtk4 libadwaita python-qrcode python-yaml
+depends=(python python-gobject gtk4 libadwaita python-qrcode
          polkit docker docker-compose util-linux systemd curl gzip)
 optdepends=('ntfs-3g: discos NTFS' 'exfatprogs: discos exFAT'
             'tailscale: acesso fora de casa' 'ufw: firewall')
@@ -50,6 +50,9 @@ ID `io.github.ruscher.NuvemRuscher`, licença do metadado `CC0-1.0`, do projeto
 `GPL-3.0-or-later`, `content_rating oars-1.1`, `releases`, `branding` com as cores do
 céu, `requires`/`recommends` de memória (6 GB) e tela. Validação:
 `appstreamcli validate --no-net`.
+
+> Observação: o BigLinux configura `PKGEXT='.pkg.tar'` (sem compressão) em `/etc/makepkg.conf`,
+> então o arquivo gerado é `nuvem-ruscher-1.0.0-1-any.pkg.tar`.
 
 ## Instalação
 
