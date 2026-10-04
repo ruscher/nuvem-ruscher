@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# systemctl falso: guarda o estado do serviço em $ROOT/state/service.
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+args=("$@")
+[[ ${args[0]:-} == --quiet ]] && args=("${args[@]:1}")
+case ${args[0]:-} in
+    is-active)
+        unit=${args[-1]}
+        case $unit in
+            ufw.service) [[ ${SIM_UFW:-0} == 1 ]] && { echo active; exit 0; }; echo inactive; exit 3 ;;
+            firewalld.service) echo inactive; exit 3 ;;
+        esac
+        state=$(sim_state service)
+        echo "${state:-inactive}"
+        [[ $state == active ]]
+        ;;
+    start | restart)
+        [[ ${SIM_START_FAIL:-0} == 1 ]] && exit 1
+        sim_state service active ;;
+    stop) sim_state service inactive ;;
+    disable)
+        [[ ${args[1]:-} == --now ]] && sim_state service inactive
+        exit 0 ;;
+    show) echo "${SIM_SOURCE_PATH-/etc/fstab}" ;;
+    *) exit 0 ;;
+esac

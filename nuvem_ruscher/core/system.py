@@ -23,7 +23,7 @@ def run_text(argv: list[str], timeout: float = 10) -> tuple[int, str]:
             text=True,
             timeout=timeout,
             check=False,
-            env={**os.environ, "LC_ALL": "C"},
+            env={**os.environ, "LC_ALL": "C.UTF-8"},
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         return 127, str(exc)

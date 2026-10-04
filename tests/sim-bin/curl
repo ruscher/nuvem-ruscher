@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# curl falso: downloads vêm das fixtures; a API responde conforme o ambiente.
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+out="" url="${*: -1}"
+while [[ $# -gt 0 ]]; do
+    [[ $1 == -o ]] && { out=$2; shift; }
+    shift
+done
+case $url in
+    */docker-compose.yml)
+        [[ ${SIM_DOWNLOAD_FAIL:-0} == 1 ]] && exit 22
+        cp "${SIM_FIXTURES}/immich-v3.2.4-docker-compose.yml" "$out" ;;
+    */api/server/ping)
+        [[ ${SIM_HEALTH:-ok} == ok ]] && echo '{"res":"pong"}' || exit 7 ;;
+    */api/server/version)
+        v=${SIM_SERVER_VERSION:-v3.2.4}; v=${v#v}
+        IFS=. read -r ma mi pa <<<"$v"
+        printf '{"major":%s,"minor":%s,"patch":%s,"prerelease":null}\n' "$ma" "$mi" "$pa" ;;
+    *) exit 6 ;;
+esac

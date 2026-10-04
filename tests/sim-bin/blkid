@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+if [[ $1 == -U ]]; then
+    [[ $2 == "${SIM_UUID:-F22A6D342A6CF74F}" ]] && { echo /dev/sim1; exit 0; }
+    exit 2
+fi
+echo "${SIM_REAL_FSTYPE:-ntfs}"

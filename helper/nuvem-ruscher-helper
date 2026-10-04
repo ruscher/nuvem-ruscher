@@ -1,0 +1,1179 @@
+#!/usr/bin/env bash
+#
+# nuvem-ruscher-helper — ações privilegiadas do Nuvem Ruscher.
+#
+# Chamado SOMENTE via pkexec pela interface gráfica. Conhece uma lista fechada de
+# ações; cada argumento é validado antes de qualquer uso; nada recebido de fora é
+# executado como comando. A saída segue um protocolo de linhas lido pela interface:
+#
+#   @@STEP <id>          começou uma etapa
+#   @@INFO <texto>       informação para o log
+#   @@RESULT <k>=<v>     resultado
+#   @@ERROR <código> <texto técnico>
+#
+# Regras de ouro (docs/04-armazenamento-e-seguranca.md):
+#   * nunca formatar, apagar, mover ou sobrescrever nada no disco das fotos;
+#   * nunca remover recursivamente um caminho vindo de entrada (ver ADR-008);
+#   * nunca colocar o banco de dados fora de /var/lib/nuvem-ruscher.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+set -Eeuo pipefail
+umask 022
+export LC_ALL=C.UTF-8
+
+readonly HELPER_VERSION="1.0.0"
+readonly SERVICE="nuvem-ruscher-immich.service"
+readonly PORT=2283
+readonly RELEASE_URL="https://github.com/immich-app/immich/releases/download"
+readonly MARKER="# Nuvem Ruscher: disco de fotos do Immich"
+
+# --- Modo simulado (somente testes) ------------------------------------------------
+# Aceito apenas para usuário comum sem pkexec: o pkexec limpa o ambiente, então não
+# há como ativar este modo numa chamada privilegiada.
+if [[ -n ${NUVEM_RUSCHER_SIM_ROOT:-} && -z ${PKEXEC_UID:-} && ${EUID} -ne 0 ]]; then
+    SIM=1
+    ROOT=${NUVEM_RUSCHER_SIM_ROOT}
+    PATH="${ROOT}/bin:/usr/bin:/bin"
+else
+    SIM=0
+    ROOT=""
+    PATH="/usr/bin:/usr/sbin:/bin:/sbin"
+fi
+readonly SIM ROOT
+export PATH
+
+# No modo simulado, todo comando que altera o sistema PRECISA ser o falso da sandbox.
+# Se algum cair no real (ex.: sandbox num /tmp com noexec), paramos antes de tudo.
+if ((SIM)); then
+    for sim_cmd in systemctl docker pacman gpasswd groupadd ufw firewall-cmd blkid mountpoint curl findmnt; do
+        if [[ $(type -P "$sim_cmd" || true) != "${ROOT}/bin/${sim_cmd}" ]]; then
+            printf '@@ERROR internal sandbox incompleta: %s não é o comando simulado\n' "$sim_cmd"
+            exit 1
+        fi
+    done
+    unset sim_cmd
+fi
+
+readonly STACK_DIR="${ROOT}/var/lib/nuvem-ruscher/immich"
+readonly WORK_DIR="${ROOT}/var/lib/nuvem-ruscher/tmp"
+readonly DB_DIR="${STACK_DIR}/postgres"
+readonly SNAPSHOT_DIR="${STACK_DIR}/postgres.anterior"
+readonly ROLLBACK_DIR="${STACK_DIR}/rollback"
+readonly CONF_DIR="${ROOT}/etc/nuvem-ruscher"
+readonly CONF_FILE="${CONF_DIR}/nuvem-ruscher.conf"
+readonly UNIT_DIR="${ROOT}/etc/systemd/system"
+readonly UNIT_FILE="${UNIT_DIR}/${SERVICE}"
+readonly FSTAB="${ROOT}/etc/fstab"
+readonly LOCK_FILE="${ROOT}/run/nuvem-ruscher-helper.lock"
+readonly ZONEINFO="/usr/share/zoneinfo"
+
+TARGET_UID=""
+TARGET_GID=""
+TARGET_USER=""
+KIND=""
+OPTS=""
+PASSNO=0
+IN_UPDATE=0
+OLD_VERSION=""
+
+# --- Protocolo -----------------------------------------------------------------------
+
+emit() { printf '@@%s\n' "$*"; }
+step() { emit "STEP $1"; }
+info() { emit "INFO $*"; }
+result() { emit "RESULT $1=$2"; }
+
+die() {
+    local code=$1
+    shift
+    emit "ERROR ${code} $*"
+    exit 1
+}
+
+on_error() {
+    local rc=$? line=$1
+    trap - ERR
+    if ((IN_UPDATE)); then
+        IN_UPDATE=0
+        info "falha inesperada durante a atualização (linha ${line}); voltando à versão anterior"
+        rollback "$OLD_VERSION"
+    fi
+    emit "ERROR internal comando falhou (código ${rc}) na linha ${line}"
+    exit 1
+}
+trap 'on_error $LINENO' ERR
+
+pause() {
+    if ((SIM)); then
+        return 0
+    fi
+    sleep "$1"
+}
+
+# --- Validação -----------------------------------------------------------------------
+
+validate_version() {
+    if [[ ! $1 =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,4}$ ]]; then
+        die invalid-argument "versão inválida: ${1}"
+    fi
+}
+
+validate_uuid() {
+    if [[ ! $1 =~ ^[A-Za-z0-9-]{4,36}$ ]]; then
+        die invalid-argument "UUID inválido"
+    fi
+}
+
+validate_timezone() {
+    if [[ ! $1 =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+){0,2}$ || ! -f ${ZONEINFO}/$1 ]]; then
+        die invalid-argument "fuso horário inválido: ${1}"
+    fi
+}
+
+validate_choice() {
+    local value=$1 choice
+    shift
+    for choice in "$@"; do
+        if [[ $value == "$choice" ]]; then
+            return 0
+        fi
+    done
+    die invalid-argument "opção inválida: ${value}"
+}
+
+# Mesmas regras de nuvem_ruscher/core/validation.py::validate_photo_path.
+validate_path() {
+    local path=$1 rel
+    if [[ $path != /* ]]; then
+        die invalid-argument "caminho precisa ser absoluto"
+    fi
+    if ((${#path} > 1024)); then
+        die invalid-argument "caminho longo demais"
+    fi
+    if [[ $path =~ [[:cntrl:]] ]]; then
+        die invalid-argument "caractere de controle no caminho"
+    fi
+    case $path in
+        *'"'* | *'$'* | *'`'* | *\\* | *'%'*)
+            die invalid-argument "caractere proibido no caminho"
+            ;;
+    esac
+    case "${path}/" in
+        *//* | */./* | */../*)
+            die invalid-argument "caminho com '.', '..' ou '//'"
+            ;;
+    esac
+    rel=$path
+    if ((SIM)); then
+        if [[ $path != "$ROOT"/* ]]; then
+            die invalid-argument "fora da raiz simulada"
+        fi
+        rel=${path#"$ROOT"}
+    fi
+    case $rel in
+        / | /bin | /bin/* | /boot | /boot/* | /dev | /dev/* | /etc | /etc/* | /lib | /lib/* | \
+            /lib64 | /lib64/* | /proc | /proc/* | /root | /root/* | /sbin | /sbin/* | /sys | /sys/* | \
+            /tmp | /tmp/* | /usr | /usr/* | /var/lib/docker | /var/lib/docker/* | \
+            /var/lib/nuvem-ruscher | /var/lib/nuvem-ruscher/* | /var/tmp | /var/tmp/*)
+            die storage-unsafe "pasta do sistema: ${rel}"
+            ;;
+        /run/media/*) ;;
+        /run | /run/*)
+            die storage-unsafe "pasta temporária: ${rel}"
+            ;;
+    esac
+}
+
+strip_slash() {
+    local path=$1
+    while [[ ${#path} -gt 1 && $path == */ ]]; do
+        path=${path%/}
+    done
+    printf '%s' "$path"
+}
+
+# --- Utilitários ---------------------------------------------------------------------
+
+target_user() {
+    local uid=${PKEXEC_UID:-} entry
+    if ((SIM)); then
+        uid=${NUVEM_RUSCHER_SIM_UID:-$(id -u)}
+    fi
+    if [[ ! $uid =~ ^[0-9]+$ ]]; then
+        die not-authorized "PKEXEC_UID ausente"
+    fi
+    if ((!SIM && uid < 1000)); then
+        die not-authorized "uid ${uid} não é de um usuário comum"
+    fi
+    entry=$(getent passwd "$uid") || die not-authorized "usuário ${uid} não existe"
+    TARGET_UID=$uid
+    TARGET_USER=$(cut -d: -f1 <<<"$entry")
+    TARGET_GID=$(cut -d: -f4 <<<"$entry")
+}
+
+take_lock() {
+    mkdir -p -- "${LOCK_FILE%/*}"
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        die busy "outra operação do Nuvem Ruscher está em andamento"
+    fi
+}
+
+# write_file <destino> <modo> — conteúdo pela entrada padrão; troca atômica.
+# O temporário nasce 600 (mktemp), então segredos nunca ficam legíveis no caminho.
+write_file() {
+    local dest=$1 mode=$2 tmp
+    tmp=$(mktemp "${dest%/*}/.nuvem-ruscher.XXXXXX")
+    cat >"$tmp"
+    chmod "$mode" -- "$tmp"
+    sync -- "$tmp" 2>/dev/null || true
+    mv -f -- "$tmp" "$dest"
+}
+
+conf_get() {
+    local key=$1 line
+    [[ -f $CONF_FILE ]] || return 1
+    while IFS= read -r line || [[ -n $line ]]; do
+        if [[ $line == "${key}="* ]]; then
+            printf '%s' "${line#*=}"
+            return 0
+        fi
+    done <"$CONF_FILE"
+    return 1
+}
+
+conf_set() {
+    local key=$1 value=$2
+    {
+        local line found=0
+        while IFS= read -r line || [[ -n $line ]]; do
+            if [[ $line == "${key}="* ]]; then
+                printf '%s=%s\n' "$key" "$value"
+                found=1
+            else
+                printf '%s\n' "$line"
+            fi
+        done <"$CONF_FILE"
+        if ((!found)); then
+            printf '%s=%s\n' "$key" "$value"
+        fi
+    } | write_file "$CONF_FILE" 644
+}
+
+env_get() {
+    local key=$1 line value
+    [[ -f ${STACK_DIR}/.env ]] || return 1
+    while IFS= read -r line || [[ -n $line ]]; do
+        if [[ $line == "${key}="* ]]; then
+            value=${line#*=}
+            value=${value#\"}
+            value=${value%\"}
+            printf '%s' "$value"
+            return 0
+        fi
+    done <"${STACK_DIR}/.env"
+    return 1
+}
+
+env_set() {
+    local key=$1 value=$2
+    {
+        local line
+        while IFS= read -r line || [[ -n $line ]]; do
+            if [[ $line == "${key}="* ]]; then
+                printf '%s="%s"\n' "$key" "$value"
+            else
+                printf '%s\n' "$line"
+            fi
+        done <"${STACK_DIR}/.env"
+    } | write_file "${STACK_DIR}/.env" 600
+}
+
+require_installed() {
+    if [[ ! -f $CONF_FILE || ! -f ${STACK_DIR}/docker-compose.yml ]]; then
+        die not-installed "configuração não encontrada"
+    fi
+}
+
+download() {
+    local url=$1 dest=$2 tmp
+    tmp=$(mktemp "${dest%/*}/.download.XXXXXX")
+    if ! curl -fsSL --proto '=https' --tlsv1.2 --retry 3 --retry-delay 2 \
+        --connect-timeout 15 --max-time 180 -o "$tmp" "$url"; then
+        rm -f -- "$tmp"
+        die download-failed "não foi possível baixar ${url}"
+    fi
+    chmod 644 -- "$tmp"
+    mv -f -- "$tmp" "$dest"
+}
+
+# O app depende do mapeamento oficial "${UPLOAD_LOCATION}:/data" para que o override
+# substitua o volume com create_host_path: false. Se a release mudar isso, paramos.
+check_compose() {
+    local file=$1
+    # shellcheck disable=SC2016 # os ${...} são texto literal do arquivo oficial
+    if ! grep -q '^name: immich' "$file" ||
+        ! grep -q 'immich-server:' "$file" ||
+        ! grep -qF '${UPLOAD_LOCATION}:/data' "$file" ||
+        ! grep -qF '${DB_DATA_LOCATION}:/var/lib/postgresql/data' "$file"; then
+        die download-failed "o docker-compose.yml baixado tem um formato inesperado"
+    fi
+}
+
+version_gt() {
+    [[ $1 != "$2" && $(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n 1) == "$1" ]]
+}
+
+version_from_json() {
+    local json=$1 major minor patch
+    if [[ $json =~ \"major\":([0-9]+) ]]; then major=${BASH_REMATCH[1]}; else return 1; fi
+    if [[ $json =~ \"minor\":([0-9]+) ]]; then minor=${BASH_REMATCH[1]}; else return 1; fi
+    if [[ $json =~ \"patch\":([0-9]+) ]]; then patch=${BASH_REMATCH[1]}; else return 1; fi
+    printf 'v%s.%s.%s' "$major" "$minor" "$patch"
+}
+
+# wait_health <segundos> [versão esperada]
+wait_health() {
+    local timeout=$1 expected=${2:-} waited=0 body state
+    while ((waited < timeout)); do
+        body=$(curl -fsS --max-time 5 "http://127.0.0.1:${PORT}/api/server/ping" 2>/dev/null || true)
+        if [[ $body == *pong* ]]; then
+            if [[ -z $expected ]]; then
+                return 0
+            fi
+            body=$(curl -fsS --max-time 5 "http://127.0.0.1:${PORT}/api/server/version" 2>/dev/null || true)
+            if [[ $(version_from_json "$body" || true) == "$expected" ]]; then
+                return 0
+            fi
+        fi
+        state=$(systemctl is-active "$SERVICE" 2>/dev/null || true)
+        if [[ $state == failed ]]; then
+            return 1
+        fi
+        if ((waited % 30 == 0)); then
+            info "aguardando o servidor responder (${waited}s, serviço: ${state:-?})"
+        fi
+        pause 5
+        waited=$((waited + 5))
+    done
+    return 1
+}
+
+fstab_escape() {
+    local s=$1
+    s=${s//\\/\\134}
+    s=${s// /\\040}
+    s=${s//$'\t'/\\011}
+    printf '%s' "$s"
+}
+
+# Mesmas regras de nuvem_ruscher/core/fstab.py::mount_spec.
+mount_spec() {
+    local fs=$1
+    local common="defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s"
+    local owner="uid=${TARGET_UID},gid=${TARGET_GID},dmask=022,fmask=133"
+    PASSNO=0
+    case $fs in
+        ntfs | ntfs3)
+            KIND=ntfs-3g
+            OPTS="${common},${owner},windows_names"
+            if ! command -v mount.ntfs-3g >/dev/null 2>&1; then
+                KIND=ntfs3
+                OPTS="${common},${owner}"
+            fi
+            ;;
+        exfat)
+            KIND=exfat
+            OPTS="${common},${owner}"
+            ;;
+        vfat)
+            KIND=vfat
+            OPTS="${common},${owner},utf8,shortname=mixed"
+            ;;
+        btrfs)
+            KIND=btrfs
+            OPTS="${common},noatime"
+            ;;
+        ext2 | ext3 | ext4 | xfs | f2fs)
+            KIND=$fs
+            OPTS="${common},noatime"
+            PASSNO=2
+            ;;
+        *)
+            die unsupported-fs "sistema de arquivos sem suporte: ${fs}"
+            ;;
+    esac
+}
+
+fstab_has_target() {
+    [[ -n $1 && -f $FSTAB ]] && findmnt --tab-file "$FSTAB" -n -M "$1" >/dev/null 2>&1
+}
+
+# Liga o serviço no boot só quando o disco é montado pelo sistema (fstab) ou é o
+# disco do sistema. Em todos os casos, ele sobe sozinho quando o disco aparece.
+refresh_enablement() {
+    local mountpoint mount_unit
+    mountpoint=$(conf_get MOUNT_POINT || true)
+    mount_unit=$(conf_get MOUNT_UNIT || true)
+    # "disable" remove todos os links da unidade; por isso vem antes do link manual.
+    if [[ -z $mount_unit ]] || fstab_has_target "$mountpoint"; then
+        systemctl enable "$SERVICE" >/dev/null 2>&1 || systemctl enable "$SERVICE"
+        result boot "auto"
+    else
+        systemctl disable "$SERVICE" >/dev/null 2>&1 || true
+        result boot "on-disk-mount"
+    fi
+    if [[ -n $mount_unit ]]; then
+        mkdir -p -- "${UNIT_DIR}/${mount_unit}.wants"
+        ln -sfn -- "/etc/systemd/system/${SERVICE}" "${UNIT_DIR}/${mount_unit}.wants/${SERVICE}"
+    fi
+    systemctl daemon-reload
+}
+
+# --- Geração de arquivos -------------------------------------------------------------
+
+gen_password() {
+    local chars
+    chars=$(head -c 4096 /dev/urandom | tr -dc 'A-Za-z0-9')
+    printf '%s' "${chars:0:32}"
+}
+
+write_env() {
+    local upload=$1 tz=$2 version=$3 password=$4
+    write_file "${STACK_DIR}/.env" 600 <<EOF
+# Gerado pelo Nuvem Ruscher em $(date -Iseconds).
+# Contém a senha do banco: mantenha este arquivo com permissão 600.
+# Variáveis: https://docs.immich.app/install/environment-variables
+UPLOAD_LOCATION="${upload}"
+DB_DATA_LOCATION="${DB_DIR}"
+TZ="${tz}"
+IMMICH_VERSION="${version}"
+DB_PASSWORD="${password}"
+DB_USERNAME="postgres"
+DB_DATABASE_NAME="immich"
+EOF
+}
+
+write_override() {
+    local transcode=$1 ml=$2 hdd=$3
+    {
+        printf '%s\n' \
+            "# Gerado pelo Nuvem Ruscher. Não edite: este arquivo é recriado." \
+            "# O docker-compose.yml oficial do Immich fica intocado; tudo o que muda está aqui." \
+            "" \
+            "services:" \
+            "  immich-server:" \
+            "    # Quem liga e desliga é o systemd (${SERVICE}), nunca o Docker." \
+            "    restart: \"no\"" \
+            "    volumes:" \
+            "      # Mesmo destino (/data) do arquivo oficial. create_host_path: false impede" \
+            "      # que o Docker crie uma pasta vazia se o disco das fotos não estiver montado." \
+            "      - type: bind" \
+            "        source: \${UPLOAD_LOCATION}" \
+            "        target: /data" \
+            "        bind:" \
+            "          create_host_path: false"
+        case $transcode in
+            vaapi | quicksync)
+                printf '%s\n' "    devices:" "      - /dev/dri:/dev/dri"
+                ;;
+            nvenc)
+                printf '%s\n' "    deploy:" "      resources:" "        reservations:" "          devices:" \
+                    "            - driver: nvidia" "              count: 1" \
+                    "              capabilities: [gpu, compute, video]"
+                ;;
+        esac
+        printf '%s\n' "  immich-machine-learning:" "    restart: \"no\""
+        case $ml in
+            off)
+                printf '%s\n' "    # Inteligência artificial desligada (pouca memória)." \
+                    "    profiles: [\"desativado\"]"
+                ;;
+            openvino)
+                printf '%s\n' \
+                    "    image: ghcr.io/immich-app/immich-machine-learning:\${IMMICH_VERSION:-release}-openvino" \
+                    "    device_cgroup_rules:" "      - 'c 189:* rmw'" \
+                    "    devices:" "      - /dev/dri:/dev/dri" \
+                    "    volumes:" "      - /dev/bus/usb:/dev/bus/usb"
+                ;;
+            rocm)
+                printf '%s\n' \
+                    "    image: ghcr.io/immich-app/immich-machine-learning:\${IMMICH_VERSION:-release}-rocm" \
+                    "    group_add:" "      - video" \
+                    "    devices:" "      - /dev/dri:/dev/dri" "      - /dev/kfd:/dev/kfd"
+                ;;
+            cuda)
+                printf '%s\n' \
+                    "    image: ghcr.io/immich-app/immich-machine-learning:\${IMMICH_VERSION:-release}-cuda" \
+                    "    deploy:" "      resources:" "        reservations:" "          devices:" \
+                    "            - driver: nvidia" "              count: 1" "              capabilities: [gpu]"
+                ;;
+        esac
+        printf '%s\n' "  redis:" "    restart: \"no\"" "  database:" "    restart: \"no\""
+        if ((hdd)); then
+            printf '%s\n' "    environment:" "      DB_STORAGE_TYPE: HDD"
+        fi
+        printf '%s\n' \
+            "    volumes:" \
+            "      - type: bind" \
+            "        source: \${DB_DATA_LOCATION}" \
+            "        target: /var/lib/postgresql/data" \
+            "        bind:" \
+            "          create_host_path: false"
+    } | write_file "${STACK_DIR}/docker-compose.override.yml" 644
+}
+
+write_unit() {
+    local upload=$1 mountpoint=$2 mount_unit=$3
+    {
+        printf '%s\n' \
+            "# Gerado pelo Nuvem Ruscher. Não edite: este arquivo é recriado." \
+            "[Unit]" \
+            "Description=Nuvem Ruscher: servidor de fotos Immich" \
+            "Documentation=https://docs.immich.app https://github.com/ruscher/nuvem-ruscher" \
+            "Requires=docker.service" \
+            "After=docker.service network-online.target" \
+            "Wants=network-online.target"
+        if [[ -n $mount_unit ]]; then
+            printf '%s\n' \
+                "# Sem o disco das fotos o servidor não sobe; se o disco sair, ele para antes." \
+                "BindsTo=${mount_unit}" \
+                "After=${mount_unit}"
+        fi
+        printf 'RequiresMountsFor="%s" "%s"\n' "$upload" "$STACK_DIR"
+        printf '%s\n' \
+            "StartLimitIntervalSec=10min" \
+            "StartLimitBurst=5" \
+            "" \
+            "[Service]" \
+            "Type=exec" \
+            "WorkingDirectory=${STACK_DIR}"
+        if [[ -n $mount_unit ]]; then
+            printf 'ExecStartPre=/usr/bin/mountpoint -q "%s"\n' "$mountpoint"
+        fi
+        printf 'ExecStartPre=/usr/bin/test -d "%s"\n' "$upload"
+        printf '%s\n' \
+            "ExecStart=/usr/bin/docker compose up --pull never --abort-on-container-exit --remove-orphans" \
+            "ExecStop=/usr/bin/docker compose stop" \
+            "Restart=always" \
+            "RestartSec=15s" \
+            "TimeoutStopSec=3min" \
+            "" \
+            "[Install]" \
+            "WantedBy=multi-user.target"
+    } | write_file "$UNIT_FILE" 644
+}
+
+db_on_hdd() {
+    local src rota
+    src=$(findmnt -n --nofsroot -o SOURCE -T "${STACK_DIR%/*}" 2>/dev/null || true)
+    [[ -b $src ]] || return 1
+    rota=$(lsblk -ndo ROTA "$src" 2>/dev/null || true)
+    [[ ${rota// /} == 1 ]]
+}
+
+# --- Ações ---------------------------------------------------------------------------
+
+cmd_install_docker() {
+    (($# == 0)) || die invalid-argument "install-docker não recebe argumentos"
+    if [[ -e ${ROOT}/var/lib/pacman/db.lck ]]; then
+        die pacman-failed "outro programa está instalando pacotes agora"
+    fi
+    step install
+    if ! pacman -S --needed --noconfirm docker docker-compose; then
+        die pacman-failed "pacman -S docker docker-compose falhou"
+    fi
+    step enable
+    if ! systemctl enable --now docker.service; then
+        die service-failed "o Docker não iniciou"
+    fi
+    result docker ok
+}
+
+cmd_enable_docker() {
+    (($# == 0)) || die invalid-argument "enable-docker não recebe argumentos"
+    step enable
+    if ! systemctl enable --now docker.service; then
+        die service-failed "o Docker não iniciou"
+    fi
+    result docker ok
+}
+
+cmd_add_docker_group() {
+    (($# == 0)) || die invalid-argument "add-docker-group não recebe argumentos"
+    target_user
+    step group
+    if ! getent group docker >/dev/null; then
+        groupadd --system docker
+    fi
+    gpasswd -a "$TARGET_USER" docker
+    result group "docker"
+}
+
+cmd_firewall_allow() {
+    (($# == 0)) || die invalid-argument "firewall-allow não recebe argumentos"
+    local net
+    step firewall
+    if systemctl is-active --quiet ufw.service; then
+        # Só redes locais e Tailscale (100.64.0.0/10) — nunca a internet inteira.
+        for net in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10; do
+            if ! ufw allow from "$net" to any port "$PORT" proto tcp comment 'Nuvem Ruscher (Immich)'; then
+                die firewall-failed "ufw recusou a regra para ${net}"
+            fi
+        done
+        result firewall ufw
+    elif systemctl is-active --quiet firewalld.service; then
+        if ! firewall-cmd --permanent --add-port="${PORT}/tcp" || ! firewall-cmd --reload; then
+            die firewall-failed "firewall-cmd falhou"
+        fi
+        result firewall firewalld
+    else
+        info "nenhum firewall ativo"
+        result firewall none
+    fi
+}
+
+cmd_fstab_add() {
+    (($# == 2)) || die invalid-argument "uso: fstab-add <uuid> <ponto-de-montagem>"
+    local uuid=$1 mountpoint dev fstype stamp backup tmp seen unit
+    mountpoint=$(strip_slash "$2")
+    validate_uuid "$uuid"
+    validate_path "$mountpoint"
+    target_user
+    take_lock
+
+    step check
+    dev=$(blkid -U "$uuid" 2>/dev/null) || die storage-missing "nenhum disco com UUID ${uuid}"
+    fstype=$(blkid -o value -s TYPE "$dev" 2>/dev/null) || die storage-missing "tipo de ${dev} desconhecido"
+    mount_spec "$fstype"
+    if grep -Eq "^[[:space:]]*(UUID=${uuid}|/dev/disk/by-uuid/${uuid})[[:space:]]" "$FSTAB"; then
+        die fstab-exists "o fstab já tem uma entrada para UUID=${uuid}"
+    fi
+    if fstab_has_target "$mountpoint"; then
+        die fstab-exists "o fstab já tem uma entrada para ${mountpoint}"
+    fi
+
+    if ! findmnt --verify --tab-file "$FSTAB" >/dev/null 2>&1; then
+        die fstab-invalid "o /etc/fstab atual já tem erros; nada foi alterado"
+    fi
+
+    step backup
+    stamp=$(date +%Y%m%d-%H%M%S)
+    backup="${FSTAB}.nuvem-ruscher-${stamp}.bak"
+    cp -a -- "$FSTAB" "$backup"
+    result backup "$backup"
+
+    step write
+    tmp=$(mktemp "${FSTAB%/*}/.fstab.nuvem-ruscher.XXXXXX")
+    {
+        cat -- "$FSTAB"
+        if [[ -s $FSTAB && -n $(tail -c 1 -- "$FSTAB") ]]; then
+            printf '\n'
+        fi
+        printf '%s (adicionado em %s)\n' "$MARKER" "$(date +%F)"
+        printf 'UUID=%s %s %s %s 0 %s\n' "$uuid" "$(fstab_escape "$mountpoint")" "$KIND" "$OPTS" "$PASSNO"
+    } >"$tmp"
+    chmod 644 -- "$tmp"
+
+    step verify
+    if ! findmnt --verify --tab-file "$tmp"; then
+        rm -f -- "$tmp"
+        die fstab-invalid "findmnt --verify reprovou a nova linha"
+    fi
+    seen=$(findmnt --tab-file "$tmp" -n -o TARGET -S "UUID=${uuid}" 2>/dev/null || true)
+    if [[ $seen != "$mountpoint" ]]; then
+        rm -f -- "$tmp"
+        die fstab-invalid "o alvo relido (${seen}) não é ${mountpoint}"
+    fi
+    mv -f -- "$tmp" "$FSTAB"
+
+    step apply
+    unit=$(systemd-escape -p --suffix=mount "$mountpoint")
+    if ! systemctl daemon-reload ||
+        [[ $(systemctl show -p SourcePath --value "$unit" 2>/dev/null || true) != /etc/fstab ]]; then
+        cp -a -- "$backup" "$FSTAB"
+        systemctl daemon-reload || true
+        die fstab-invalid "a unidade ${unit} não foi gerada a partir do fstab; arquivo restaurado"
+    fi
+    if [[ -f $CONF_FILE ]]; then
+        refresh_enablement
+    fi
+    result unit "$unit"
+    result fstab "ok"
+}
+
+cmd_fstab_remove() {
+    (($# == 1)) || die invalid-argument "uso: fstab-remove <uuid>"
+    local uuid=$1 stamp backup tmp
+    validate_uuid "$uuid"
+    take_lock
+    step check
+    if ! grep -q "^UUID=${uuid} " "$FSTAB"; then
+        die fstab-invalid "não há entrada para UUID=${uuid}"
+    fi
+    step backup
+    stamp=$(date +%Y%m%d-%H%M%S)
+    backup="${FSTAB}.nuvem-ruscher-${stamp}.bak"
+    cp -a -- "$FSTAB" "$backup"
+    result backup "$backup"
+    step write
+    tmp=$(mktemp "${FSTAB%/*}/.fstab.nuvem-ruscher.XXXXXX")
+    # Remove só o par "comentário do app" + "linha do UUID". Entradas de terceiros ficam.
+    awk -v uuid="UUID=${uuid} " -v marker="$MARKER" '
+        { lines[NR] = $0 }
+        END {
+            for (i = 1; i <= NR; i++) {
+                if (index(lines[i], marker) == 1 && i < NR && index(lines[i + 1], uuid) == 1) {
+                    i++
+                    continue
+                }
+                print lines[i]
+            }
+        }' "$FSTAB" >"$tmp"
+    if cmp -s -- "$tmp" "$FSTAB"; then
+        rm -f -- "$tmp"
+        die fstab-invalid "a entrada não foi criada pelo Nuvem Ruscher; nada foi alterado"
+    fi
+    chmod 644 -- "$tmp"
+    step verify
+    if ! findmnt --verify --tab-file "$tmp"; then
+        rm -f -- "$tmp"
+        die fstab-invalid "findmnt --verify reprovou o resultado"
+    fi
+    mv -f -- "$tmp" "$FSTAB"
+    step apply
+    systemctl daemon-reload
+    if [[ -f $CONF_FILE ]]; then
+        refresh_enablement
+    fi
+    result fstab "removed"
+}
+
+cmd_setup() {
+    (($# == 5)) || die invalid-argument "uso: setup <versão> <pasta-fotos> <fuso> <transcode> <ml>"
+    local version=$1 upload tz=$3 transcode=$4 ml=$5
+    local parent mountpoint mount_unit fstype options password existing hdd=0 rel_dir was_active=0
+    upload=$(strip_slash "$2")
+    validate_version "$version"
+    validate_path "$upload"
+    validate_timezone "$tz"
+    validate_choice "$transcode" cpu vaapi quicksync nvenc
+    validate_choice "$ml" cpu off openvino rocm cuda
+    target_user
+    take_lock
+
+    step storage
+    parent=${upload%/*}
+    parent=${parent:-/}
+    if [[ ! -d $parent ]]; then
+        die storage-missing "a pasta ${parent} não existe (o disco está conectado?)"
+    fi
+    if [[ -L $upload ]]; then
+        die storage-unsafe "a pasta das fotos é um link simbólico"
+    fi
+    if [[ ! -d $upload ]]; then
+        mkdir -- "$upload"
+        chown -- "${TARGET_UID}:${TARGET_GID}" "$upload" 2>/dev/null || true
+        info "pasta criada: ${upload}"
+    fi
+    mountpoint=$(findmnt -n -o TARGET -T "$upload")
+    fstype=$(findmnt -n -o FSTYPE -T "$upload")
+    options=$(findmnt -n -o OPTIONS -T "$upload")
+    if [[ ,${options}, == *,ro,* ]]; then
+        die storage-unsafe "o disco das fotos está somente leitura"
+    fi
+    mount_unit=""
+    if [[ $mountpoint != / ]]; then
+        mount_unit=$(systemd-escape -p --suffix=mount "$mountpoint")
+    fi
+    result mountpoint "$mountpoint"
+
+    step download
+    mkdir -p -- "$STACK_DIR" "$CONF_DIR" "$WORK_DIR" "$UNIT_DIR"
+    chmod 755 -- "${STACK_DIR%/*}" "$STACK_DIR"
+    rel_dir="${STACK_DIR}/releases/${version}"
+    mkdir -p -- "$rel_dir"
+    if [[ ! -s ${rel_dir}/docker-compose.yml ]]; then
+        download "${RELEASE_URL}/${version}/docker-compose.yml" "${rel_dir}/docker-compose.yml"
+    fi
+    check_compose "${rel_dir}/docker-compose.yml"
+    cp -f -- "${rel_dir}/docker-compose.yml" "${STACK_DIR}/docker-compose.yml"
+    chmod 644 -- "${STACK_DIR}/docker-compose.yml"
+
+    step env
+    existing=$(env_get DB_PASSWORD || true)
+    if [[ $existing =~ ^[A-Za-z0-9]{8,128}$ ]]; then
+        password=$existing
+        info "senha do banco existente preservada"
+    elif [[ -f ${DB_DIR}/PG_VERSION ]]; then
+        die db-password-missing "há um banco em ${DB_DIR} mas o .env com a senha sumiu"
+    else
+        password=$(gen_password)
+        if [[ ! $password =~ ^[A-Za-z0-9]{32}$ ]]; then
+            die internal "falha ao gerar a senha do banco"
+        fi
+    fi
+    write_env "$upload" "$tz" "$version" "$password"
+    mkdir -p -- "$DB_DIR"
+    chmod 700 -- "$DB_DIR"
+    if db_on_hdd; then
+        hdd=1
+    fi
+    write_override "$transcode" "$ml" "$hdd"
+
+    step service
+    if systemctl is-active --quiet "$SERVICE" 2>/dev/null; then
+        was_active=1
+    fi
+    write_unit "$upload" "$mountpoint" "$mount_unit"
+    write_file "$CONF_FILE" 644 <<EOF
+# Gerado pelo Nuvem Ruscher. Configuração pública (sem segredos), lida pela interface.
+INSTALLED=1
+IMMICH_VERSION=${version}
+UPLOAD_LOCATION=${upload}
+DB_DATA_LOCATION=${DB_DIR}
+MOUNT_POINT=${mountpoint}
+MOUNT_UNIT=${mount_unit}
+FS_TYPE=${fstype}
+TRANSCODE=${transcode}
+ML=${ml}
+TZ=${tz}
+OWNER_UID=${TARGET_UID}
+UPDATED=$(date -Iseconds)
+EOF
+    systemctl daemon-reload
+    refresh_enablement
+    result restart-needed "$was_active"
+    result version "$version"
+}
+
+cmd_start() {
+    (($# == 0)) || die invalid-argument "start não recebe argumentos"
+    require_installed
+    take_lock
+    local mountpoint upload
+    mountpoint=$(conf_get MOUNT_POINT || true)
+    upload=$(conf_get UPLOAD_LOCATION || true)
+    if [[ -n $mountpoint && $mountpoint != / ]] && ! mountpoint -q -- "$mountpoint"; then
+        die storage-missing "${mountpoint} não está montado"
+    fi
+    if [[ ! -d $upload ]]; then
+        die storage-missing "a pasta ${upload} não existe"
+    fi
+    step start
+    systemctl reset-failed "$SERVICE" >/dev/null 2>&1 || true
+    if ! systemctl start "$SERVICE"; then
+        die service-failed "systemctl start ${SERVICE} falhou"
+    fi
+    result service started
+}
+
+cmd_stop() {
+    (($# == 0)) || die invalid-argument "stop não recebe argumentos"
+    require_installed
+    take_lock
+    step stop
+    if ! systemctl stop "$SERVICE"; then
+        die service-failed "systemctl stop ${SERVICE} falhou"
+    fi
+    result service stopped
+}
+
+cmd_restart() {
+    (($# == 0)) || die invalid-argument "restart não recebe argumentos"
+    require_installed
+    take_lock
+    local mountpoint
+    mountpoint=$(conf_get MOUNT_POINT || true)
+    if [[ -n $mountpoint && $mountpoint != / ]] && ! mountpoint -q -- "$mountpoint"; then
+        die storage-missing "${mountpoint} não está montado"
+    fi
+    step restart
+    systemctl reset-failed "$SERVICE" >/dev/null 2>&1 || true
+    if ! systemctl restart "$SERVICE"; then
+        die service-failed "systemctl restart ${SERVICE} falhou"
+    fi
+    result service started
+}
+
+# O dump é feito no disco interno e só depois copiado para o disco das fotos:
+# assim nunca precisamos apagar nada lá, nem um arquivo parcial.
+do_backup_db() {
+    local upload version user db dest name tmp
+    upload=$(conf_get UPLOAD_LOCATION) || die not-installed "configuração incompleta"
+    version=$(conf_get IMMICH_VERSION || echo desconhecida)
+    user=$(env_get DB_USERNAME || echo postgres)
+    db=$(env_get DB_DATABASE_NAME || echo immich)
+    if [[ ! $user =~ ^[A-Za-z0-9_]+$ || ! $db =~ ^[A-Za-z0-9_]+$ ]]; then
+        die backup-failed "nome de usuário/banco inválido no .env"
+    fi
+    if [[ $(docker inspect -f '{{.State.Running}}' immich_postgres 2>/dev/null || true) != true ]]; then
+        die not-running "o banco de dados não está ligado"
+    fi
+    if [[ ! -d $upload ]]; then
+        die storage-missing "a pasta ${upload} não existe"
+    fi
+    mkdir -p -- "$WORK_DIR"
+    chmod 700 -- "$WORK_DIR"
+    name="nuvem-ruscher-db-$(date +%Y%m%d-%H%M%S)-${version}.sql.gz"
+    tmp="${WORK_DIR}/${name}"
+    step dump
+    if ! docker exec immich_postgres pg_dump --clean --if-exists \
+        --dbname="$db" --username="$user" | gzip >"$tmp"; then
+        rm -f -- "$tmp"
+        die backup-failed "pg_dump falhou"
+    fi
+    if ! gzip -t -- "$tmp" || [[ $(stat -c %s -- "$tmp") -lt 1024 ]]; then
+        rm -f -- "$tmp"
+        die backup-failed "o arquivo de backup ficou vazio ou corrompido"
+    fi
+    step copy
+    dest="${upload}/backups/nuvem-ruscher"
+    mkdir -p -- "$dest"
+    if [[ -e ${dest}/${name} ]]; then
+        rm -f -- "$tmp"
+        die backup-failed "já existe ${dest}/${name}"
+    fi
+    if ! cp -- "$tmp" "${dest}/${name}"; then
+        rm -f -- "$tmp"
+        die backup-failed "não foi possível copiar para ${dest}"
+    fi
+    result size "$(stat -c %s -- "$tmp")"
+    rm -f -- "$tmp"
+    result file "${dest}/${name}"
+}
+
+cmd_backup_db() {
+    (($# == 0)) || die invalid-argument "backup-db não recebe argumentos"
+    require_installed
+    take_lock
+    do_backup_db
+}
+
+# Única remoção recursiva do projeto (ADR-008). O caminho vem só de constantes e é
+# conferido de novo aqui, para que nenhuma mudança futura o transforme em outra coisa.
+remove_old_snapshot() {
+    [[ -e $SNAPSHOT_DIR || -L $SNAPSHOT_DIR ]] || return 0
+    case $SNAPSHOT_DIR in
+        */var/lib/nuvem-ruscher/immich/postgres.anterior) ;;
+        *) die internal "caminho de snapshot inesperado: ${SNAPSHOT_DIR}" ;;
+    esac
+    if [[ -L $SNAPSHOT_DIR || ! -d $SNAPSHOT_DIR ]]; then
+        die internal "o snapshot anterior não é um diretório comum"
+    fi
+    if mountpoint -q -- "$SNAPSHOT_DIR"; then
+        die internal "o snapshot anterior é um ponto de montagem"
+    fi
+    rm -r --one-file-system --preserve-root=all -- "$SNAPSHOT_DIR"
+}
+
+rollback() {
+    local old=$1 stamp failed
+    stamp=$(date +%Y%m%d-%H%M%S)
+    failed="${DB_DIR}.falhou-${stamp}"
+    step rollback
+    systemctl stop "$SERVICE" || true
+    if [[ ! -d $SNAPSHOT_DIR ]]; then
+        die rollback-failed "não há snapshot para restaurar"
+    fi
+    if [[ -e $DB_DIR ]]; then
+        mv -- "$DB_DIR" "$failed"
+        info "banco da tentativa guardado em ${failed}"
+    fi
+    if ! cp -a --reflink=auto -- "$SNAPSHOT_DIR" "$DB_DIR"; then
+        die rollback-failed "não foi possível restaurar ${SNAPSHOT_DIR}"
+    fi
+    cp -a -- "${ROLLBACK_DIR}/docker-compose.yml" "${STACK_DIR}/docker-compose.yml"
+    cp -a -- "${ROLLBACK_DIR}/.env" "${STACK_DIR}/.env"
+    cp -a -- "${ROLLBACK_DIR}/nuvem-ruscher.conf" "$CONF_FILE"
+    systemctl reset-failed "$SERVICE" >/dev/null 2>&1 || true
+    if ! systemctl start "$SERVICE" || ! wait_health 600 "$old"; then
+        die rollback-failed "a versão ${old} também não respondeu; snapshot preservado em ${SNAPSHOT_DIR}"
+    fi
+    result version "$old"
+    die update-rolled-back "a nova versão não ficou saudável; tudo voltou para ${old}"
+}
+
+cmd_update() {
+    (($# == 1)) || die invalid-argument "uso: update <versão>"
+    local new=$1 rel_dir need avail
+    validate_version "$new"
+    require_installed
+    target_user
+    take_lock
+    OLD_VERSION=$(conf_get IMMICH_VERSION) || die not-installed "versão atual desconhecida"
+    if ! version_gt "$new" "$OLD_VERSION"; then
+        die invalid-argument "${new} não é mais nova que ${OLD_VERSION}"
+    fi
+
+    step download
+    rel_dir="${STACK_DIR}/releases/${new}"
+    mkdir -p -- "$rel_dir"
+    download "${RELEASE_URL}/${new}/docker-compose.yml" "${rel_dir}/docker-compose.yml"
+    check_compose "${rel_dir}/docker-compose.yml"
+
+    step pull
+    # Variável de ambiente tem precedência sobre o .env na interpolação do compose.
+    if ! IMMICH_VERSION="$new" docker compose --project-directory "$STACK_DIR" \
+        -f "${rel_dir}/docker-compose.yml" -f "${STACK_DIR}/docker-compose.override.yml" \
+        --progress plain pull; then
+        die download-failed "não foi possível baixar as imagens de ${new}"
+    fi
+
+    step backup
+    if systemctl is-active --quiet "$SERVICE"; then
+        do_backup_db
+    else
+        info "servidor desligado: o snapshot do banco cobre a volta"
+    fi
+
+    step stop
+    if ! systemctl stop "$SERVICE"; then
+        die service-failed "não foi possível parar o servidor"
+    fi
+
+    step snapshot
+    remove_old_snapshot
+    need=$(du -sb -- "$DB_DIR" | cut -f1)
+    avail=$(df --output=avail -B1 -- "$STACK_DIR" | tail -n 1 | tr -d ' ')
+    case $(findmnt -n -o FSTYPE -T "$STACK_DIR" 2>/dev/null || true) in
+        btrfs | xfs | bcachefs) ;; # cópia por reflink: instantânea e sem gastar espaço
+        *)
+            if ((need > avail)); then
+                systemctl start "$SERVICE" || true
+                die no-space "o snapshot do banco precisa de ${need} bytes e há ${avail}"
+            fi
+            ;;
+    esac
+    if ! cp -a --reflink=auto -- "$DB_DIR" "$SNAPSHOT_DIR"; then
+        remove_old_snapshot
+        systemctl start "$SERVICE" || true
+        die no-space "não foi possível copiar o banco para o snapshot"
+    fi
+    mkdir -p -- "$ROLLBACK_DIR"
+    chmod 700 -- "$ROLLBACK_DIR"
+    cp -a -- "${STACK_DIR}/docker-compose.yml" "${STACK_DIR}/.env" "$CONF_FILE" "$ROLLBACK_DIR/"
+
+    IN_UPDATE=1
+    step switch
+    cp -f -- "${rel_dir}/docker-compose.yml" "${STACK_DIR}/docker-compose.yml"
+    chmod 644 -- "${STACK_DIR}/docker-compose.yml"
+    env_set IMMICH_VERSION "$new"
+    conf_set IMMICH_VERSION "$new"
+
+    step start
+    systemctl reset-failed "$SERVICE" >/dev/null 2>&1 || true
+    if systemctl start "$SERVICE" && wait_health 900 "$new"; then
+        IN_UPDATE=0
+        conf_set UPDATED "$(date -Iseconds)"
+        result version "$new"
+        result snapshot "$SNAPSHOT_DIR"
+        return 0
+    fi
+    IN_UPDATE=0
+    rollback "$OLD_VERSION"
+}
+
+cmd_uninstall() {
+    local remove_images=0 mount_unit upload images
+    case $# in
+        0) ;;
+        1)
+            if [[ $1 != --remove-images ]]; then
+                die invalid-argument "opção desconhecida: ${1}"
+            fi
+            remove_images=1
+            ;;
+        *) die invalid-argument "uso: uninstall [--remove-images]" ;;
+    esac
+    [[ -f $CONF_FILE ]] || die not-installed "nada para desinstalar"
+    take_lock
+    mount_unit=$(conf_get MOUNT_UNIT || true)
+    upload=$(conf_get UPLOAD_LOCATION || true)
+
+    step stop
+    systemctl disable --now "$SERVICE" >/dev/null 2>&1 || systemctl stop "$SERVICE" || true
+
+    step containers
+    if [[ -f ${STACK_DIR}/docker-compose.yml ]]; then
+        # Sem "-v": volumes e pastas montadas nunca são apagados aqui.
+        docker compose --project-directory "$STACK_DIR" down --remove-orphans || info "containers já removidos"
+        if ((remove_images)); then
+            images=$(docker compose --project-directory "$STACK_DIR" config --images 2>/dev/null || true)
+            if [[ -n $images ]]; then
+                # shellcheck disable=SC2086 # nomes de imagem não têm espaço; um por linha
+                docker image rm $images || info "algumas imagens continuam em uso"
+            fi
+            docker volume rm immich_model-cache >/dev/null 2>&1 || true
+        fi
+    fi
+
+    step service
+    rm -f -- "$UNIT_FILE"
+    if [[ -n $mount_unit ]]; then
+        rm -f -- "${UNIT_DIR}/${mount_unit}.wants/${SERVICE}"
+        rmdir -- "${UNIT_DIR}/${mount_unit}.wants" 2>/dev/null || true
+    fi
+    systemctl daemon-reload
+    systemctl reset-failed "$SERVICE" >/dev/null 2>&1 || true
+
+    step files
+    rm -f -- "${STACK_DIR}/docker-compose.yml" "${STACK_DIR}/docker-compose.override.yml"
+    conf_set INSTALLED 0
+    result kept-photos "$upload"
+    result kept-database "$DB_DIR"
+}
+
+usage() {
+    cat <<'EOF'
+uso: nuvem-ruscher-helper <ação> [argumentos]
+
+ações:
+  install-docker | enable-docker | add-docker-group | firewall-allow
+  fstab-add <uuid> <ponto-de-montagem> | fstab-remove <uuid>
+  setup <versão> <pasta-fotos> <fuso> <cpu|vaapi|quicksync|nvenc> <cpu|off|openvino|rocm|cuda>
+  start | stop | restart | backup-db | update <versão> | uninstall [--remove-images]
+  version
+EOF
+}
+
+main() {
+    if (($# < 1)); then
+        usage
+        die invalid-argument "nenhuma ação informada"
+    fi
+    local action=$1
+    shift
+    case $action in
+        version)
+            printf '%s\n' "$HELPER_VERSION"
+            return 0
+            ;;
+        help | --help | -h)
+            usage
+            return 0
+            ;;
+    esac
+    if ((!SIM)) && [[ $EUID -ne 0 ]]; then
+        die not-authorized "precisa ser executado como root, via pkexec"
+    fi
+    case $action in
+        install-docker) cmd_install_docker "$@" ;;
+        enable-docker) cmd_enable_docker "$@" ;;
+        add-docker-group) cmd_add_docker_group "$@" ;;
+        firewall-allow) cmd_firewall_allow "$@" ;;
+        fstab-add) cmd_fstab_add "$@" ;;
+        fstab-remove) cmd_fstab_remove "$@" ;;
+        setup) cmd_setup "$@" ;;
+        start) cmd_start "$@" ;;
+        stop) cmd_stop "$@" ;;
+        restart) cmd_restart "$@" ;;
+        backup-db) cmd_backup_db "$@" ;;
+        update) cmd_update "$@" ;;
+        uninstall) cmd_uninstall "$@" ;;
+        *) die invalid-argument "ação desconhecida: ${action}" ;;
+    esac
+}
+
+main "$@"

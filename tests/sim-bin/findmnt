@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# findmnt falso para "-T" (ponto de montagem simulado); o resto usa o findmnt real.
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+if [[ " $* " == *" -T "* ]]; then
+    case " $* " in
+        *" TARGET "*) echo "${SIM_MOUNTPOINT}" ;;
+        *" FSTYPE "*) echo "${SIM_FSTYPE:-fuseblk}" ;;
+        *" OPTIONS "*) echo "${SIM_OPTIONS:-rw,nosuid,nodev}" ;;
+        *" SOURCE "*) echo "/dev/sim1" ;;
+    esac
+    exit 0
+fi
+if [[ " $* " == *" --verify "* ]]; then
+    # Na sandbox, o UUID e o alvo não existem; reprovamos só erros de análise
+    # (é o que pega um espaço mal escapado) ou quando o teste pedir.
+    [[ ${SIM_VERIFY_FAIL:-0} == 1 ]] && exit 1
+    out=$(LC_ALL=C /usr/bin/findmnt "$@" 2>&1 || true)
+    echo "$out"
+    [[ ! $out =~ [1-9][0-9]*\ parse\ error ]]
+    exit
+fi
+exec /usr/bin/findmnt "$@"

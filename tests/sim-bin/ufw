@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+name=${0##*/}
+var="SIM_FAIL_${name//-/_}"
+exit "${!var:-0}"
