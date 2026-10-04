@@ -369,9 +369,12 @@ fstab_escape() {
 }
 
 # Mesmas regras de nuvem_ruscher/core/fstab.py::mount_spec.
+# x-systemd.wanted-by=<unidade do dispositivo>: o systemd monta quando o disco aparece
+# (no boot ou ao conectar depois), sem depender do udisks e sem travar o boot sem ele.
 mount_spec() {
-    local fs=$1
-    local common="defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s"
+    local fs=$1 uuid=$2 device_unit
+    device_unit=$(systemd-escape -p --suffix=device "/dev/disk/by-uuid/${uuid}")
+    local common="defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s,x-systemd.wanted-by=${device_unit}"
     local owner="uid=${TARGET_UID},gid=${TARGET_GID},dmask=022,fmask=133"
     PASSNO=0
     case $fs in
@@ -655,7 +658,7 @@ cmd_fstab_add() {
     step check
     dev=$(blkid -U "$uuid" 2>/dev/null) || die storage-missing "nenhum disco com UUID ${uuid}"
     fstype=$(blkid -o value -s TYPE "$dev" 2>/dev/null) || die storage-missing "tipo de ${dev} desconhecido"
-    mount_spec "$fstype"
+    mount_spec "$fstype" "$uuid"
     if grep -Eq "^[[:space:]]*(UUID=${uuid}|/dev/disk/by-uuid/${uuid})[[:space:]]" "$FSTAB"; then
         die fstab-exists "o fstab já tem uma entrada para UUID=${uuid}"
     fi

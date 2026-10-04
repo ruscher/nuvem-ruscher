@@ -53,12 +53,19 @@ do login, o caminho não existe.
 **Linha gerada (NTFS):**
 ```
 # Nuvem Ruscher: disco de fotos do Immich (adicionado em 2026-10-04)
-UUID=F22A6D342A6CF74F /run/media/ruscher/Novo\040volume ntfs-3g defaults,nofail,nosuid,nodev,uid=1000,gid=1007,dmask=022,fmask=133,windows_names,x-systemd.device-timeout=15s 0 0
+UUID=F22A6D342A6CF74F /run/media/ruscher/Novo\040volume ntfs-3g defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s,x-systemd.wanted-by=dev-disk-by\x2duuid-F22A6D342A6CF74F.device,uid=1000,gid=1007,dmask=022,fmask=133,windows_names 0 0
 ```
+
+**Por que `x-systemd.wanted-by=<dispositivo>`** (descoberto na instalação real): com a entrada no
+fstab, o udisks2 deixa de montar o disco sozinho como usuário (exigiria a opção `user` ou senha
+de administrador via `x-udisks-auth`). Com `x-systemd.wanted-by`, o **systemd** monta o disco
+sempre que ele aparece — no boot ou conectado depois —, no mesmo caminho, sem senha. Efeitos
+colaterais desejados: a montagem sai do `local-fs.target` (o boot nunca espera por esse disco) e
+o `nofail` vira redundante (mantido por segurança; o gerador avisa isso no journal).
 
 **Opções por sistema de arquivos:**
 
-| FS | tipo | opções (além de `defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s`) | passo |
+| FS | tipo | opções (além de `defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s,x-systemd.wanted-by=…`) | passo |
 |---|---|---|---|
 | ntfs | `ntfs-3g` | `uid,gid,dmask=022,fmask=133,windows_names` | 0 |
 | exfat | `exfat` | `uid,gid,dmask=022,fmask=133` | 0 |

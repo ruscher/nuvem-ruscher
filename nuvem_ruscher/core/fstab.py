@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from nuvem_ruscher.core.escaping import fstab_escape, fstab_unescape
+from nuvem_ruscher.core.escaping import fstab_escape, fstab_unescape, systemd_escape_path
 from nuvem_ruscher.core.storage import FsFamily, fs_family
 
 MARKER = "# Nuvem Ruscher: disco de fotos do Immich"
@@ -26,10 +26,20 @@ class FstabEntry:
     passno: str = "0"
 
 
-def mount_spec(fstype: str, uid: int, gid: int) -> tuple[str, list[str], int]:
-    """Tipo, opções e passo de fsck para o sistema de arquivos detectado."""
+def device_unit(uuid: str) -> str:
+    return systemd_escape_path(f"/dev/disk/by-uuid/{uuid}") + ".device"
+
+
+def mount_spec(fstype: str, uid: int, gid: int, uuid: str = "") -> tuple[str, list[str], int]:
+    """Tipo, opções e passo de fsck para o sistema de arquivos detectado.
+
+    Com ``uuid``, acrescenta ``x-systemd.wanted-by=<dispositivo>``: o systemd monta o disco
+    quando ele aparece (no boot ou conectado depois).
+    """
     family = fs_family(fstype)
     options = list(COMMON_OPTIONS)
+    if uuid:
+        options.append(f"x-systemd.wanted-by={device_unit(uuid)}")
     owner = [f"uid={uid}", f"gid={gid}", "dmask=022", "fmask=133"]
     if family is FsFamily.NTFS:
         return "ntfs-3g", [*options, *owner, "windows_names"], 0
@@ -45,7 +55,7 @@ def mount_spec(fstype: str, uid: int, gid: int) -> tuple[str, list[str], int]:
 
 
 def fstab_line(uuid: str, mountpoint: str, fstype: str, uid: int, gid: int) -> str:
-    kind, options, passno = mount_spec(fstype, uid, gid)
+    kind, options, passno = mount_spec(fstype, uid, gid, uuid)
     return f"UUID={uuid} {fstab_escape(mountpoint)} {kind} {','.join(options)} 0 {passno}"
 
 

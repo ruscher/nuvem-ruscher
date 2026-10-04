@@ -52,14 +52,40 @@ mensagens humanas.
 ## Fase 5 — i18n, empacotamento, README
 - [x] `po/nuvem-ruscher.pot` (textos-fonte em pt-BR, ADR-009), `.desktop`, metainfo validada
 - [x] `Makefile` e `PKGBUILD`; pacote gerado com `makepkg`
-- [ ] Instalar e remover com pacman (aguarda autorização)
+- [x] Instalar, remover e reinstalar com pacman (102 arquivos saem; o servidor segue no ar)
 - [x] `README.md` com screenshots
 
-## Fase 6 — Validação real (com autorização)
-- [ ] Instalação real; API em `http://localhost:2283`
-- [ ] Arquivo enviado aparece em `/run/media/ruscher/Novo volume/immich-ruscher/`
-- [ ] Banco em `/var/lib/nuvem-ruscher/immich/postgres`
-- [ ] Reboot com disco: sobe; sem disco: não sobe
+## Fase 6 — Validação real (com autorização, 04/10/2026)
+- [x] Instalação real (Immich v3.2.4); API em `http://localhost:2283` → `{"res":"pong"}`
+- [x] O Immich criou `library/`, `upload/`, `thumbs/`, `encoded-video/`, `profile/`, `backups/`
+      (com `.immich`) em `/run/media/ruscher/Novo volume/immich-ruscher/`; o container vê `/data`
+      como FUSE (o NTFS). Envio de foto pelo celular: depende da conta, que fica com o usuário.
+- [x] Banco em `/var/lib/nuvem-ruscher/immich/postgres` (314 MB, NVMe interno, btrfs)
+- [x] Download das imagens pelo código do app: 1,1 GB em 36 s, sem erros
+- [x] Interface real retomou a instalação e chegou à tela de Conta; painel real com métricas
+- [x] Montagem no boot: linha no fstab (backup `/etc/fstab.nuvem-ruscher-20261004-013247.bak`),
+      `findmnt --verify` sem erros, unidade gerada com `SourcePath=/etc/fstab`, serviço habilitado
+- [x] Backup real do banco: 18,6 MB, `gzip -t` ok, gravado no disco das fotos
+- [ ] Reboot com disco: sobe — **a fazer pelo usuário** (roteiro abaixo)
+- [ ] Reboot sem disco: não sobe e não cria pasta — **a fazer pelo usuário**
+
+### Problemas encontrados na instalação real (e corrigidos)
+
+| Problema | Correção |
+|---|---|
+| Primeira subida caiu: o Postgres reinicia ao fim do `initdb` e o `immich_server` encerrava com `ECONNREFUSED`, derrubando o conjunto | override com `depends_on: database: condition: service_healthy`; limite de reinícios 10/15 min |
+| Desligar deixava a unidade “failed” (o compose sai com 143 no SIGTERM) | `SuccessExitStatus=143` |
+| Ao retomar, a etapa já feita aparecia cinza | marcada como “Já feito” |
+| Cartão de fotos dizia “Disponível com o servidor ligado” com o servidor ligado (falta a conta) | “Conecte sua conta para ver” |
+| Com o disco no fstab, conectá-lo **depois** do boot não montaria (o udisks montaria como usuário e falharia) | `x-systemd.wanted-by=<dispositivo>`: o systemd monta ao aparecer; linha substituída no sistema real |
+
+### Roteiro de reinicialização (para o usuário)
+
+1. **Com o disco conectado:** reinicie; antes de entrar na sessão (ou logo depois), rode
+   `systemctl status nuvem-ruscher-immich` → `active (running)`; `curl localhost:2283/api/server/ping`.
+2. **Sem o disco:** desligue, desconecte o “Novo volume”, ligue. O boot não trava (`nofail`, 15 s).
+   `systemctl status nuvem-ruscher-immich` → não iniciado por dependência; `ls /run/media/ruscher/`
+   não deve ter `Novo volume/immich-ruscher`. Conecte o disco: o serviço liga sozinho.
 
 ## Registro de execução
 

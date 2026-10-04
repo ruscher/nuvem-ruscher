@@ -110,6 +110,7 @@ class TestFstab:
         assert line == (
             "UUID=F22A6D342A6CF74F /run/media/ruscher/Novo\\040volume ntfs-3g "
             "defaults,nofail,nosuid,nodev,x-systemd.device-timeout=15s,"
+            "x-systemd.wanted-by=dev-disk-by\\x2duuid-F22A6D342A6CF74F.device,"
             "uid=1000,gid=1007,dmask=022,fmask=133,windows_names 0 0"
         )
 
@@ -142,6 +143,40 @@ class TestFstab:
         assert found.target == MOUNTPOINT
         assert fstab.is_ours(text, "F22A6D342A6CF74F")
         assert fstab.find_entry(entries, "DEADBEEF", "/mnt/x") is None
+
+    def test_device_unit_matches_systemd_escape(self):
+        if not shutil.which("systemd-escape"):
+            pytest.skip("systemd-escape ausente")
+        expected = subprocess.run(
+            ["systemd-escape", "-p", "--suffix=device", "/dev/disk/by-uuid/F22A6D342A6CF74F"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        assert fstab.device_unit("F22A6D342A6CF74F") == expected
+
+    @pytest.mark.skipif(
+        not __import__("os").path.exists("/usr/lib/systemd/system-generators/systemd-fstab-generator"),
+        reason="gerador do systemd ausente",
+    )
+    def test_systemd_generator_mounts_when_disk_appears(self, tmp_path):
+        tab = tmp_path / "fstab"
+        tab.write_text(fstab.fstab_line("F22A6D342A6CF74F", MOUNTPOINT, "ntfs", 1000, 1007) + "\n")
+        out = tmp_path / "out"
+        out.mkdir()
+        subprocess.run(
+            ["/usr/lib/systemd/system-generators/systemd-fstab-generator", out, out, out],
+            env={"SYSTEMD_FSTAB": str(tab), "PATH": "/usr/bin"},
+            capture_output=True,
+            check=True,
+        )
+        wants = out / "dev-disk-by\\x2duuid-F22A6D342A6CF74F.device.wants"
+        assert (wants / "run-media-ruscher-Novo\\x20volume.mount").is_symlink()
+        unit = (out / "run-media-ruscher-Novo\\x20volume.mount").read_text()
+        assert f"Where={MOUNTPOINT}\n" in unit
+        assert "What=/dev/disk/by-uuid/F22A6D342A6CF74F" in unit
+        # Sem o disco, o boot não espera por ele.
+        assert not (out / "local-fs.target.requires").exists()
 
     @pytest.mark.skipif(not shutil.which("findmnt"), reason="findmnt ausente")
     def test_findmnt_reads_escaped_target(self, tmp_path):
