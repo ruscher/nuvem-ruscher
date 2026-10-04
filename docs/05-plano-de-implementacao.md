@@ -50,8 +50,9 @@ estreito.
 mensagens humanas.
 
 ## Fase 5 — i18n, empacotamento, README
-- [x] `po/` (pot + pt_BR), `.desktop`, metainfo validada (`appstreamcli`)
-- [x] `Makefile` e `PKGBUILD`; instalar e remover com pacman
+- [x] `po/nuvem-ruscher.pot` (textos-fonte em pt-BR, ADR-009), `.desktop`, metainfo validada
+- [x] `Makefile` e `PKGBUILD`; pacote gerado com `makepkg`
+- [ ] Instalar e remover com pacman (aguarda autorização)
 - [x] `README.md` com screenshots
 
 ## Fase 6 — Validação real (com autorização)
