@@ -163,6 +163,7 @@ ExecStartPre=/usr/bin/mountpoint -q "/run/media/ruscher/Novo volume"
 ExecStartPre=/usr/bin/test -d "/run/media/ruscher/Novo volume/immich-ruscher"
 ExecStart=/usr/bin/docker compose up --pull never --abort-on-container-exit --remove-orphans
 ExecStop=/usr/bin/docker compose stop
+SuccessExitStatus=143
 Restart=always
 RestartSec=10s
 TimeoutStopSec=3min

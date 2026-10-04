@@ -158,6 +158,7 @@ class TestSetup:
         assert f'RequiresMountsFor="{sim.photos}" "{sim.stack}"' in unit
         assert f'ExecStartPre=/usr/bin/mountpoint -q "{sim.mountpoint}"' in unit
         assert "--pull never" in unit and "Restart=always" in unit
+        assert "SuccessExitStatus=143" in unit  # desligar não deixa a unidade "failed"
 
     @pytest.mark.skipif(not shutil.which("systemd-analyze"), reason="systemd-analyze ausente")
     def test_unit_passes_systemd_analyze(self, sim):

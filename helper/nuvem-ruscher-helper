@@ -563,6 +563,8 @@ write_unit() {
         printf '%s\n' \
             "ExecStart=/usr/bin/docker compose up --pull never --abort-on-container-exit --remove-orphans" \
             "ExecStop=/usr/bin/docker compose stop" \
+            "# Ao desligar, o compose termina com 143 (SIGTERM): é sucesso, não falha." \
+            "SuccessExitStatus=143" \
             "Restart=always" \
             "RestartSec=10s" \
             "TimeoutStopSec=3min" \
