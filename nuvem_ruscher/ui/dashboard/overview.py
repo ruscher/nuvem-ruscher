@@ -256,9 +256,16 @@ class OverviewPage(Gtk.Box):
             )
             self.connect_stats.set_visible(False)
         else:
-            self.photos.set("—", _("Disponível com o servidor ligado"))
+            has_key = self.backend.has_stats_key()
+            if overall != "ok":
+                note = _("Disponível com o servidor ligado")
+            elif not has_key:
+                note = _("Conecte sua conta para ver")
+            else:
+                note = _("Carregando…")
+            self.photos.set("—", note)
             self.videos.set("—")
-            self.connect_stats.set_visible(not self.backend.has_stats_key() and overall == "ok")
+            self.connect_stats.set_visible(not has_key and overall == "ok")
         total, used, free = m.disk
         if total:
             self.disk.set(human_size(free), _("livres de {total}").format(total=human_size(total)))

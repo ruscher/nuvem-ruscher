@@ -808,6 +808,9 @@ class InstallPage(WizardPage):
                 reached = True
             if reached:
                 self.steps[key].set_state("pending", "")
+            elif self.steps[key].state != "ok":
+                # Retomando: o que veio antes já foi feito numa execução anterior.
+                self.steps[key].set_state("ok", _("Já feito"))
         self.backend.state_set("install_step", step)
         getattr(self, f"_step_{step}")()
 

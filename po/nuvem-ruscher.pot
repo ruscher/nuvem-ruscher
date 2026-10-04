@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nuvem-ruscher 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ruscher/nuvem-ruscher/issues\n"
-"POT-Creation-Date: 2026-10-04 01:17-0300\n"
+"POT-Creation-Date: 2026-10-04 01:34-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: nuvem_ruscher/backend/base.py:282 nuvem_ruscher/ui/wizard/pages.py:110
+#: nuvem_ruscher/backend/base.py:282 nuvem_ruscher/ui/wizard/pages.py:111
 msgid "Docker instalado"
 msgstr ""
 
@@ -39,7 +39,7 @@ msgid "Instalar"
 msgstr ""
 
 #: nuvem_ruscher/backend/base.py:293 nuvem_ruscher/backend/base.py:295
-#: nuvem_ruscher/ui/wizard/pages.py:111
+#: nuvem_ruscher/ui/wizard/pages.py:112
 msgid "Docker ligado"
 msgstr ""
 
@@ -73,7 +73,7 @@ msgid ""
 "Já funciona. Quando puder, saia e entre na sessão para completar o ajuste."
 msgstr ""
 
-#: nuvem_ruscher/backend/base.py:318 nuvem_ruscher/ui/wizard/pages.py:112
+#: nuvem_ruscher/backend/base.py:318 nuvem_ruscher/ui/wizard/pages.py:113
 msgid "Permissão para usar o Docker"
 msgstr ""
 
@@ -630,7 +630,7 @@ msgstr ""
 
 #: nuvem_ruscher/ui/application.py:103
 #: nuvem_ruscher/ui/dashboard/__init__.py:45
-#: nuvem_ruscher/ui/wizard/pages.py:1174 nuvem_ruscher/ui/wizard/pages.py:1175
+#: nuvem_ruscher/ui/wizard/pages.py:1177 nuvem_ruscher/ui/wizard/pages.py:1178
 msgid "Celular"
 msgstr ""
 
@@ -646,7 +646,7 @@ msgstr ""
 
 #: nuvem_ruscher/ui/application.py:106
 #: nuvem_ruscher/ui/dashboard/__init__.py:48
-#: nuvem_ruscher/ui/dashboard/updates.py:338
+#: nuvem_ruscher/ui/dashboard/updates.py:337
 msgid "Atualizar"
 msgstr ""
 
@@ -690,12 +690,12 @@ msgid "Detalhes técnicos"
 msgstr ""
 
 #: nuvem_ruscher/ui/common.py:140 nuvem_ruscher/ui/dashboard/updates.py:81
-#: nuvem_ruscher/ui/wizard/pages.py:1152
+#: nuvem_ruscher/ui/wizard/pages.py:1155
 msgid "Fechar"
 msgstr ""
 
 #: nuvem_ruscher/ui/common.py:144 nuvem_ruscher/ui/wizard/pages.py:752
-#: nuvem_ruscher/ui/wizard/pages.py:826
+#: nuvem_ruscher/ui/wizard/pages.py:829
 msgid "Tentar novamente"
 msgstr ""
 
@@ -724,7 +724,7 @@ msgid ""
 msgstr ""
 
 #: nuvem_ruscher/ui/dashboard/backups.py:54
-#: nuvem_ruscher/ui/dashboard/backups.py:125
+#: nuvem_ruscher/ui/dashboard/backups.py:124
 msgid "Fazer backup agora"
 msgstr ""
 
@@ -737,49 +737,49 @@ msgid ""
 "O primeiro backup automático acontece esta noite. Se quiser, faça um agora."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:73
+#: nuvem_ruscher/ui/dashboard/backups.py:72
 msgid "E as fotos?"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:75
+#: nuvem_ruscher/ui/dashboard/backups.py:74
 msgid ""
 "O backup do banco não inclui as fotos. Para protegê-las de verdade, copie de "
 "vez em quando a pasta das fotos para outro disco. Os backups ficam no disco "
 "das fotos, separados do banco."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:95
+#: nuvem_ruscher/ui/dashboard/backups.py:94
 msgid "Automático"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:95
+#: nuvem_ruscher/ui/dashboard/backups.py:94
 msgid "Manual"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:98
-#: nuvem_ruscher/ui/dashboard/updates.py:268
+#: nuvem_ruscher/ui/dashboard/backups.py:97
+#: nuvem_ruscher/ui/dashboard/updates.py:267
 #, python-brace-format
 msgid "Immich {v}"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:108
+#: nuvem_ruscher/ui/dashboard/backups.py:107
 msgid "Mostrar na pasta"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:118
+#: nuvem_ruscher/ui/dashboard/backups.py:117
 msgid "o servidor precisa estar ligado para o backup"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:121
+#: nuvem_ruscher/ui/dashboard/backups.py:120
 msgid "Fazendo backup…"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:129
+#: nuvem_ruscher/ui/dashboard/backups.py:128
 #, python-brace-format
 msgid "Backup feito ({size})"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/backups.py:131
+#: nuvem_ruscher/ui/dashboard/backups.py:130
 msgid "Backup feito"
 msgstr ""
 
@@ -954,7 +954,7 @@ msgstr ""
 msgid "Este tipo de disco não pode ligar automaticamente."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/more.py:214 nuvem_ruscher/ui/wizard/pages.py:233
+#: nuvem_ruscher/ui/dashboard/more.py:214 nuvem_ruscher/ui/wizard/pages.py:234
 msgid "Pronto!"
 msgstr ""
 
@@ -1042,11 +1042,12 @@ msgstr ""
 
 #: nuvem_ruscher/ui/dashboard/overview.py:121
 #: nuvem_ruscher/ui/dashboard/overview.py:197
+#: nuvem_ruscher/ui/dashboard/overview.py:265
 msgid "Carregando…"
 msgstr ""
 
 #: nuvem_ruscher/ui/dashboard/overview.py:129
-#: nuvem_ruscher/ui/wizard/pages.py:1207
+#: nuvem_ruscher/ui/wizard/pages.py:1210
 msgid "Abrir o Immich"
 msgstr ""
 
@@ -1100,7 +1101,7 @@ msgid "Seu servidor está no ar"
 msgstr ""
 
 #: nuvem_ruscher/ui/dashboard/overview.py:199
-#: nuvem_ruscher/ui/dashboard/overview.py:306
+#: nuvem_ruscher/ui/dashboard/overview.py:313
 msgid "Ligando o servidor…"
 msgstr ""
 
@@ -1150,24 +1151,28 @@ msgstr ""
 msgid "{size} no total"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/overview.py:259
+#: nuvem_ruscher/ui/dashboard/overview.py:261
 msgid "Disponível com o servidor ligado"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/overview.py:264
+#: nuvem_ruscher/ui/dashboard/overview.py:263
+msgid "Conecte sua conta para ver"
+msgstr ""
+
+#: nuvem_ruscher/ui/dashboard/overview.py:271
 #, python-brace-format
 msgid "livres de {total}"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/overview.py:267
+#: nuvem_ruscher/ui/dashboard/overview.py:274
 msgid "Disco não encontrado"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/overview.py:307
+#: nuvem_ruscher/ui/dashboard/overview.py:314
 msgid "Servidor desligado"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/overview.py:308
+#: nuvem_ruscher/ui/dashboard/overview.py:315
 msgid "Reiniciando…"
 msgstr ""
 
@@ -1207,7 +1212,7 @@ msgid "Buscando os arquivos da {v}…"
 msgstr ""
 
 #: nuvem_ruscher/ui/dashboard/updates.py:115
-#: nuvem_ruscher/ui/wizard/pages.py:890
+#: nuvem_ruscher/ui/wizard/pages.py:895
 #, python-brace-format
 msgid "{percent}% · {done} baixados"
 msgstr ""
@@ -1230,90 +1235,90 @@ msgid ""
 "Um backup e uma cópia do banco anterior ficaram guardados, por segurança."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:207
+#: nuvem_ruscher/ui/dashboard/updates.py:206
 msgid "Verificar agora"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:208
+#: nuvem_ruscher/ui/dashboard/updates.py:207
 msgid "Atualizar com segurança"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:217
+#: nuvem_ruscher/ui/dashboard/updates.py:216
 msgid "Novidades"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:222
+#: nuvem_ruscher/ui/dashboard/updates.py:221
 msgid "Como a atualização protege seus dados"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:224
+#: nuvem_ruscher/ui/dashboard/updates.py:223
 msgid ""
 "Antes de trocar a versão, fazemos um backup do banco e uma cópia instantânea "
 "dele. Depois conferimos se o servidor respondeu. Se não responder, tudo "
 "volta sozinho para a versão anterior."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:240
+#: nuvem_ruscher/ui/dashboard/updates.py:239
 msgid "Procurando atualizações…"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:252
+#: nuvem_ruscher/ui/dashboard/updates.py:251
 msgid "Não foi possível verificar agora"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:253
+#: nuvem_ruscher/ui/dashboard/updates.py:252
 msgid "Sem conexão com o GitHub. Tente de novo mais tarde."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:267
+#: nuvem_ruscher/ui/dashboard/updates.py:266
 msgid "Você está na versão mais recente"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:275
+#: nuvem_ruscher/ui/dashboard/updates.py:274
 #, python-brace-format
 msgid "A versão {v} está disponível"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:277
+#: nuvem_ruscher/ui/dashboard/updates.py:276
 #, python-brace-format
 msgid "Você está na {cur}. Publicada em {date}."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:285
+#: nuvem_ruscher/ui/dashboard/updates.py:284
 msgid "Mudanças importantes nesta atualização"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:286
+#: nuvem_ruscher/ui/dashboard/updates.py:285
 msgid "Leia antes de atualizar. Normalmente não exigem nada de você."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:291
+#: nuvem_ruscher/ui/dashboard/updates.py:290
 msgid "É uma versão principal nova: a mudança é maior que o normal."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:301
+#: nuvem_ruscher/ui/dashboard/updates.py:300
 msgid "Ver no GitHub"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:325
+#: nuvem_ruscher/ui/dashboard/updates.py:324
 msgid "Conecte o disco das fotos"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:326
+#: nuvem_ruscher/ui/dashboard/updates.py:325
 msgid "A atualização precisa do servidor ligado."
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:327
-#: nuvem_ruscher/ui/wizard/pages.py:103
+#: nuvem_ruscher/ui/dashboard/updates.py:326
+#: nuvem_ruscher/ui/wizard/pages.py:104
 msgid "Entendi"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:333
+#: nuvem_ruscher/ui/dashboard/updates.py:332
 #, python-brace-format
 msgid "Atualizar para a {v}?"
 msgstr ""
 
-#: nuvem_ruscher/ui/dashboard/updates.py:335
+#: nuvem_ruscher/ui/dashboard/updates.py:334
 #, python-brace-format
 msgid ""
 "O servidor fica fora do ar por alguns minutos. Antes, fazemos backup do "
@@ -1330,7 +1335,7 @@ msgid ""
 "lê a contagem de fotos e o uso do disco. Sua senha não fica guardada."
 msgstr ""
 
-#: nuvem_ruscher/ui/dialogs.py:39 nuvem_ruscher/ui/wizard/pages.py:1015
+#: nuvem_ruscher/ui/dialogs.py:39 nuvem_ruscher/ui/wizard/pages.py:1020
 msgid "E-mail"
 msgstr ""
 
@@ -1452,33 +1457,33 @@ msgstr ""
 msgid "Passo {n} de {total}"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:64
+#: nuvem_ruscher/ui/wizard/pages.py:65
 msgid "Bem-vindo"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:70
+#: nuvem_ruscher/ui/wizard/pages.py:71
 msgid "Suas fotos, na sua casa."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:76
+#: nuvem_ruscher/ui/wizard/pages.py:77
 msgid ""
 "Vamos transformar este computador num “Google Fotos” só seu, com o Immich. "
 "Leva poucos minutos, e nada do que já está nos seus discos será apagado."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:83
+#: nuvem_ruscher/ui/wizard/pages.py:84
 msgid "Começar"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:87
+#: nuvem_ruscher/ui/wizard/pages.py:88
 msgid "O que vai ser instalado?"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:94
+#: nuvem_ruscher/ui/wizard/pages.py:95
 msgid "O que o Nuvem Ruscher faz"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:96
+#: nuvem_ruscher/ui/wizard/pages.py:97
 msgid ""
 "• Instala o Docker, se faltar, e roda o Immich oficial dentro dele.\n"
 "• Guarda as fotos na pasta que você escolher (nada é apagado ou movido).\n"
@@ -1488,84 +1493,84 @@ msgid ""
 "• Pede sua senha de administrador apenas para as etapas que mexem no sistema."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:113
+#: nuvem_ruscher/ui/wizard/pages.py:114
 msgid "Memória"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:114 nuvem_ruscher/ui/wizard/pages.py:559
+#: nuvem_ruscher/ui/wizard/pages.py:115 nuvem_ruscher/ui/wizard/pages.py:559
 msgid "Processador"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:115
+#: nuvem_ruscher/ui/wizard/pages.py:116
 msgid "Espaço no disco do sistema"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:116
+#: nuvem_ruscher/ui/wizard/pages.py:117
 msgid "Porta 2283 livre"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:117
+#: nuvem_ruscher/ui/wizard/pages.py:118
 msgid "Conexão com a internet"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:118
+#: nuvem_ruscher/ui/wizard/pages.py:119
 msgid "Firewall"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:126 nuvem_ruscher/ui/wizard/pages.py:127
+#: nuvem_ruscher/ui/wizard/pages.py:127 nuvem_ruscher/ui/wizard/pages.py:128
 msgid "Verificação"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:130
+#: nuvem_ruscher/ui/wizard/pages.py:131
 msgid "Preparando o terreno"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:131
+#: nuvem_ruscher/ui/wizard/pages.py:132
 msgid ""
 "Conferimos se este computador tem tudo o que o servidor de fotos precisa."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:144
+#: nuvem_ruscher/ui/wizard/pages.py:145
 msgid "Verificar de novo"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:147 nuvem_ruscher/ui/wizard/pages.py:283
+#: nuvem_ruscher/ui/wizard/pages.py:148 nuvem_ruscher/ui/wizard/pages.py:283
 #: nuvem_ruscher/ui/wizard/pages.py:537 nuvem_ruscher/ui/wizard/pages.py:756
-#: nuvem_ruscher/ui/wizard/pages.py:834 nuvem_ruscher/ui/wizard/pages.py:1066
+#: nuvem_ruscher/ui/wizard/pages.py:837 nuvem_ruscher/ui/wizard/pages.py:1069
 msgid "Continuar"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:165
+#: nuvem_ruscher/ui/wizard/pages.py:166
 msgid "Verificando…"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:212
+#: nuvem_ruscher/ui/wizard/pages.py:213
 msgid ""
 "Resolva os itens marcados para continuar. Cada um tem um botão que faz isso "
 "por você."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:215
+#: nuvem_ruscher/ui/wizard/pages.py:216
 msgid "Tudo certo! Pode continuar."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:224
+#: nuvem_ruscher/ui/wizard/pages.py:225
 msgid "Aplicando a correção… (pode ser pedida a senha de administrador)"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:256 nuvem_ruscher/ui/wizard/pages.py:257
+#: nuvem_ruscher/ui/wizard/pages.py:257 nuvem_ruscher/ui/wizard/pages.py:258
 msgid "Armazenamento"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:260
+#: nuvem_ruscher/ui/wizard/pages.py:261
 msgid "Onde suas fotos vão morar"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:261
+#: nuvem_ruscher/ui/wizard/pages.py:262
 msgid "Escolhemos o disco com mais espaço. Você pode trocar se quiser."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:269
+#: nuvem_ruscher/ui/wizard/pages.py:270
 msgid "Procurando o disco…"
 msgstr ""
 
@@ -1837,7 +1842,7 @@ msgstr ""
 msgid "Registrando o serviço no sistema"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:701 nuvem_ruscher/ui/wizard/pages.py:925
+#: nuvem_ruscher/ui/wizard/pages.py:701 nuvem_ruscher/ui/wizard/pages.py:930
 msgid "Ligando…"
 msgstr ""
 
@@ -1858,171 +1863,179 @@ msgid ""
 "Leva alguns minutos, conforme a internet. Pode usar o computador normalmente."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:833
+#: nuvem_ruscher/ui/wizard/pages.py:813
+msgid "Já feito"
+msgstr ""
+
+#: nuvem_ruscher/ui/wizard/pages.py:836
 msgid "Pausado. Você pode continuar de onde parou."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:852
+#: nuvem_ruscher/ui/wizard/pages.py:855
 msgid "Pedindo autorização… digite sua senha de administrador, se pedida"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:873
+#: nuvem_ruscher/ui/wizard/pages.py:876
 msgid "Configuração pronta"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:881
+#: nuvem_ruscher/ui/wizard/pages.py:884
 msgid "Preparando o download…"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:894
+#: nuvem_ruscher/ui/wizard/pages.py:892
+msgid "Descompactando os componentes…"
+msgstr ""
+
+#: nuvem_ruscher/ui/wizard/pages.py:899
 #, python-brace-format
 msgid "{speed}/s"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:912
+#: nuvem_ruscher/ui/wizard/pages.py:917
 #, python-brace-format
 msgid "Componentes baixados ({size})"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:914
+#: nuvem_ruscher/ui/wizard/pages.py:919
 msgid "Componentes prontos"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:934
+#: nuvem_ruscher/ui/wizard/pages.py:939
 msgid "Servidor ligado"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:941 nuvem_ruscher/ui/wizard/pages.py:967
+#: nuvem_ruscher/ui/wizard/pages.py:946 nuvem_ruscher/ui/wizard/pages.py:972
 msgid "O servidor está acordando…"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:958
+#: nuvem_ruscher/ui/wizard/pages.py:963
 msgid "Tudo pronto!"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:964
+#: nuvem_ruscher/ui/wizard/pages.py:969
 #, python-brace-format
 msgid "{ready} de {total} componentes prontos"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:966
+#: nuvem_ruscher/ui/wizard/pages.py:971
 msgid "Na primeira vez demora mais: o banco está sendo preparado."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:983
+#: nuvem_ruscher/ui/wizard/pages.py:988
 msgid "Servidor no ar!"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:998 nuvem_ruscher/ui/wizard/pages.py:999
+#: nuvem_ruscher/ui/wizard/pages.py:1003 nuvem_ruscher/ui/wizard/pages.py:1004
 msgid "Conta"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1009
+#: nuvem_ruscher/ui/wizard/pages.py:1014
 msgid "Crie sua conta de administrador"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1010
+#: nuvem_ruscher/ui/wizard/pages.py:1015
 msgid ""
 "É com ela que você entra no app do celular e no site. Guarde bem a senha."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1014
+#: nuvem_ruscher/ui/wizard/pages.py:1019
 msgid "Seu nome"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1016
+#: nuvem_ruscher/ui/wizard/pages.py:1021
 msgid "Senha (mínimo de 8 caracteres)"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1017
+#: nuvem_ruscher/ui/wizard/pages.py:1022
 msgid "Confirmar a senha"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1025
+#: nuvem_ruscher/ui/wizard/pages.py:1030
 msgid "Força da senha"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1035
+#: nuvem_ruscher/ui/wizard/pages.py:1040
 msgid "Mostrar quantas fotos e vídeos você tem no painel"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1036
+#: nuvem_ruscher/ui/wizard/pages.py:1041
 msgid "Cria uma chave que só lê estatísticas. Sua senha não é guardada."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1042
+#: nuvem_ruscher/ui/wizard/pages.py:1047
 msgid "Prefiro criar a conta no navegador"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1050
+#: nuvem_ruscher/ui/wizard/pages.py:1055
 msgid "Sua conta já existe"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1052
+#: nuvem_ruscher/ui/wizard/pages.py:1056
 msgid ""
 "Encontramos a conta da instalação anterior. Use o mesmo e-mail e senha no "
 "app do celular e no site."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1056
+#: nuvem_ruscher/ui/wizard/pages.py:1059
 msgid "Mostrar contagem de fotos no painel"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1062 nuvem_ruscher/ui/wizard/pages.py:1143
+#: nuvem_ruscher/ui/wizard/pages.py:1065 nuvem_ruscher/ui/wizard/pages.py:1146
 msgid "Criar conta"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1103
+#: nuvem_ruscher/ui/wizard/pages.py:1106
 msgid "Confira o e-mail."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1107
+#: nuvem_ruscher/ui/wizard/pages.py:1110
 msgid "A senha precisa de pelo menos 8 caracteres."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1110
+#: nuvem_ruscher/ui/wizard/pages.py:1113
 msgid "As senhas não são iguais."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1124
+#: nuvem_ruscher/ui/wizard/pages.py:1127
 msgid "Criando…"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1138
+#: nuvem_ruscher/ui/wizard/pages.py:1141
 msgid "Conta criada!"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1147
+#: nuvem_ruscher/ui/wizard/pages.py:1150
 msgid "Não foi possível criar a conta"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1148
+#: nuvem_ruscher/ui/wizard/pages.py:1151
 #, python-brace-format
 msgid "O servidor respondeu: {msg}"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1150
+#: nuvem_ruscher/ui/wizard/pages.py:1153
 msgid "O servidor não respondeu. Espere alguns segundos e tente de novo."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1177
+#: nuvem_ruscher/ui/wizard/pages.py:1180
 msgid "Concluir"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1190
+#: nuvem_ruscher/ui/wizard/pages.py:1193
 msgid "Pronto"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1196
+#: nuvem_ruscher/ui/wizard/pages.py:1199
 msgid "Sua nuvem está no ar!"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1201
+#: nuvem_ruscher/ui/wizard/pages.py:1204
 msgid ""
 "Abra o app Immich no celular e as fotos começam a chegar. Este computador "
 "cuida do resto."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:1208
+#: nuvem_ruscher/ui/wizard/pages.py:1211
 msgid "Ir para o painel"
 msgstr ""
