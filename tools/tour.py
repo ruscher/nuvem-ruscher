@@ -57,6 +57,7 @@ def main() -> int:
     parser.add_argument("--estreito", action="store_true")
     parser.add_argument("--cenario", default="feliz")
     parser.add_argument("--somente", default="", help="prefixos separados por vírgula")
+    parser.add_argument("--ate", default="", help="encerra depois desta captura (prefixo)")
     args = parser.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -65,6 +66,8 @@ def main() -> int:
     app = NuvemApplication(backend)
     app.set_flags(app.get_flags() | gi.repository.Gio.ApplicationFlags.NON_UNIQUE)
     suffix = ("-escuro" if args.escuro else "") + ("-estreito" if args.estreito else "")
+    if args.cenario != "feliz":
+        suffix += f"-{args.cenario}"
 
     steps: list[tuple[int, Callable[[], None]]] = []
 
@@ -73,6 +76,8 @@ def main() -> int:
             if args.somente and not any(name.startswith(p) for p in args.somente.split(",")):
                 return
             capture(app.window, out / f"{name}{suffix}.png")
+            if args.ate and name.startswith(args.ate):
+                app.quit()
 
         return go
 

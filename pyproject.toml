@@ -37,3 +37,4 @@ ignore = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+filterwarnings = ["ignore:GLib.unix_signal_add_full is deprecated"]

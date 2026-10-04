@@ -1,0 +1,20 @@
+# shellcheck shell=bash
+# Mensagens do pacote nuvem-ruscher. Nunca removem dados: só avisam.
+
+post_install() {
+  echo ":: Abra o \"Nuvem Ruscher\" no menu de aplicativos para configurar o servidor de fotos."
+}
+
+post_upgrade() {
+  if [[ -f /etc/systemd/system/nuvem-ruscher-immich.service ]]; then
+    echo ":: O servidor de fotos não foi reiniciado; ele continua como estava."
+  fi
+}
+
+pre_remove() {
+  if [[ -f /etc/systemd/system/nuvem-ruscher-immich.service ]]; then
+    echo ":: Atenção: o servidor de fotos (Immich) continua instalado e funcionando."
+    echo "   Remover o app NÃO remove o servidor, as fotos nem o banco de dados."
+    echo "   Para remover o servidor, reinstale o app e use: Painel → Mais → Desinstalar o servidor."
+  fi
+}

@@ -1,0 +1,58 @@
+# Maintainer: ruscher <https://github.com/ruscher>
+#
+# PKGBUILD de desenvolvimento: empacota a árvore do repositório ao lado desta pasta.
+#   cd packaging && makepkg -si
+# Para publicar num repositório, troque por:
+#   source=("git+https://github.com/ruscher/nuvem-ruscher.git#tag=v$pkgver")
+
+pkgname=nuvem-ruscher
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Instala, configura e cuida do Immich (alternativa livre ao Google Fotos) no BigLinux"
+arch=('any')
+url="https://github.com/ruscher/nuvem-ruscher"
+license=('GPL-3.0-or-later')
+depends=(
+  'python'
+  'python-gobject'
+  'gtk4'
+  'libadwaita'
+  'python-qrcode'
+  'polkit'
+  'docker'
+  'docker-compose'
+  'util-linux'
+  'systemd'
+  'curl'
+  'gzip'
+)
+makedepends=('gettext')
+checkdepends=('python-pytest' 'shellcheck')
+optdepends=(
+  'ntfs-3g: discos formatados no Windows (NTFS)'
+  'exfatprogs: discos exFAT'
+  'tailscale: acesso às fotos fora de casa'
+  'ufw: firewall com liberação automática da porta'
+)
+install=nuvem-ruscher.install
+source=()
+sha256sums=()
+
+_tree() {
+  printf '%s' "$(realpath "$startdir/..")"
+}
+
+build() {
+  make -C "$(_tree)" all
+}
+
+check() {
+  cd "$(_tree)"
+  if command -v pytest >/dev/null; then
+    python3 -m pytest -q -p no:cacheprovider
+  fi
+}
+
+package() {
+  make -C "$(_tree)" DESTDIR="$pkgdir" PREFIX=/usr install
+}

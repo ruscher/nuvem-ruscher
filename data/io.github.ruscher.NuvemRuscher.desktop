@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Nuvem Ruscher
+Name[pt_BR]=Nuvem Ruscher
+GenericName=Photo Server
+GenericName[pt_BR]=Servidor de Fotos
+Comment=Your own Google Photos with Immich, on this computer
+Comment[pt_BR]=Seu próprio Google Fotos com o Immich, neste computador
+Keywords=photos;backup;immich;cloud;google photos;gallery;server;docker;
+Keywords[pt_BR]=fotos;backup;cópia;immich;nuvem;google fotos;galeria;servidor;celular;docker;
+Exec=nuvem-ruscher
+Icon=io.github.ruscher.NuvemRuscher
+Terminal=false
+Categories=GTK;GNOME;Graphics;Photography;
+StartupNotify=true
+StartupWMClass=io.github.ruscher.NuvemRuscher

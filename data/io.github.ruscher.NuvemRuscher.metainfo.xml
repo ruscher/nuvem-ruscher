@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.ruscher.NuvemRuscher</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Nuvem Ruscher</name>
+  <summary>Your own Google Photos with Immich</summary>
+  <summary xml:lang="pt_BR">Seu próprio Google Fotos com o Immich</summary>
+  <developer id="io.github.ruscher">
+    <name>ruscher</name>
+  </developer>
+  <description>
+    <p>
+      Nuvem Ruscher installs, configures and looks after Immich — the free, self-hosted
+      alternative to Google Photos — on this computer, with your photos stored on the
+      disk you choose. It leaves your phone ready to back up automatically.
+    </p>
+    <p xml:lang="pt_BR">
+      O Nuvem Ruscher instala, configura e cuida do Immich — a alternativa livre e
+      auto-hospedada ao Google Fotos — neste computador, com as fotos guardadas no disco
+      que você escolher. No fim, o celular fica pronto para copiar as fotos sozinho.
+    </p>
+    <ul>
+      <li>Guided setup with automatic system checks and one-click fixes</li>
+      <li xml:lang="pt_BR">Instalação guiada, com verificação do sistema e correção em um clique</li>
+      <li>Safe storage: nothing on your disks is ever deleted, and the server only starts with the photo disk mounted</li>
+      <li xml:lang="pt_BR">Armazenamento seguro: nada nos seus discos é apagado, e o servidor só liga com o disco das fotos montado</li>
+      <li>QR codes to connect your Android phone</li>
+      <li xml:lang="pt_BR">QR codes para conectar o celular Android</li>
+      <li>Live dashboard, logs, database backups and safe updates with automatic rollback</li>
+      <li xml:lang="pt_BR">Painel ao vivo, registros, backups do banco e atualização segura com volta automática</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.ruscher.NuvemRuscher.desktop</launchable>
+  <url type="homepage">https://github.com/ruscher/nuvem-ruscher</url>
+  <url type="bugtracker">https://github.com/ruscher/nuvem-ruscher/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Welcome</caption>
+      <caption xml:lang="pt_BR">Boas-vindas</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/01-boas-vindas.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Dashboard</caption>
+      <caption xml:lang="pt_BR">Painel</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/09-painel.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Connect your phone</caption>
+      <caption xml:lang="pt_BR">Conecte o celular</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/07-celular.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <recommends>
+    <memory>6144</memory>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
+  <branding>
+    <color type="primary" scheme_preference="light">#99c1f1</color>
+    <color type="primary" scheme_preference="dark">#1a5fb4</color>
+  </branding>
+  <releases>
+    <release version="1.0.0" date="2026-10-04">
+      <description>
+        <p>First release: guided Immich setup, dashboard, backups and safe updates.</p>
+        <p xml:lang="pt_BR">Primeira versão: instalação guiada do Immich, painel, backups e atualização segura.</p>
+      </description>
+    </release>
+  </releases>
+</component>

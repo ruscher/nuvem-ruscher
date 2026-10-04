@@ -8,31 +8,33 @@ from nuvem_ruscher.async_utils import run_async
 from nuvem_ruscher.backend.base import Backend
 from nuvem_ruscher.constants import FDROID_URL, IMMICH_PORT, PLAY_STORE_URL
 from nuvem_ruscher.core.system import TailscaleInfo
-from nuvem_ruscher.i18n import _
+from nuvem_ruscher.i18n import N_, _
 from nuvem_ruscher.ui.common import copy_text, icon_button, label, open_uri, toast
 from nuvem_ruscher.ui.widgets.qr_code import QrCode, qr_frame
 
 TIPS = (
     (
         "battery-symbolic",
-        "Tire o Immich da economia de bateria",
-        "No Android: Configurações → Apps → Immich → Bateria → “Sem restrições”. "
-        "Assim o backup continua mesmo com a tela desligada.",
+        N_("Tire o Immich da economia de bateria"),
+        N_(
+            "No Android: Configurações → Apps → Immich → Bateria → “Sem restrições”. "
+            "Assim o backup continua mesmo com a tela desligada."
+        ),
     ),
     (
         "camera-photo-symbolic",
-        "Escolha a pasta da câmera",
-        "No app, toque no ícone de nuvem e selecione “Camera” (e outras pastas que quiser, como WhatsApp Images).",
+        N_("Escolha a pasta da câmera"),
+        N_("No app, toque no ícone de nuvem e selecione “Camera” (e outras pastas que quiser, como WhatsApp Images)."),
     ),
     (
         "network-wireless-symbolic",
-        "Use o mesmo Wi-Fi",
-        "Em casa, o celular precisa estar na mesma rede que este computador.",
+        N_("Use o mesmo Wi-Fi"),
+        N_("Em casa, o celular precisa estar na mesma rede que este computador."),
     ),
     (
         "nr-status-ok-symbolic",
-        "Ative o backup em segundo plano",
-        "Em Backup, ligue “Backup em segundo plano”. As fotos novas sobem sozinhas.",
+        N_("Ative o backup em segundo plano"),
+        N_("Em Backup, ligue “Backup em segundo plano”. As fotos novas sobem sozinhas."),
     ),
 )
 
