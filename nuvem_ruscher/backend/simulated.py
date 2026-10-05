@@ -74,6 +74,10 @@ SCENARIOS: dict[str, dict[str, object]] = {
     "migration-no-space": {"installed": True, "initialized": True, "migration": "no-space"},
     "migration-interrupted": {"installed": True, "initialized": True, "migration": "interrupted"},
     "migration-verify-fails": {"installed": True, "initialized": True, "migration": "verify-fails"},
+    # celulares: o que o diagnóstico de conexão precisa mostrar
+    "no-network": {"installed": True, "initialized": True, "lan": "none"},
+    "no-tailscale": {"installed": True, "initialized": True, "tailscale": "missing"},
+    "lan-unreachable": {"installed": True, "initialized": True, "firewall": "ufw", "lan": "unreachable"},
 }
 
 # Nomes da primeira versão (pt-BR), aceitos para não quebrar comandos documentados.
@@ -129,6 +133,9 @@ SCENARIO_HELP = {
     "migration-no-space": N_("second disk without enough space"),
     "migration-interrupted": N_("an interrupted copy to resume"),
     "migration-verify-fails": N_("the copy fails verification and everything goes back"),
+    "no-network": N_("this computer is not connected to a network"),
+    "no-tailscale": N_("Tailscale is not installed (phones only at home)"),
+    "lan-unreachable": N_("the server does not answer on the home network address"),
 }
 
 
@@ -200,6 +207,8 @@ class SimulatedBackend(SimulatedCloud, Backend):
         self.pull_fail = bool(opts.get("pull_fail", False))
         self.slow = bool(opts.get("slow", False))
         self.firewall = str(opts.get("firewall", ""))
+        self.lan = str(opts.get("lan", "ok"))  # ok | none | unreachable
+        self.tailscale_state = str(opts.get("tailscale", "running"))  # running | off | missing
         self.fstab_state = str(opts.get("fstab", "none"))
         self.update_fail = bool(opts.get("update_fail", False))
         self.installed = bool(opts.get("installed", False))
@@ -791,6 +800,17 @@ class SimulatedBackend(SimulatedCloud, Backend):
         time.sleep(0.15)
         return self.service == "active" and self._age() > (14 if self.slow else 5)
 
+    def probe_server(self, url: str) -> bool:
+        self._sleep(0.3)
+        host = url.split("://", 1)[-1].rsplit(":", 1)[0]
+        if host.startswith("127.") or host == "localhost":
+            return self.ping()
+        if host.startswith("192.168.") and self.lan == "unreachable":
+            return False
+        if host.endswith(".ts.net") or host.startswith("100."):
+            return self.tailscale_state == "running" and self.ping()
+        return self.ping()
+
     def server_version(self) -> str:
         return self.version
 
@@ -843,9 +863,13 @@ class SimulatedBackend(SimulatedCloud, Backend):
         return list(self._backups)
 
     def lan_ip(self) -> str:
-        return "192.168.0.10"
+        return "127.0.0.1" if self.lan == "none" else "192.168.0.10"
 
     def tailscale(self) -> TailscaleInfo:
+        if self.tailscale_state == "missing":
+            return TailscaleInfo(False)
+        if self.tailscale_state == "off":
+            return TailscaleInfo(True)
         return TailscaleInfo(True, True, "100.100.184.97", "ruscher-big.tail9c419a.ts.net")
 
     def disk_usage(self, path: str) -> tuple[int, int, int]:

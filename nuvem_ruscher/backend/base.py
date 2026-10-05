@@ -230,6 +230,10 @@ class Backend(abc.ABC):
     def ping(self) -> bool: ...
 
     @abc.abstractmethod
+    def probe_server(self, url: str) -> bool:
+        """O servidor responde em ``url`` (ex.: o endereço do QR)? Testado deste computador."""
+
+    @abc.abstractmethod
     def server_version(self) -> str: ...
 
     @abc.abstractmethod
