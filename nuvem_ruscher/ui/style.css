@@ -223,3 +223,9 @@ image.accent { color: var(--accent-color); }
 
 /* Registros */
 .log-frame { padding: 0; }
+
+/* Assistentes em diálogo */
+.flow-body { margin: 18px 24px 24px 24px; }
+image.success { color: var(--success-color); }
+image.warning { color: var(--warning-color); }
+levelbar.near-full block.filled { background-color: var(--warning-bg-color); }

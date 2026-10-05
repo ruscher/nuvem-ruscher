@@ -15,13 +15,17 @@ def build_pages(ctx: AppContext) -> dict[str, Page]:
     from nuvem_ruscher.ui.pages.logs import LogsPage
     from nuvem_ruscher.ui.pages.network import NetworkPage
     from nuvem_ruscher.ui.pages.phones import PhonesPage
+    from nuvem_ruscher.ui.pages.sharing import SharingPage
     from nuvem_ruscher.ui.pages.storage import StoragePage
     from nuvem_ruscher.ui.pages.system import SystemPage
     from nuvem_ruscher.ui.pages.updates import UpdatesPage
+    from nuvem_ruscher.ui.pages.users import UsersPage
 
     return {
         "home": HomePage(ctx),
         "phones": PhonesPage(ctx),
+        "users": UsersPage(ctx),
+        "sharing": SharingPage(ctx),
         "storage": StoragePage(ctx),
         "backups": BackupsPage(ctx),
         "network": NetworkPage(ctx),

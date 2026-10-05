@@ -82,6 +82,11 @@ UI_MODULES = [
     "nuvem_ruscher.ui.pages.updates",
     "nuvem_ruscher.ui.pages.logs",
     "nuvem_ruscher.ui.pages.system",
+    "nuvem_ruscher.ui.pages.users",
+    "nuvem_ruscher.ui.pages.sharing",
+    "nuvem_ruscher.ui.flow",
+    "nuvem_ruscher.ui.storage_flows",
+    "nuvem_ruscher.ui.accounts_ui",
 ]
 
 

@@ -176,8 +176,120 @@ def main() -> int:
     return app.run([sys.argv[0]])
 
 
-# Ações extras (diálogos), registradas pelas páginas que as têm: nome → passos.
-EXTRAS: dict[str, Callable[..., list[tuple[int, Callable[[], None]]]]] = {}
+def _migration_tour(app: NuvemApplication, shot: Callable[[str], Callable[[], None]]) -> list:
+    box: dict = {}
+
+    def open_dialog() -> None:
+        storage = app.window.shell.page("storage")
+        app.window.shell.show("storage")
+        box["d"] = storage.open_migration("/run/media/ruscher/Backup HD/Nuvem")
+
+    return [
+        (300, open_dialog),
+        (1500, shot("d-move-1-choose")),
+        (100, lambda: box["d"]._check()),
+        (3000, shot("d-move-2-summary")),
+        (100, lambda: box["d"]._start()),
+        (4500, shot("d-move-3-copy")),
+        (16000, shot("d-move-4-done")),
+        (100, lambda: box["d"].close()),
+    ]
+
+
+def _raid_tour(app: NuvemApplication, shot: Callable[[str], Callable[[], None]]) -> list:
+    box: dict = {}
+
+    def open_dialog() -> None:
+        storage = app.window.shell.page("storage")
+        app.window.shell.show("storage")
+        box["d"] = storage.open_raid()
+
+    def pick() -> None:
+        for name in ("sda", "sdb"):
+            check = box["d"].checks.get(name)
+            if check is not None:
+                check.set_active(True)
+
+    def confirm_all() -> None:
+        for check in box["d"].erase_checks:
+            check.set_active(True)
+        box["d"].word_entry.set_text(box["d"].word)
+
+    return [
+        (300, open_dialog),
+        (1200, shot("d-raid-1-level")),
+        (100, lambda: box["d"]._choose_disks()),
+        (1500, pick),
+        (500, shot("d-raid-2-disks")),
+        (100, lambda: box["d"]._confirm_page()),
+        (600, confirm_all),
+        (500, shot("d-raid-3-confirm")),
+        (100, lambda: box["d"]._create()),
+        (8000, shot("d-raid-4-done")),
+        (100, lambda: box["d"].close()),
+    ]
+
+
+def _accounts_tour(app: NuvemApplication, shot: Callable[[str], Callable[[], None]]) -> list:
+    box: dict = {}
+
+    def sign_in() -> None:
+        users = app.window.shell.page("users")
+        app.window.shell.show("users")
+        users.sign_in.email.set_text("ruscher@example.com")
+        users.sign_in.password.set_text("example-password")
+        users.sign_in._go()
+
+    def add() -> None:
+        from nuvem_ruscher.ui.accounts_ui import AddAccountDialog
+
+        box["d"] = AddAccountDialog(app.window.shell.ctx, lambda _u: None)
+        box["d"].present(app.window)
+
+    def fill() -> None:
+        d = box["d"]
+        d.name.set_text("Ana")
+        d.email.set_text("ana@example.com")
+        d.quota.set_selected(4)
+
+    def sharing() -> None:
+        app.window.shell.show("sharing")
+
+    def manage() -> None:
+        page = app.window.shell.page("sharing")
+        from nuvem_ruscher.ui.pages.sharing import SharedFolderDialog
+
+        mine, _w = app.window.shell.ctx.backend.shared_albums()
+        box["m"] = SharedFolderDialog(app.window.shell.ctx, mine[0], page.people, lambda: None)
+        box["m"].present(app.window)
+
+    return [
+        (300, lambda: app.window.shell.show("users")),
+        (900, shot("p-users-signin")),
+        (100, sign_in),
+        (3000, shot("p-users")),
+        (100, add),
+        (600, fill),
+        (500, shot("d-account-1-form")),
+        (100, lambda: box["d"]._create()),
+        (2500, shot("d-account-2-created")),
+        (100, lambda: box["d"].close()),
+        (300, sharing),
+        (2500, shot("p-sharing")),
+        (100, manage),
+        (900, shot("d-shared-folder")),
+        (100, lambda: box["m"].close()),
+        (300, lambda: app.window.shell.show("home")),
+        (2500, shot("p-home-signed")),
+    ]
+
+
+# Ações extras (diálogos): nome → passos.
+EXTRAS: dict[str, Callable[..., list[tuple[int, Callable[[], None]]]]] = {
+    "migration": _migration_tour,
+    "raid": _raid_tour,
+    "accounts": _accounts_tour,
+}
 
 
 if __name__ == "__main__":

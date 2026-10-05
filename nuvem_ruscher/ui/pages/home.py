@@ -15,7 +15,7 @@ from nuvem_ruscher.backend.base import BackupFile, HelperResult
 from nuvem_ruscher.core import numbers
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.core.system import TailscaleInfo
-from nuvem_ruscher.i18n import N_, _
+from nuvem_ruscher.i18n import N_, _, ngettext
 from nuvem_ruscher.ui.common import label, open_uri, set_status_icon, show_error, status_icon, toast
 from nuvem_ruscher.ui.dialogs import ConnectStatsDialog
 from nuvem_ruscher.ui.format import relative_time
@@ -181,7 +181,9 @@ class HomePage(Page):
         self.tiles: dict[str, HealthTile] = {
             "server": HealthTile(_("Server"), "network-server-symbolic", "blue", lambda: show("system")),
             "storage": HealthTile(_("Storage"), "drive-harddisk-symbolic", "teal", lambda: show("storage")),
+            "redundancy": HealthTile(_("Redundancy"), "drive-multidisk-symbolic", "teal", lambda: show("storage")),
             "backups": HealthTile(_("Backups"), "document-save-symbolic", "yellow", lambda: show("backups")),
+            "accounts": HealthTile(_("Accounts"), "system-users-symbolic", "violet", lambda: show("users")),
             "network": HealthTile(_("Network"), "network-wireless-symbolic", "blue", lambda: show("network")),
         }
         for tile in self.tiles.values():
@@ -193,6 +195,8 @@ class HomePage(Page):
         # Atalhos
         actions = group(_("Quick actions"))
         self.actions_box = Adw.WrapBox(child_spacing=8, line_spacing=8)
+        self.add_action(_("Add an account"), "contact-new-symbolic", lambda: show("users"))
+        self.add_action(_("Share a folder"), "folder-publicshare-symbolic", lambda: show("sharing"))
         self.add_action(_("Connect a phone"), "phone-symbolic", lambda: show("phones"))
         self.add_action(_("Storage"), "drive-harddisk-symbolic", lambda: show("storage"))
         self.add_action(_("Back up now"), "document-save-symbolic", lambda: show("backups"))
@@ -329,6 +333,46 @@ class HomePage(Page):
             return self.backend.lan_ip(), self.backend.tailscale()
 
         run_async(network, on_done=self._show_network, on_error=lambda _e: None)
+        run_async(self.backend.raid_arrays, on_done=self._show_raid, on_error=lambda _e: None)
+        self.session_changed()
+
+    def _show_raid(self, arrays: list) -> None:
+        from nuvem_ruscher.core.raid import RaidState
+
+        tile = self.tiles["redundancy"]
+        if not arrays:
+            tile.set_state("info", _("Not set up"), _("Your photos are on one drive"))
+            return
+        array = arrays[0]
+        level = array.level.replace("raid", "RAID ")
+        texts = {
+            RaidState.HEALTHY: ("ok", _("{level} — Healthy")),
+            RaidState.SYNCING: ("pending", _("{level} — Preparing")),
+            RaidState.CHECKING: ("pending", _("{level} — Checking")),
+            RaidState.REBUILDING: ("warning", _("{level} — Rebuilding")),
+            RaidState.DEGRADED: ("warning", _("{level} — Degraded")),
+            RaidState.FAILED: ("error", _("{level} — Failed")),
+        }
+        status, text = texts[array.state]
+        detail = ""
+        if array.progress is not None and array.operation:
+            detail = _("{percent}% done").format(percent=int(array.progress * 100))
+        elif array.state is RaidState.DEGRADED:
+            detail = _("Replace the failed drive")
+        tile.set_state(status, text.format(level=level), detail)
+
+    def session_changed(self) -> None:
+        session = self.backend.session
+        tile = self.tiles["accounts"]
+        if session is None:
+            tile.set_state("info", _("Sign in to see"), _("Manage the family’s accounts"))
+        elif not session.is_admin:
+            tile.set_state("info", _("Signed in as {name}").format(name=session.name), "")
+
+    def accounts_changed(self, count: int) -> None:
+        self.tiles["accounts"].set_state(
+            "ok", ngettext("{n} account", "{n} accounts", count).format(n=count), _("Each with their own library")
+        )
 
     def _show_backups(self, backups: list[BackupFile]) -> None:
         tile = self.tiles["backups"]

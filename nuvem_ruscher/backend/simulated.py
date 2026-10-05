@@ -285,6 +285,37 @@ class SimulatedBackend(SimulatedCloud, Backend):
         return self.photo_path
 
     def _volume(self, path: str) -> storage.Volume:
+        if self.mountpoint == "/mnt/nuvem-ruscher-raid":
+            total, used, free = self.disk_usage(path)
+            return storage.Volume(
+                path,
+                self.mountpoint,
+                "/dev/md127",
+                "ext4",
+                "5c1d9e7a-41b2-4f4e-9d0b-1f2a3b4c5d6e",
+                "nuvem-ruscher",
+                total,
+                free,
+                used,
+                model="RAID 1",
+            )
+        if self.mountpoint.startswith("/run/media/ruscher/Backup HD"):
+            total, used, free = self.disk_usage(path)
+            return storage.Volume(
+                path,
+                self.mountpoint,
+                "/dev/sde1",
+                "ext4",
+                "8e7d6c5b-0000-4a1b-9c2d-3e4f5a6b7c8d",
+                "Backup HD",
+                total,
+                free,
+                used,
+                hotplug=True,
+                transport="usb",
+                model="Seagate Expansion HDD",
+                rotational=True,
+            )
         return storage.Volume(
             path=path,
             mountpoint=self.mountpoint,

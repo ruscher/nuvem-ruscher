@@ -108,6 +108,7 @@ class Shell(Adw.BreakpointBin):
         self.backend = backend
         self.monitor = ServerMonitor(backend)
         self.ctx = AppContext(backend, self.monitor, self.show, on_uninstalled)
+        self.ctx.extras["shell"] = self
         self.pages: dict[str, Page] = {}
         self.rows: dict[str, NavRow] = {}
         self._current = ""

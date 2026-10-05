@@ -113,6 +113,72 @@ ERRORS: dict[str, tuple[str, str]] = {
         N_("Could not adjust the firewall"),
         N_("You can open port 2283 manually in the firewall settings."),
     ),
+    "busy": (
+        N_("Another task is already running"),
+        N_("Wait for it to finish and try again. Nothing was changed."),
+    ),
+    "migration-cancelled": (
+        N_("The move was canceled"),
+        N_("Your photos stay where they were and the server keeps using them. You can resume later."),
+    ),
+    "migration-rolled-back": (
+        N_("The move did not work, but everything is back as it was"),
+        N_("The server is using the original folder again, with all your photos. The new copy was kept for checking."),
+    ),
+    "copy-failed": (
+        N_("The photos could not be copied"),
+        N_("The original folder was not touched. Check that the new disk is connected and has space, then try again."),
+    ),
+    "verify-failed": (
+        N_("The copy did not match the original"),
+        N_("To be safe, nothing was switched: the server keeps using the original folder. Check the new disk."),
+    ),
+    "dest-not-empty": (
+        N_("The new folder already has files"),
+        N_("Choose an empty folder, or a folder that already has a copy of the library."),
+    ),
+    "adopt-incomplete": (
+        N_("The new folder does not have a complete library"),
+        N_("Some Immich folders or files are missing there. Nothing was changed. Use “Move existing data” instead."),
+    ),
+    "old-copy-differs": (
+        N_("The old copy has files that are not in the new location"),
+        N_(
+            "To be safe, the old copy was kept. They may be photos deleted later in Immich; "
+            "you can remove the old folder yourself."
+        ),
+    ),
+    "disk-protected": (
+        N_("This drive cannot be used"),
+        N_("It holds the system, your photos, the database, Docker or swap. Nothing was changed."),
+    ),
+    "disk-in-use": (
+        N_("This drive is currently in use"),
+        N_("It is mounted or used by another service (RAID, LVM, encryption). Nothing was changed."),
+    ),
+    "not-confirmed": (
+        N_("The drives to erase were not confirmed"),
+        N_("Nothing was erased. Start again and confirm each drive."),
+    ),
+    "raid-exists": (
+        N_("There is already a Nuvem Ruscher array"),
+        N_("Only one array is managed by the app. Nothing was changed."),
+    ),
+    "raid-failed": (
+        N_("The array could not be created"),
+        N_(
+            "The drives you confirmed may already be erased, but your photos were not touched. "
+            "See the technical details."
+        ),
+    ),
+    "tool-missing": (
+        N_("A required program is missing"),
+        N_("Install it from the software store (or use the “Install” button) and try again."),
+    ),
+    "api-unavailable": (
+        N_("Immich did not answer"),
+        N_("Make sure the server is on and try again in a few seconds."),
+    ),
     "internal": (
         N_("Something unexpected happened"),
         N_("Nothing in your photos was changed. See the technical details and try again."),

@@ -101,7 +101,9 @@ class ServerMonitor(GObject.Object):
             healthy = backend.ping() if server_up else False
             mounted = backend.is_mounted(conf.mount_point) if conf.mount_point not in ("", "/") else True
             target = conf.upload_location if conf.upload_location and os.path.isdir(conf.upload_location) else ""
-            disk = backend.disk_usage(target) if target or backend.simulated else (0, 0, 0)
+            if backend.simulated:
+                target = target or conf.upload_location
+            disk = backend.disk_usage(target) if target else (0, 0, 0)
             return conf, service, containers, healthy, mounted, disk
 
         def done(result: tuple) -> None:

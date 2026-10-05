@@ -34,6 +34,7 @@ ignore = [
 "nuvem_ruscher/core/validation.py" = ["S108"]   # lista de pastas proibidas
 "nuvem_ruscher/core/compose.py" = ["S105"]      # senha fictícia, documentada
 "nuvem_ruscher/ui/widgets/confetti.py" = ["S311"]
+"tools/tour.py" = ["PLW0108"]  # o diálogo só existe quando o passo roda
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from nuvem_ruscher import APP_ID, APP_NAME, VERSION
@@ -79,6 +81,14 @@ class NuvemApplication(Adw.Application):
         section.append(_("About {name}").format(name=APP_NAME), "app.about")
         menu.append_section(None, section)
         return menu
+
+    def do_shutdown(self) -> None:
+        # A sessão de administrador vive só na memória: ao sair, o token é encerrado no Immich.
+        try:
+            self.backend.sign_out()
+        except Exception as exc:  # sair nunca pode falhar por causa do logout
+            print(f"nuvem-ruscher: could not sign out of Immich: {exc}", file=sys.stderr)
+        Adw.Application.do_shutdown(self)
 
     def do_activate(self) -> None:
         if self.window is None:

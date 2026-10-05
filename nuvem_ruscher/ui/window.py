@@ -19,6 +19,8 @@ class MainWindow(Adw.ApplicationWindow):
         if backend.simulated:
             self.add_css_class("devel")
 
+        self.connect("close-request", self._close_request)
+        self._closing = False
         self.toasts = Adw.ToastOverlay()
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, transition_duration=300)
         self.toasts.set_child(self.stack)
@@ -36,6 +38,32 @@ class MainWindow(Adw.ApplicationWindow):
             self.show_wizard("account" if step == "done" else "install")
         else:
             self.show_wizard("welcome")
+
+    def _close_request(self, _window: Adw.ApplicationWindow) -> bool:
+        from nuvem_ruscher.ui.flow import BUSY
+
+        if not BUSY or self._closing:
+            return False
+        alert = Adw.AlertDialog(
+            heading=_("An operation is still running"),
+            body=_(
+                "Closing is safe: it continues in the background and does not stop halfway. Open Nuvem "
+                "Ruscher again later to see the result."
+            ),
+        )
+        alert.add_response("stay", _("Keep open"))
+        alert.add_response("close", _("Close anyway"))
+        alert.set_default_response("stay")
+        alert.set_close_response("stay")
+
+        def answered(_a: Adw.AlertDialog, response: str) -> None:
+            if response == "close":
+                self._closing = True
+                self.close()
+
+        alert.connect("response", answered)
+        alert.present(self)
+        return True
 
     def toast(self, text: str, timeout: int = 3) -> None:
         self.toasts.add_toast(Adw.Toast(title=text, timeout=timeout))
