@@ -11,6 +11,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from nuvem_ruscher.core import network
+
 GIB = 1024**3
 
 
@@ -220,27 +222,20 @@ def detect_gpu(sys_drm: Path = Path("/sys/class/drm"), dev_dri: Path = Path("/de
 
 
 def lan_ip() -> str:
-    """IP da máquina na rede local (sem enviar pacotes: só escolhe a rota)."""
+    """IP deste computador na rede de casa (sem enviar pacotes: só escolhe a rota).
+
+    Com uma VPN como rota padrão, usa o endereço privado de uma interface de verdade.
+    """
+    route_ip = ""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.connect(("192.0.2.1", 9))  # TEST-NET-1, nunca roteado de verdade
-            ip = sock.getsockname()[0]
-            if ip and not ip.startswith("127."):
-                return str(ip)
+            route_ip = str(sock.getsockname()[0] or "")
     except OSError:
         pass
     code, out = run_text(["ip", "-j", "-4", "addr", "show", "scope", "global"])
-    if code == 0:
-        try:
-            for iface in json.loads(out):
-                for addr in iface.get("addr_info", []):
-                    if addr.get("family") == "inet" and not str(iface.get("ifname", "")).startswith(
-                        ("docker", "br-", "veth", "tailscale", "virbr")
-                    ):
-                        return str(addr["local"])
-        except (ValueError, KeyError, TypeError):
-            pass
-    return "127.0.0.1"
+    addresses = network.parse_ip_addr(out) if code == 0 else []
+    return network.choose_lan_address(route_ip, addresses)
 
 
 @dataclass(frozen=True)

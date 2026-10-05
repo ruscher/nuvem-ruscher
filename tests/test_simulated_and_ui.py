@@ -95,10 +95,12 @@ def test_ui_modules_import(module):
     importlib.import_module(module)
 
 
-def test_phone_tips_shape():
-    from nuvem_ruscher.ui.widgets.phone import TIPS
+def test_phone_notes_shape():
+    from nuvem_ruscher.core import mobile
 
-    assert all(len(tip) == 3 and tip[0].endswith("-symbolic") for tip in TIPS)
+    for p in mobile.PLATFORMS:
+        notes = [*mobile.phone_steps(p), *mobile.good_to_know(p), *mobile.troubleshooting(p, away=True)]
+        assert all(n.icon.endswith("-symbolic") and n.title and n.body for n in notes)
 
 
 def test_qr_matrix():

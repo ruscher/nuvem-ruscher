@@ -371,6 +371,9 @@ class RealBackend(Backend):
     def ping(self) -> bool:
         return self._api.ping()
 
+    def probe_server(self, url: str) -> bool:
+        return ImmichClient(url, timeout=4).ping()
+
     def server_version(self) -> str:
         return self._api.version()
 

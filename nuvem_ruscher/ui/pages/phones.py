@@ -16,11 +16,11 @@ class PhonesPage(Page):
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(
             _("Phones"),
-            _("Two steps with the phone camera. Each person signs in with their own account."),
+            _("Android or iPhone: install Immich, type the address and turn on the backup."),
             "phone-symbolic",
             "green",
         )
-        self.view = PhoneView(ctx.backend, show_title=False)
+        self.view = PhoneView(ctx.backend, show_title=False, open_page=ctx.show_page)
         self.add(self.view)
 
     def on_shown(self) -> None:
