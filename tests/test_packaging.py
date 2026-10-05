@@ -98,6 +98,7 @@ def prefix(tmp_path_factory) -> Path:
         'msgid "Installs and looks after Immich on BigLinux."\nmsgstr ""',
         'msgid "Installs and looks after Immich on BigLinux."\nmsgstr "Tradução de teste."',
     )
+    po = po.replace("nplurals=INTEGER; plural=EXPRESSION;", "nplurals=2; plural=(n != 1);")
     (tree / "po" / "xx.po").write_text(po)
     prefix = tmp_path_factory.mktemp("loja") / "0123-nuvem-ruscher"
     make_install(tree, None, prefix, sys.executable)
@@ -228,10 +229,13 @@ def test_catalog_complete_and_consistent(po, tmp_path):
     with mo.open("rb") as fp:
         catalog = gettext.GNUTranslations(fp)._catalog
     pot = (ROOT / "po/nuvem-ruscher.pot").read_text()
-    msgids = {k for k in catalog if k}
-    assert len(msgids) == pot.count("\nmsgid ") - 1, "há mensagens sem tradução"
-    for msgid in msgids:
-        msgstr = catalog[msgid]
+    # Plurais aparecem como (msgid, índice) no catálogo compilado.
+    distinct = {k[0] if isinstance(k, tuple) else k for k in catalog if k}
+    assert len(distinct) == pot.count("\nmsgid ") - 1, "há mensagens sem tradução"
+    for key, msgstr in catalog.items():
+        if not key:
+            continue
+        msgid = key[0] if isinstance(key, tuple) else key
         assert sorted(re.findall(r"\{\w+\}", msgid)) == sorted(re.findall(r"\{\w+\}", msgstr)), msgid
         for token in ("\n", "<b>", "</b>"):
             assert msgid.count(token) == msgstr.count(token), msgid

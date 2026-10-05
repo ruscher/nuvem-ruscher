@@ -85,11 +85,40 @@ def test_detect_library(tmp_path):
     assert len(info.backups) == 1
 
 
-def test_human_size():
+@pytest.fixture
+def c_numeric():
+    import locale
+
+    saved = locale.setlocale(locale.LC_NUMERIC)
+    locale.setlocale(locale.LC_NUMERIC, "C")
+    yield
+    locale.setlocale(locale.LC_NUMERIC, saved)
+
+
+def test_human_size(c_numeric):
     assert storage.human_size(0) == "0 B"
-    assert storage.human_size(1986854027264) == "2,0 TB"
+    assert storage.human_size(1986854027264) == "2.0 TB"
     assert storage.human_size(410_500_000) == "410 MB"
-    assert storage.human_size(1_500_000_000) == "1,5 GB"
+    assert storage.human_size(1_500_000_000) == "1.5 GB"
+
+
+def test_numbers_follow_locale(c_numeric):
+    import locale
+
+    from nuvem_ruscher.core import numbers
+
+    saved = locale.setlocale(locale.LC_NUMERIC)
+    try:
+        assert numbers.integer(12483) == "12483"
+        try:
+            locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
+        except locale.Error:
+            pytest.skip("locale pt_BR.UTF-8 não instalado")
+        assert numbers.integer(12483) == "12.483"
+        assert numbers.decimal(1.5) == "1,5"
+        assert storage.human_size(1_500_000_000) == "1,5 GB"
+    finally:
+        locale.setlocale(locale.LC_NUMERIC, saved)
 
 
 def test_suggest_photo_folder(tmp_path):

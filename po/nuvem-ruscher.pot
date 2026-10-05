@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nuvem-ruscher 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ruscher/nuvem-ruscher/issues\n"
-"POT-Creation-Date: 2026-10-05 06:46-0300\n"
+"POT-Creation-Date: 2026-10-05 07:07-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: nuvem_ruscher/backend/base.py:282 nuvem_ruscher/ui/wizard/pages.py:111
 msgid "Docker installed"
@@ -56,8 +57,8 @@ msgstr ""
 msgid "We will turn it on now and have it start with the computer."
 msgstr ""
 
-#: nuvem_ruscher/backend/base.py:301 nuvem_ruscher/ui/dashboard/overview.py:228
-#: nuvem_ruscher/ui/dashboard/overview.py:245
+#: nuvem_ruscher/backend/base.py:301 nuvem_ruscher/ui/pages/home.py:248
+#: nuvem_ruscher/ui/pages/home.py:263
 msgid "Turn on"
 msgstr ""
 
@@ -203,7 +204,8 @@ msgstr ""
 msgid "Open port {p} so the phone can find the server on the home network."
 msgstr ""
 
-#: nuvem_ruscher/backend/base.py:413 nuvem_ruscher/ui/dashboard/more.py:87
+#: nuvem_ruscher/backend/base.py:413 nuvem_ruscher/ui/pages/network.py:64
+#: nuvem_ruscher/ui/pages/network.py:106
 msgid "Open port"
 msgstr ""
 
@@ -287,7 +289,7 @@ msgstr ""
 msgid "automatic mounting already configured"
 msgstr ""
 
-#: nuvem_ruscher/core/docker.py:84
+#: nuvem_ruscher/core/docker.py:84 nuvem_ruscher/ui/pages/home.py:180
 msgid "Server"
 msgstr ""
 
@@ -295,7 +297,7 @@ msgstr ""
 msgid "Artificial intelligence"
 msgstr ""
 
-#: nuvem_ruscher/core/docker.py:86
+#: nuvem_ruscher/core/docker.py:86 nuvem_ruscher/ui/pages/system.py:101
 msgid "Database"
 msgstr ""
 
@@ -356,8 +358,7 @@ msgstr ""
 msgid "Nothing was changed. Check the chosen folder and try again."
 msgstr ""
 
-#: nuvem_ruscher/core/helper_protocol.py:53
-#: nuvem_ruscher/ui/dashboard/overview.py:217
+#: nuvem_ruscher/core/helper_protocol.py:53 nuvem_ruscher/ui/pages/home.py:51
 msgid "The photo disk is not connected"
 msgstr ""
 
@@ -428,8 +429,7 @@ msgid ""
 "details to recover."
 msgstr ""
 
-#: nuvem_ruscher/core/helper_protocol.py:85
-#: nuvem_ruscher/ui/dashboard/overview.py:212
+#: nuvem_ruscher/core/helper_protocol.py:85 nuvem_ruscher/ui/pages/home.py:47
 msgid "The server could not start"
 msgstr ""
 
@@ -447,7 +447,6 @@ msgid "Run the setup assistant first."
 msgstr ""
 
 #: nuvem_ruscher/core/helper_protocol.py:93
-#: nuvem_ruscher/ui/dashboard/overview.py:202
 msgid "The server is turned off"
 msgstr ""
 
@@ -504,66 +503,66 @@ msgid ""
 "Nothing in your photos was changed. See the technical details and try again."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:196
+#: nuvem_ruscher/core/storage.py:197
 msgid ""
 "The Immich database does not go on this disk: it goes on the internal disk, "
 "as the official documentation requires."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:200
+#: nuvem_ruscher/core/storage.py:201
 msgid ""
 "Use “Safely remove” before disconnecting the disk (or turn off the "
 "computer). Abrupt shutdowns can corrupt files."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:207
+#: nuvem_ruscher/core/storage.py:208
 msgid "Disk formatted on Windows (NTFS)"
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:208
+#: nuvem_ruscher/core/storage.py:209
 msgid "It works well for storing photos. We only ask for three precautions."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:212
+#: nuvem_ruscher/core/storage.py:213
 msgid ""
 "If you use this disk on Windows, turn off “Fast Startup” there; otherwise "
 "Linux may open it as read-only."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:215
+#: nuvem_ruscher/core/storage.py:216
 msgid ""
 "It is a bit slower than a disk formatted for Linux: thumbnails may take "
 "longer the first time."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:224
+#: nuvem_ruscher/core/storage.py:225
 msgid "Disk in exFAT format"
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:225
+#: nuvem_ruscher/core/storage.py:226
 msgid "It works for storing photos, with two precautions."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:228
+#: nuvem_ruscher/core/storage.py:229
 msgid "exFAT has no journal: power failures are riskier."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:237
+#: nuvem_ruscher/core/storage.py:238
 msgid "This disk does not accept files larger than 4 GB"
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:239
+#: nuvem_ruscher/core/storage.py:240
 msgid ""
 "It is in FAT32 format. Photos work, but long videos will not be saved. If "
 "you can, choose another disk."
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:249
+#: nuvem_ruscher/core/storage.py:250
 #, python-brace-format
 msgid "Uncommon file system ({fs})"
 msgstr ""
 
-#: nuvem_ruscher/core/storage.py:250
+#: nuvem_ruscher/core/storage.py:251
 msgid ""
 "We have not tested this format. It may work, but prefer ext4, Btrfs or NTFS."
 msgstr ""
@@ -658,92 +657,76 @@ msgstr ""
 msgid "Unknown scenario: {name}. Use --scenario help."
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:48
+#: nuvem_ruscher/ui/application.py:71
 msgid "Open Immich in the browser"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:51 nuvem_ruscher/ui/application.py:95
+#: nuvem_ruscher/ui/application.py:74
+msgid "Follow system style"
+msgstr ""
+
+#: nuvem_ruscher/ui/application.py:74
+msgid "Light"
+msgstr ""
+
+#: nuvem_ruscher/ui/application.py:74
+msgid "Dark"
+msgstr ""
+
+#: nuvem_ruscher/ui/application.py:76
+msgid "Appearance"
+msgstr ""
+
+#: nuvem_ruscher/ui/application.py:78 nuvem_ruscher/ui/application.py:122
 msgid "Keyboard shortcuts"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:52
+#: nuvem_ruscher/ui/application.py:79
 #, python-brace-format
 msgid "About {name}"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:71
+#: nuvem_ruscher/ui/application.py:98
 #, python-brace-format
 msgid "{version} (simulation)"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:76
+#: nuvem_ruscher/ui/application.py:103
 msgid ""
 "Installs, configures and looks after Immich — your free alternative to "
 "Google Photos — on this computer, with the photos stored on the disk you "
 "choose."
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:80
+#: nuvem_ruscher/ui/application.py:107
 msgid "Immich documentation"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:91
+#: nuvem_ruscher/ui/application.py:118
 msgid "General"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:93
+#: nuvem_ruscher/ui/application.py:120
 msgid "Quit"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:94
+#: nuvem_ruscher/ui/application.py:121
 msgid "Close the window"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:96
+#: nuvem_ruscher/ui/application.py:123
 msgid "Go back in the assistant"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:100
-msgid "Dashboard"
+#: nuvem_ruscher/ui/application.py:127 nuvem_ruscher/ui/shell.py:120
+msgid "Pages"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:102
-#: nuvem_ruscher/ui/dashboard/__init__.py:44
-msgid "Home"
-msgstr ""
-
-#: nuvem_ruscher/ui/application.py:103
-#: nuvem_ruscher/ui/dashboard/__init__.py:45
-#: nuvem_ruscher/ui/wizard/pages.py:1181 nuvem_ruscher/ui/wizard/pages.py:1182
-msgid "Phone"
-msgstr ""
-
-#: nuvem_ruscher/ui/application.py:104
-#: nuvem_ruscher/ui/dashboard/__init__.py:46
-msgid "Logs"
-msgstr ""
-
-#: nuvem_ruscher/ui/application.py:105
-#: nuvem_ruscher/ui/dashboard/__init__.py:47
-msgid "Backups"
-msgstr ""
-
-#: nuvem_ruscher/ui/application.py:106
-#: nuvem_ruscher/ui/dashboard/__init__.py:48
-#: nuvem_ruscher/ui/dashboard/updates.py:337
-msgid "Update"
-msgstr ""
-
-#: nuvem_ruscher/ui/application.py:107
-#: nuvem_ruscher/ui/dashboard/__init__.py:49
-msgid "More"
-msgstr ""
-
-#: nuvem_ruscher/ui/application.py:108
+#: nuvem_ruscher/ui/application.py:132
 msgid "Refresh information"
 msgstr ""
 
-#: nuvem_ruscher/ui/application.py:109
+#: nuvem_ruscher/ui/application.py:132
 msgid "Search the logs"
 msgstr ""
 
@@ -767,13 +750,13 @@ msgstr ""
 msgid "Waiting"
 msgstr ""
 
-#: nuvem_ruscher/ui/common.py:114 nuvem_ruscher/ui/dashboard/more.py:94
-#: nuvem_ruscher/ui/dashboard/updates.py:80
-#: nuvem_ruscher/ui/wizard/pages.py:428 nuvem_ruscher/ui/wizard/pages.py:745
+#: nuvem_ruscher/ui/common.py:114 nuvem_ruscher/ui/pages/system.py:95
+#: nuvem_ruscher/ui/pages/updates.py:84 nuvem_ruscher/ui/wizard/pages.py:428
+#: nuvem_ruscher/ui/wizard/pages.py:745
 msgid "Technical details"
 msgstr ""
 
-#: nuvem_ruscher/ui/common.py:140 nuvem_ruscher/ui/dashboard/updates.py:81
+#: nuvem_ruscher/ui/common.py:140 nuvem_ruscher/ui/pages/updates.py:85
 #: nuvem_ruscher/ui/wizard/pages.py:1159
 msgid "Close"
 msgstr ""
@@ -785,625 +768,6 @@ msgstr ""
 
 #: nuvem_ruscher/ui/common.py:171 nuvem_ruscher/ui/wizard/pages.py:748
 msgid "Cancel"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:24
-#, python-brace-format
-msgid "Today, {hour}"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:26
-#, python-brace-format
-msgid "Yesterday, {hour}"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:46
-msgid "Database backups"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:49
-msgid ""
-"They keep albums, people, favorites and photo information. Immich makes one "
-"every day at 2 AM."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:54
-#: nuvem_ruscher/ui/dashboard/backups.py:125
-msgid "Back up now"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:64
-msgid "No backups yet"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:65
-msgid "The first automatic backup happens tonight. If you want, make one now."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:72
-msgid "What about the photos?"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:74
-msgid ""
-"The database backup does not include the photos. To really protect them, "
-"copy the photo folder to another disk from time to time. Backups are stored "
-"on the photo disk, apart from the database."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:95
-msgid "Automatic"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:95
-msgid "Manual"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:98
-#: nuvem_ruscher/ui/dashboard/updates.py:267
-#, python-brace-format
-msgid "Immich {v}"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:108
-msgid "Show in folder"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:118
-msgid "the server must be on for the backup"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:121
-msgid "Backing up…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:129
-#, python-brace-format
-msgid "Backup done ({size})"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/backups.py:131
-msgid "Backup done"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/__init__.py:59
-msgid "Menu"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:31 nuvem_ruscher/ui/dashboard/logs.py:32
-msgid "Component"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:35
-msgid "Filter logs (e.g.: error)"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:36
-msgid "Filter logs"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:41 nuvem_ruscher/ui/dashboard/logs.py:42
-msgid "Follow new log entries"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:45 nuvem_ruscher/ui/dashboard/logs.py:46
-msgid "Copy the logs shown"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:62
-msgid "Server logs"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:67
-msgid "Nothing here yet"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:68
-msgid "Logs appear when the server is on."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/logs.py:145
-msgid "Logs copied"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:52
-msgid "Access away from home"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:53
-msgid ""
-"With Tailscale (free), the phone uploads photos from anywhere, securely."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:55
-msgid "Checking Tailscale…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:65
-#: nuvem_ruscher/ui/dashboard/overview.py:151
-msgid "Photo disk"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:67
-msgid "Mount the disk when the computer starts"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:68
-msgid "The server works right after a restart, even before you log in."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:74 nuvem_ruscher/ui/wizard/pages.py:368
-msgid "Photo folder"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:76
-#: nuvem_ruscher/ui/dashboard/overview.py:179
-msgid "Open the photo folder"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:81
-msgid "Network"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:83
-#, python-brace-format
-msgid "Open port {p} in the firewall"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:84
-msgid ""
-"Only for home networks and Tailscale. Use it if the phone cannot find the "
-"server."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:96
-msgid "System service"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:97
-msgid "Configuration"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:98
-msgid "Service logs"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:107
-msgid "Remove"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:109
-msgid "Uninstall the server"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:110
-msgid ""
-"Removes Immich from this computer. Your photos and videos are not deleted."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:113
-msgid "Uninstall…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:136
-msgid "Tailscale is not installed"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:138
-msgid ""
-"Install it from the software store (package “tailscale”), sign in to your "
-"account and also install the Tailscale app on the phone."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:142
-msgid "Learn more"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:148
-msgid "Tailscale is turned off"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:149
-msgid ""
-"Turn on Tailscale on this computer (“sudo tailscale up”) and sign in to your "
-"account."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:154
-msgid "Ready to use away from home"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:158 nuvem_ruscher/ui/widgets/phone.py:98
-msgid "Copy address"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:159 nuvem_ruscher/ui/widgets/phone.py:155
-msgid "Address copied"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:162
-msgid "Show QR"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:182
-msgid "Connect the photo disk to see this option."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:186
-msgid "Already configured in the system (/etc/fstab), outside Nuvem Ruscher."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:190
-msgid "This type of disk cannot be mounted automatically at startup."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:214 nuvem_ruscher/ui/wizard/pages.py:232
-msgid "Done!"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:214
-msgid "Automatic mounting turned off"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:230
-msgid "Turn off automatic mounting?"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:232
-msgid ""
-"After a restart, the server will only start when you log in and the disk "
-"appears. Only the line created by Nuvem Ruscher is removed from /etc/fstab "
-"(with a backup copy)."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:235
-#: nuvem_ruscher/ui/dashboard/overview.py:228
-msgid "Turn off"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:249
-msgid "Port opened to the home network"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:258
-msgid "Also delete the downloaded components (frees about 5 GB)"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:262
-#, python-brace-format
-msgid ""
-"Your photos and videos stay in <b>{photos}</b>, untouched.\n"
-"\n"
-"The database (albums, people, favorites) is kept in <b>{db}</b> so a future "
-"reinstallation can reuse everything."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:271
-msgid "Remove the Immich server?"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:273
-msgid "Remove server"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:287
-msgid "Server removed. Your photos are still on the disk."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/more.py:293
-msgid "Removing the server…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:70
-msgid "healthy"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:72
-msgid "starting"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:74
-msgid "unhealthy"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:76
-msgid "restarting"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:78
-msgid "not created"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:80
-msgid "stopped"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:85
-#, python-brace-format
-msgid "CPU {cpu}% · RAM {mem}"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:121
-#: nuvem_ruscher/ui/dashboard/overview.py:197
-#: nuvem_ruscher/ui/dashboard/overview.py:265
-msgid "Loading…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:129
-#: nuvem_ruscher/ui/wizard/pages.py:1217
-msgid "Open Immich"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:136
-msgid "Restart"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:139
-msgid "Connect phone"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:149
-msgid "Photos"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:150
-msgid "Videos"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:161
-msgid "Show photo count"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:168
-msgid "Components"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:168
-msgid "The four parts of Immich, each in its own container."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:176
-msgid "Where your data is"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:177
-msgid "Photos and videos"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:180
-msgid "Database (albums, people, information)"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:182
-#: nuvem_ruscher/ui/wizard/pages.py:578
-msgid "Immich version"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:198
-msgid "Your server is up"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:199
-#: nuvem_ruscher/ui/dashboard/overview.py:313
-msgid "Starting the server…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:199
-msgid "This takes about a minute."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:200
-msgid "Turning off…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:203
-msgid "Turn it on so the phone can upload photos again."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:207
-msgid "The server has problems"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:208
-msgid "See the logs or try restarting."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:213
-msgid "See the logs or try again."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:218
-msgid "Connect the disk and the server starts by itself."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:239
-msgid "photos"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:240
-#, python-brace-format
-msgid "The “{disk}” disk is not connected."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:244
-msgid "The server is turned off. Your photos are not being backed up."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:255
-#, python-brace-format
-msgid "{size} in total"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:261
-msgid "Available with the server on"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:263
-msgid "Connect your account to see"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:271
-#, python-brace-format
-msgid "free of {total}"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:274
-msgid "Disk not found"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:314
-msgid "Server turned off"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/overview.py:315
-msgid "Restarting…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:21
-msgid "Downloading the new version"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:22
-msgid "Backing up the database"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:23
-msgid "Saving a snapshot of the database"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:24
-msgid "Switching versions"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:25
-msgid "Checking that everything is fine"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:43
-msgid "Updating Immich"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:55
-#, python-brace-format
-msgid "Updating to {v}. Your server will be offline for a few minutes."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:108
-#, python-brace-format
-msgid "Fetching the files for {v}…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:115
-#: nuvem_ruscher/ui/wizard/pages.py:894
-#, python-brace-format
-msgid "{percent}% · {done} downloaded"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:125
-msgid "New components downloaded"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:142
-msgid "The new version did not respond. Going back to the previous one…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:169
-#, python-brace-format
-msgid "Updated to {v}!"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:170
-msgid "A backup and a copy of the previous database were kept, to be safe."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:206
-msgid "Check now"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:207
-msgid "Update safely"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:216
-msgid "What’s new"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:221
-msgid "How the update protects your data"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:223
-msgid ""
-"Before switching versions, we back up the database and take a snapshot of "
-"it. Then we check that the server responded. If it does not, everything goes "
-"back to the previous version by itself."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:239
-msgid "Looking for updates…"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:251
-msgid "Could not check right now"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:252
-msgid "No connection to GitHub. Try again later."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:266
-msgid "You are on the latest version"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:274
-#, python-brace-format
-msgid "Version {v} is available"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:276
-#, python-brace-format
-msgid "You are on {cur}. Released on {date}."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:284
-msgid "Important changes in this update"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:285
-msgid "Read before updating. They usually require nothing from you."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:290
-msgid "This is a new major version: the change is bigger than usual."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:300
-msgid "View on GitHub"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:324
-msgid "Connect the photo disk"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:325
-msgid "The update needs the server to be on."
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:326
-#: nuvem_ruscher/ui/wizard/pages.py:104
-msgid "Got it"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:332
-#, python-brace-format
-msgid "Update to {v}?"
-msgstr ""
-
-#: nuvem_ruscher/ui/dashboard/updates.py:334
-#, python-brace-format
-msgid ""
-"The server will be offline for a few minutes. First we back up the database; "
-"if something goes wrong, everything goes back to {cur} by itself."
 msgstr ""
 
 #: nuvem_ruscher/ui/dialogs.py:20
@@ -1434,6 +798,977 @@ msgstr ""
 
 #: nuvem_ruscher/ui/dialogs.py:71
 msgid "The server did not respond. Is it on?"
+msgstr ""
+
+#: nuvem_ruscher/ui/format.py:27
+#, python-brace-format
+msgid "Today, {hour}"
+msgstr ""
+
+#: nuvem_ruscher/ui/format.py:29
+#, python-brace-format
+msgid "Yesterday, {hour}"
+msgstr ""
+
+#: nuvem_ruscher/ui/format.py:31
+#, python-brace-format
+msgid "{n} day ago"
+msgid_plural "{n} days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: nuvem_ruscher/ui/format.py:39
+msgid "less than a minute"
+msgstr ""
+
+#: nuvem_ruscher/ui/format.py:43
+#, python-brace-format
+msgid "{h} h {m} min"
+msgstr ""
+
+#: nuvem_ruscher/ui/format.py:44
+#, python-brace-format
+msgid "{m} min"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:25 nuvem_ruscher/ui/pages/home.py:182
+#: nuvem_ruscher/ui/shell.py:32
+msgid "Backups"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:26
+msgid ""
+"Copies of the database: albums, people, favorites and photo details. Immich "
+"makes one every night."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:33 nuvem_ruscher/ui/pages/backups.py:125
+#: nuvem_ruscher/ui/pages/home.py:196
+msgid "Back up now"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:39
+msgid "Database backups"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:40
+msgid "Stored in"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:47
+msgid "No backups yet"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:48
+msgid "The first automatic backup happens tonight. If you want, make one now."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:53
+msgid "What about the photos?"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:54
+msgid ""
+"These backups protect the database, not the photos and videos themselves."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:59
+msgid "Keep a copy of the photo folder on another disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:61
+msgid ""
+"From time to time, copy the photo folder to an external disk you keep "
+"somewhere else. That is the copy that saves your photos if this computer is "
+"lost or damaged."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:67
+msgid "RAID is not a backup"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:69
+msgid ""
+"RAID protects against some drive failures. A deleted photo, a virus or a "
+"fire affects every drive in the array at the same time."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:75
+msgid "Where the database backups are"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:76
+msgid ""
+"They are saved on the photo disk, apart from the database, so one failure "
+"does not take both."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:99
+msgid "Automatic"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:99
+msgid "Manual"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:102 nuvem_ruscher/ui/pages/updates.py:273
+#, python-brace-format
+msgid "Immich {v}"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:110
+msgid "Show in folder"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:118
+msgid "the server must be on for the backup"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:121
+msgid "Backing up…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:128
+#, python-brace-format
+msgid "Backup done ({size})"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/backups.py:128
+msgid "Backup done"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:31 nuvem_ruscher/ui/pages/home.py:95
+#: nuvem_ruscher/ui/pages/home.py:305 nuvem_ruscher/ui/shell.py:48
+#: nuvem_ruscher/ui/wizard/pages.py:166
+msgid "Checking…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:31
+msgid "Checking your cloud…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:32 nuvem_ruscher/ui/shell.py:49
+msgid "Online"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:32
+msgid "Your cloud is online"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:33 nuvem_ruscher/ui/pages/home.py:299
+#: nuvem_ruscher/ui/shell.py:50 nuvem_ruscher/ui/wizard/pages.py:700
+#: nuvem_ruscher/ui/wizard/pages.py:929
+msgid "Starting…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:33 nuvem_ruscher/ui/pages/home.py:363
+msgid "Starting the server…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:33
+msgid "This takes about a minute."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:34 nuvem_ruscher/ui/pages/home.py:300
+#: nuvem_ruscher/ui/shell.py:51
+msgid "Turning off…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:37 nuvem_ruscher/ui/pages/home.py:301
+#: nuvem_ruscher/ui/shell.py:52
+msgid "Turned off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:38
+msgid "Your cloud is turned off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:39
+msgid "Turn it on so phones can upload photos again."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:43 nuvem_ruscher/ui/pages/home.py:47
+#: nuvem_ruscher/ui/pages/home.py:302 nuvem_ruscher/ui/shell.py:53
+#: nuvem_ruscher/ui/shell.py:54
+msgid "Needs attention"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:44
+msgid "Your cloud needs attention"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:45
+msgid "Some parts are not healthy. See System for details."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:47
+msgid "See the logs or try again."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:50 nuvem_ruscher/ui/shell.py:55
+msgid "Photo disk missing"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:52
+msgid "Connect the disk and the server starts by itself."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:121 nuvem_ruscher/ui/shell.py:20
+msgid "Your cloud"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:136 nuvem_ruscher/ui/wizard/pages.py:1217
+msgid "Open Immich"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:151
+msgid "At a glance"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:153
+msgid "Photos"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:154
+msgid "Videos"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:155 nuvem_ruscher/ui/pages/storage.py:47
+msgid "Space used"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:160
+msgid "Space used on the photo disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:167
+msgid "Show how many photos you have"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:176
+msgid "Health"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:176
+msgid "Each part of your cloud. Select one for details."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:181 nuvem_ruscher/ui/pages/home.py:195
+#: nuvem_ruscher/ui/pages/storage.py:77 nuvem_ruscher/ui/shell.py:31
+#: nuvem_ruscher/ui/wizard/pages.py:255 nuvem_ruscher/ui/wizard/pages.py:256
+msgid "Storage"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:183 nuvem_ruscher/ui/pages/network.py:24
+#: nuvem_ruscher/ui/shell.py:38
+msgid "Network"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:192
+msgid "Quick actions"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:194
+msgid "Connect a phone"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:197
+msgid "View logs"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:248 nuvem_ruscher/ui/pages/storage.py:196
+msgid "Turn off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:257
+msgid "photos"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:258
+#, python-brace-format
+msgid "The “{disk}” disk is not connected."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:262
+msgid "The server is turned off. Your photos are not being backed up."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:272
+#, python-brace-format
+msgid "{size} in total"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:278
+msgid "Available with the server on"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:280
+msgid "Connect your account to see"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:282
+msgid "Loading…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:290 nuvem_ruscher/ui/wizard/pages.py:360
+#, python-brace-format
+msgid "{free} free of {total}"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:294
+msgid "Disk not found"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:298
+msgid "Running"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:303
+msgid "Could not start"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:304
+msgid "Waiting for the photo disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:311
+msgid "Disk disconnected"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:314
+msgid "Almost full"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:314
+msgid "Healthy"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:315
+#, python-brace-format
+msgid "{free} free"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:334
+msgid "No backup yet"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:334
+msgid "Immich makes one every night"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:338
+#, python-brace-format
+msgid "Last backup: {when}"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:338
+msgid "Database only"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:343
+msgid "Away from home: on"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:343
+msgid "Away from home: off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:345
+msgid "Home network"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:347
+msgid "Not connected"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:347
+msgid "Connect this computer to Wi-Fi or cable"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:364
+msgid "Server turned off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/home.py:365 nuvem_ruscher/ui/pages/system.py:161
+msgid "Restarting…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:30 nuvem_ruscher/ui/shell.py:40
+msgid "Logs"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:31
+msgid "What the server is doing right now. Useful when something goes wrong."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:45 nuvem_ruscher/ui/pages/logs.py:46
+msgid "Component"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:49
+msgid "Filter logs (e.g.: error)"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:50
+msgid "Filter logs"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:55 nuvem_ruscher/ui/pages/logs.py:56
+msgid "Follow new log entries"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:59 nuvem_ruscher/ui/pages/logs.py:60
+msgid "Copy the logs shown"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:79
+msgid "Server logs"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:86
+msgid "Nothing here yet"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:87
+msgid "Logs appear when the server is on."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/logs.py:176
+msgid "Logs copied"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:25
+msgid "How phones and computers reach your cloud, at home and away."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:32
+msgid "At home"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:32
+msgid "Phones on the same Wi-Fi use this address."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:33
+msgid "Home address"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:37 nuvem_ruscher/ui/pages/network.py:135
+#: nuvem_ruscher/ui/widgets/phone.py:98
+msgid "Copy address"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:43
+msgid "Away from home"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:44
+msgid ""
+"With Tailscale (free), phones upload photos from anywhere, securely, without "
+"opening ports."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:46
+msgid "Checking Tailscale…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:55 nuvem_ruscher/ui/wizard/pages.py:119
+msgid "Firewall"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:58
+#, python-brace-format
+msgid "Open port {p} for the home network"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:59
+msgid ""
+"Only for home networks and Tailscale. Use it if a phone cannot find the "
+"server."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:71
+msgid "Advanced"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:71
+msgid "Port and addresses used by the server"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:72
+msgid "Server port"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:75
+msgid "On this computer"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:99
+msgid "This computer is not connected to a network."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:106
+msgid "Open again"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:114
+msgid "Tailscale is not installed"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:116
+msgid ""
+"Install it from the software store (package “tailscale”), sign in to your "
+"account and also install the Tailscale app on the phone."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:120
+msgid "Learn more"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:126
+msgid "Tailscale is turned off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:127
+msgid ""
+"Turn on Tailscale on this computer (“sudo tailscale up”) and sign in to your "
+"account."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:131
+msgid "Ready to use away from home"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:136 nuvem_ruscher/ui/pages/network.py:157
+#: nuvem_ruscher/ui/widgets/phone.py:155
+msgid "Address copied"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:139
+msgid "Show QR"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/network.py:163
+msgid "Port opened to the home network"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/phones.py:18 nuvem_ruscher/ui/shell.py:23
+msgid "Phones"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/phones.py:19
+msgid ""
+"Two steps with the phone camera. Each person signs in with their own account."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:65
+#, python-brace-format
+msgid "{size} total"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:66
+#, python-brace-format
+msgid "{size} used"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:67
+#, python-brace-format
+msgid "{size} available"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:78
+msgid ""
+"Where your photos live, how your drives protect them, and whether they are "
+"healthy."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:87
+msgid "Cloud storage"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:87
+msgid "The folder that holds every photo and video."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:89
+msgid "Open the photo folder"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:93 nuvem_ruscher/ui/wizard/pages.py:412
+msgid "After a restart"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:95
+msgid "Mount the photo disk when the computer starts"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:96
+msgid "The server works right after a restart, even before anyone logs in."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:119 nuvem_ruscher/ui/wizard/pages.py:345
+msgid "System disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:121 nuvem_ruscher/ui/wizard/pages.py:343
+msgid "External USB disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:123 nuvem_ruscher/ui/wizard/pages.py:345
+msgid "Internal disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:127
+msgid "Photo disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:140
+msgid "Connect the photo disk to see this option."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:145
+msgid "Already configured in the system (/etc/fstab), outside Nuvem Ruscher."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:150
+msgid "This type of disk cannot be mounted automatically at startup."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:175 nuvem_ruscher/ui/wizard/pages.py:232
+msgid "Done!"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:175
+msgid "Automatic mounting turned off"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:191
+msgid "Turn off automatic mounting?"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:193
+msgid ""
+"After a restart, the server will only start when you log in and the disk "
+"appears. Only the line created by Nuvem Ruscher is removed from /etc/fstab "
+"(with a backup copy)."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/storage.py:206
+msgid "The photo folder is not available right now."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:39
+msgid "healthy"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:41
+msgid "starting"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:43
+msgid "unhealthy"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:45
+msgid "restarting"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:47
+msgid "not created"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:49
+msgid "stopped"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:56
+#, python-brace-format
+msgid "CPU {cpu}% · RAM {mem}"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:65 nuvem_ruscher/ui/shell.py:36
+#: nuvem_ruscher/ui/shell.py:41
+msgid "System"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:66
+msgid ""
+"The parts that make up the server and the technical details, for when you "
+"need them."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:74
+msgid "Components"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:74
+msgid "The four parts of Immich, each in its own container."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:75
+msgid "Restart server"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:85
+msgid "Versions"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:95
+msgid "Service, configuration and data folders"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:98
+msgid "System service"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:99
+msgid "Configuration"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:100
+msgid "Server files (Docker Compose)"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:102
+msgid "Photos and videos"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:103
+msgid "Service logs"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:113
+msgid "Remove"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:115
+msgid "Uninstall the server"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:116
+msgid ""
+"Removes Immich from this computer. Your photos and videos are not deleted."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:119
+msgid "Uninstall…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:169
+msgid "Also delete the downloaded components (frees about 5 GB)"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:173
+#, python-brace-format
+msgid ""
+"Your photos and videos stay in <b>{photos}</b>, untouched.\n"
+"\n"
+"The database (albums, people, favorites) is kept in <b>{db}</b> so a future "
+"reinstallation can reuse everything."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:182
+msgid "Remove the Immich server?"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:184
+msgid "Remove server"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:196
+msgid "Server removed. Your photos are still on the disk."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/system.py:201
+msgid "Removing the server…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:25
+msgid "Downloading the new version"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:26
+msgid "Backing up the database"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:27
+msgid "Saving a snapshot of the database"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:28
+msgid "Switching versions"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:29
+msgid "Checking that everything is fine"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:47
+msgid "Updating Immich"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:59
+#, python-brace-format
+msgid "Updating to {v}. Your server will be offline for a few minutes."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:112
+#, python-brace-format
+msgid "Fetching the files for {v}…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:119 nuvem_ruscher/ui/wizard/pages.py:894
+#, python-brace-format
+msgid "{percent}% · {done} downloaded"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:129
+msgid "New components downloaded"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:146
+msgid "The new version did not respond. Going back to the previous one…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:173
+#, python-brace-format
+msgid "Updated to {v}!"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:174
+msgid "A backup and a copy of the previous database were kept, to be safe."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:196 nuvem_ruscher/ui/shell.py:39
+msgid "Updates"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:197
+msgid ""
+"New versions of Immich, installed safely: backup first, automatic rollback "
+"if anything fails."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:208
+msgid "Check now"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:209
+msgid "Update safely"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:218
+msgid "What’s new"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:223
+msgid "How the update protects your data"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:225
+msgid ""
+"Before switching versions, we back up the database and take a snapshot of "
+"it. Then we check that the server responded. If it does not, everything goes "
+"back to the previous version by itself."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:245
+msgid "Looking for updates…"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:257
+msgid "Could not check right now"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:258
+msgid "No connection to GitHub. Try again later."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:272
+msgid "You are on the latest version"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:280
+#, python-brace-format
+msgid "Version {v} is available"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:282
+#, python-brace-format
+msgid "You are on {cur}. Released on {date}."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:290
+msgid "Important changes in this update"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:291
+msgid "Read before updating. They usually require nothing from you."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:296
+msgid "This is a new major version: the change is bigger than usual."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:306
+msgid "View on GitHub"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:330
+msgid "Connect the photo disk"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:331
+msgid "The update needs the server to be on."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:332 nuvem_ruscher/ui/wizard/pages.py:104
+msgid "Got it"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:338
+#, python-brace-format
+msgid "Update to {v}?"
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:340
+#, python-brace-format
+msgid ""
+"The server will be offline for a few minutes. First we back up the database; "
+"if something goes wrong, everything goes back to {cur} by itself."
+msgstr ""
+
+#: nuvem_ruscher/ui/pages/updates.py:343
+msgid "Update"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:22
+msgid "Home"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:24
+msgid "Accounts"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:25
+msgid "Sharing"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:29
+msgid "Your data"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:98
+#, python-brace-format
+msgid "{page} — needs attention"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:142 nuvem_ruscher/ui/shell.py:143
+msgid "Show pages"
+msgstr ""
+
+#: nuvem_ruscher/ui/shell.py:146
+msgid "Main menu"
 msgstr ""
 
 #: nuvem_ruscher/ui/widgets/phone.py:18
@@ -1538,6 +1873,10 @@ msgstr ""
 msgid "Step {n} of {total}"
 msgstr ""
 
+#: nuvem_ruscher/ui/wizard/__init__.py:28
+msgid "Menu"
+msgstr ""
+
 #: nuvem_ruscher/ui/wizard/pages.py:65
 msgid "Welcome"
 msgstr ""
@@ -1595,10 +1934,6 @@ msgstr ""
 msgid "Internet connection"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:119
-msgid "Firewall"
-msgstr ""
-
 #: nuvem_ruscher/ui/wizard/pages.py:127 nuvem_ruscher/ui/wizard/pages.py:128
 msgid "Check"
 msgstr ""
@@ -1621,10 +1956,6 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:166
-msgid "Checking…"
-msgstr ""
-
 #: nuvem_ruscher/ui/wizard/pages.py:212
 msgid ""
 "Fix the marked items to continue. Each one has a button that does it for you."
@@ -1636,10 +1967,6 @@ msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:223
 msgid "Applying the fix… (the administrator password may be requested)"
-msgstr ""
-
-#: nuvem_ruscher/ui/wizard/pages.py:255 nuvem_ruscher/ui/wizard/pages.py:256
-msgid "Storage"
 msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:259
@@ -1677,25 +2004,12 @@ msgid ""
 "look again."
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:343
-msgid "External USB disk"
-msgstr ""
-
-#: nuvem_ruscher/ui/wizard/pages.py:345
-msgid "System disk"
-msgstr ""
-
-#: nuvem_ruscher/ui/wizard/pages.py:345
-msgid "Internal disk"
-msgstr ""
-
 #: nuvem_ruscher/ui/wizard/pages.py:356
 msgid "Disk space used"
 msgstr ""
 
-#: nuvem_ruscher/ui/wizard/pages.py:360
-#, python-brace-format
-msgid "{free} free of {total}"
+#: nuvem_ruscher/ui/wizard/pages.py:368
+msgid "Photo folder"
 msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:373 nuvem_ruscher/ui/wizard/pages.py:374
@@ -1708,10 +2022,6 @@ msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:383
 msgid "They will be reused — nothing will be deleted."
-msgstr ""
-
-#: nuvem_ruscher/ui/wizard/pages.py:412
-msgid "After a restart"
 msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:414
@@ -1830,6 +2140,10 @@ msgid "Detected from the system"
 msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:578
+msgid "Immich version"
+msgstr ""
+
+#: nuvem_ruscher/ui/wizard/pages.py:578
 msgid "Looking for versions…"
 msgstr ""
 
@@ -1917,10 +2231,6 @@ msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:699
 msgid "Registering the service in the system"
-msgstr ""
-
-#: nuvem_ruscher/ui/wizard/pages.py:700 nuvem_ruscher/ui/wizard/pages.py:929
-msgid "Starting…"
 msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:701
@@ -2095,6 +2405,10 @@ msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:1157
 msgid "The server did not respond. Wait a few seconds and try again."
+msgstr ""
+
+#: nuvem_ruscher/ui/wizard/pages.py:1181 nuvem_ruscher/ui/wizard/pages.py:1182
+msgid "Phone"
 msgstr ""
 
 #: nuvem_ruscher/ui/wizard/pages.py:1184

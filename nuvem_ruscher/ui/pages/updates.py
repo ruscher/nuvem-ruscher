@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from gi.repository import Adw, GLib, Gtk
 
@@ -10,12 +11,15 @@ from nuvem_ruscher.async_utils import Operation, run_async
 from nuvem_ruscher.backend.base import Backend, HelperResult
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.helper_protocol import HelperEvent, human_error
-from nuvem_ruscher.core.releases import Release, UpdateInfo, br_date, simple_markdown_to_pango, update_info
+from nuvem_ruscher.core.releases import Release, UpdateInfo, local_date, simple_markdown_to_pango, update_info
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.i18n import N_, _
 from nuvem_ruscher.ui.common import StatusBlock, confirm, label, open_uri, pill_button, status_icon
-from nuvem_ruscher.ui.dashboard.monitor import ServerMonitor
+from nuvem_ruscher.ui.page import Page
 from nuvem_ruscher.ui.widgets.rows import InstallStep
+
+if TYPE_CHECKING:
+    from nuvem_ruscher.ui.shell import AppContext
 
 UPDATE_STEPS = (
     ("download", N_("Downloading the new version")),
@@ -186,20 +190,18 @@ class UpdateDialog(Adw.Dialog):
         self.on_finished(self._ok)
 
 
-class UpdatesPage(Gtk.Box):
-    def __init__(self, backend: Backend, monitor: ServerMonitor) -> None:
-        super().__init__(orientation=Gtk.Orientation.VERTICAL)
-        self.backend = backend
-        self.monitor = monitor
+class UpdatesPage(Page):
+    def __init__(self, ctx: AppContext) -> None:
+        super().__init__(
+            _("Updates"),
+            _("New versions of Immich, installed safely: backup first, automatic rollback if anything fails."),
+            "software-update-available-symbolic",
+            "green",
+        )
+        self.ctx = ctx
+        self.backend = ctx.backend
+        self.monitor = ctx.monitor
         self.info: UpdateInfo | None = None
-        scroller = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, vexpand=True)
-        self.body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
-        self.body.set_margin_top(24)
-        self.body.set_margin_bottom(24)
-        self.body.set_margin_start(16)
-        self.body.set_margin_end(16)
-        scroller.set_child(Adw.Clamp(maximum_size=760, child=self.body))
-        self.append(scroller)
 
         self.status = StatusBlock("software-update-available-symbolic")
         buttons = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER)
@@ -209,12 +211,12 @@ class UpdatesPage(Gtk.Box):
         buttons.append(self.check_button)
         buttons.append(self.update_button)
         self.status.set_child(buttons)
-        self.body.append(self.status)
+        self.add(self.status)
 
         self.breaking = Adw.PreferencesGroup(visible=False)
-        self.body.append(self.breaking)
+        self.add(self.breaking)
         self.notes = Adw.PreferencesGroup(title=_("What’s new"), visible=False)
-        self.body.append(self.notes)
+        self.add(self.notes)
         self._dynamic: list[tuple[Adw.PreferencesGroup, Gtk.Widget]] = []
         explain = Adw.PreferencesGroup()
         row = Adw.ActionRow(
@@ -228,8 +230,12 @@ class UpdatesPage(Gtk.Box):
         row.set_subtitle_lines(6)
         row.add_prefix(Gtk.Image.new_from_icon_name("security-high-symbolic"))
         explain.add(row)
-        self.body.append(explain)
+        self.add(explain)
         self._loading = False
+
+    def on_shown(self) -> None:
+        if self.info is None:
+            self.refresh()
 
     def refresh(self, force: bool = False) -> None:
         if self._loading:
@@ -273,7 +279,7 @@ class UpdatesPage(Gtk.Box):
         self.status.set_icon_name("software-update-available-symbolic")
         self.status.set_title(_("Version {v} is available").format(v=latest.tag))
         self.status.set_description(
-            _("You are on {cur}. Released on {date}.").format(cur=info.current, date=br_date(latest.published))
+            _("You are on {cur}. Released on {date}.").format(cur=info.current, date=local_date(latest.published))
         )
         self.update_button.set_visible(True)
 
@@ -295,7 +301,7 @@ class UpdatesPage(Gtk.Box):
 
         self.notes.set_visible(True)
         for release in info.pending[:8]:
-            expander = Adw.ExpanderRow(title=release.tag, subtitle=br_date(release.published))
+            expander = Adw.ExpanderRow(title=release.tag, subtitle=local_date(release.published))
             expander.add_row(self._text_row(simple_markdown_to_pango(release.body), markup=True))
             link = Adw.ActionRow(title=_("View on GitHub"), activatable=True)
             link.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))

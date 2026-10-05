@@ -23,7 +23,7 @@ from nuvem_ruscher.constants import HEALTH_TIMEOUT_S
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.helper_protocol import HelperEvent, human_error
 from nuvem_ruscher.core.immich_api import ApiError
-from nuvem_ruscher.core.releases import Release, br_date
+from nuvem_ruscher.core.releases import Release, local_date
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.core.validation import is_valid_email, password_strength
 from nuvem_ruscher.i18n import N_, _
@@ -653,7 +653,7 @@ class ConfigurePage(WizardPage):
             if index == 0:
                 labels.append(_("{tag} — latest").format(tag=release.tag))
             else:
-                labels.append(f"{release.tag} ({br_date(release.published)})")
+                labels.append(f"{release.tag} ({local_date(release.published)})")
         self.version.set_model(Gtk.StringList.new(labels))
         self.version.set_selected(0)
         self.version.set_subtitle(_("We recommend the latest one"))

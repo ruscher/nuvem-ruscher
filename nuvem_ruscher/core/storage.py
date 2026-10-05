@@ -9,6 +9,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from nuvem_ruscher.core.numbers import decimal
 from nuvem_ruscher.i18n import _
 
 IMMICH_FOLDERS = ("library", "upload", "thumbs", "encoded-video", "profile", "backups")
@@ -275,7 +276,7 @@ def detect_library(path: str) -> LibraryInfo:
 
 
 def human_size(num_bytes: float, binary: bool = False) -> str:
-    """Tamanho legível em pt-BR.
+    """Tamanho legível, no formato numérico do idioma do usuário.
 
     Base 1000 para discos (como os gerenciadores de arquivos); ``binary=True`` para
     memória, que o sistema mostra em base 1024 (46 GB, e não 49,4 GB).
@@ -287,8 +288,7 @@ def human_size(num_bytes: float, binary: bool = False) -> str:
         if abs(value) < base or unit == units[-1]:
             if unit == "B":
                 return f"{int(value)} B"
-            text = f"{value:.1f}" if value < 100 else f"{value:.0f}"
-            return f"{text.replace('.', ',')} {unit}"
+            return f"{decimal(value, 1 if value < 100 else 0)} {unit}"
         value /= base
     return f"{value} PB"  # pragma: no cover
 

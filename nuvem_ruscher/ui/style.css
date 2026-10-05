@@ -126,3 +126,100 @@
 .big-number {
   font-feature-settings: "tnum";
 }
+
+/* ===== v2: barra lateral, faixas de página e cartões ===================================
+   Inspirado na estrutura do build_iso (big-comm), com identidade própria: céu → verde-água.
+   Só variáveis do libadwaita: claro, escuro e alto contraste funcionam sozinhos. */
+
+/* Cores por seção (quadrados dos ícones) */
+.tint-blue   { --tint: #3584e4; }
+.tint-teal   { --tint: #2190a4; }
+.tint-green  { --tint: #2ec27e; }
+.tint-violet { --tint: #9141ac; }
+.tint-orange { --tint: #e66100; }
+.tint-yellow { --tint: #c88800; }
+.tint-red    { --tint: #e01b24; }
+.tint-slate  { --tint: #5e6c84; }
+
+.icon-tile {
+  color: #ffffff;
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--tint) 78%, #ffffff), var(--tint));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000000 10%, transparent);
+}
+.icon-tile-small  { min-width: 28px; min-height: 28px; border-radius: 8px; }
+.icon-tile-medium { min-width: 38px; min-height: 38px; border-radius: 11px; }
+.icon-tile-large  { min-width: 56px; min-height: 56px; border-radius: 16px; }
+
+/* Barra lateral */
+.nr-sidebar .navigation-sidebar row {
+  min-height: 42px;
+  border-radius: 10px;
+  margin: 1px 0;
+}
+.nr-sidebar .navigation-sidebar row:selected .icon-tile {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 55%, transparent);
+}
+.nav-section {
+  margin: 14px 12px 4px 12px;
+  opacity: 0.6;
+}
+.nav-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85em;
+}
+.nav-badge.warning { background: color-mix(in srgb, var(--warning-color) 22%, transparent); color: var(--warning-color); }
+.nav-badge.error   { background: color-mix(in srgb, var(--error-color) 20%, transparent); color: var(--error-color); }
+.nav-badge.accent  { background: color-mix(in srgb, var(--accent-bg-color) 20%, transparent); color: var(--accent-color); }
+
+/* Faixa de título de cada página */
+.page-hero {
+  padding: 26px 32px 24px 32px;
+  border-bottom: 1px solid color-mix(in srgb, var(--tint, var(--accent-color)) 20%, transparent);
+  background-image: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--tint, var(--accent-bg-color)) 16%, transparent),
+    color-mix(in srgb, var(--tint, var(--accent-bg-color)) 5%, transparent) 60%,
+    color-mix(in srgb, #2190a4 9%, transparent)
+  );
+}
+.hero-blue   { --tint: #3584e4; }
+.hero-teal   { --tint: #2190a4; }
+.hero-green  { --tint: #2ec27e; }
+.hero-violet { --tint: #9141ac; }
+.hero-orange { --tint: #e66100; }
+.hero-yellow { --tint: #c88800; }
+.hero-red    { --tint: #e01b24; }
+.hero-slate  { --tint: #5e6c84; }
+.hero-description { opacity: 0.8; }
+.page-body { margin: 22px 24px 32px 24px; }
+
+/* Pílula de estado (ícone + texto) */
+.state-pill {
+  padding: 2px 10px 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+.state-pill.ok      { background: color-mix(in srgb, var(--success-color) 16%, transparent); }
+.state-pill.warning { background: color-mix(in srgb, var(--warning-color) 18%, transparent); }
+.state-pill.error   { background: color-mix(in srgb, var(--error-color) 16%, transparent); }
+.state-pill.pending { background: color-mix(in srgb, var(--accent-bg-color) 14%, transparent); }
+
+/* Cartões de saúde da página Início */
+.health-tile {
+  padding: 14px 16px;
+  border-radius: 14px;
+}
+.health-tile:hover {
+  background-color: color-mix(in srgb, var(--accent-bg-color) 7%, var(--card-bg-color));
+}
+.quick-action { padding-left: 16px; padding-right: 18px; }
+
+/* Local das fotos */
+.location-card { padding: 18px 20px; }
+.location-card levelbar trough, .location-card levelbar block { min-height: 8px; border-radius: 99px; }
+image.accent { color: var(--accent-color); }
+
+/* Registros */
+.log-frame { padding: 0; }
