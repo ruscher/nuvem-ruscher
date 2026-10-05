@@ -39,6 +39,11 @@ Caracteres **recusados** em caminhos (Python e Bash): controle/nova linha, `"`, 
 e áreas do sistema (`/`, `/etc`, `/usr`, `/boot`, `/proc`, `/sys`, `/dev`,
 `/var/lib/docker`, `/var/lib/nuvem-ruscher`…).
 
+A pasta das fotos é do usuário, mas o helper (root) cria a pasta, entrega ao usuário e
+grava backups em `backups/nuvem-ruscher/` dentro dela. Por isso o helper recusa
+(`storage-unsafe`) um caminho de fotos que passe por link simbólico e uma pasta de
+backups que seja link: senão essas operações de root iriam parar em outro lugar do sistema.
+
 ## Montagem persistente no boot (fstab)
 
 **Por que:** `/run/media/…` só existe depois que a sessão monta o disco. No boot, antes

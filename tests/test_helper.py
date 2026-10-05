@@ -265,6 +265,15 @@ class TestValidation:
         assert sim.error(proc) in ("invalid-argument", "storage-unsafe")
         assert not sim.conf.exists()
 
+    def test_rejects_symlink_inside_photo_path(self, sim):
+        """Como root, o helper cria a pasta e a entrega ao usuário: não pode ser em /etc."""
+        (sim.root / "etc" / "systemd").mkdir()
+        Path(sim.mountpoint, "atalho").symlink_to(sim.root / "etc" / "systemd")
+        proc = sim.run("setup", "v3.2.4", f"{sim.mountpoint}/atalho/fotos", "America/Sao_Paulo", "cpu", "cpu")
+        assert sim.error(proc) == "storage-unsafe"
+        assert not (sim.root / "etc" / "systemd" / "fotos").exists()
+        assert not sim.conf.exists()
+
     def test_simulation_refused_under_pkexec(self, sim):
         proc = sim.run("setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu", PKEXEC_UID="1000")
         assert sim.error(proc) == "not-authorized"
@@ -361,6 +370,16 @@ class TestService:
         assert path.parent == Path(sim.photos) / "backups" / "nuvem-ruscher"
         assert path.name.endswith("-v3.2.4.sql.gz")
         subprocess.run(["gzip", "-t", str(path)], check=True)
+        assert list((sim.root / "var" / "lib" / "nuvem-ruscher" / "tmp").iterdir()) == []
+
+    def test_backup_does_not_follow_symlink_in_photo_folder(self, sim):
+        sim.setup()
+        target = sim.root / "etc" / "alvo"
+        target.mkdir()
+        Path(sim.photos, "backups").symlink_to(target)
+        proc = sim.run("backup-db")
+        assert sim.error(proc) == "storage-unsafe"
+        assert list(target.iterdir()) == []
         assert list((sim.root / "var" / "lib" / "nuvem-ruscher" / "tmp").iterdir()) == []
 
 

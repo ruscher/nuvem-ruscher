@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 #
 # nuvem-ruscher-helper — ações privilegiadas do Nuvem Ruscher.
 #
@@ -784,6 +784,11 @@ cmd_setup() {
     if [[ -L $upload ]]; then
         die storage-unsafe "a pasta das fotos é um link simbólico"
     fi
+    # Como root, a pasta é criada e entregue ao usuário: um link no meio do caminho
+    # faria isso acontecer em outro lugar do sistema.
+    if [[ $(realpath -e -- "$parent") != "$parent" ]]; then
+        die storage-unsafe "o caminho da pasta das fotos passa por um link simbólico"
+    fi
     if [[ ! -d $upload ]]; then
         mkdir -- "$upload"
         chown -- "${TARGET_UID}:${TARGET_GID}" "$upload" 2>/dev/null || true
@@ -942,7 +947,16 @@ do_backup_db() {
     fi
     step copy
     dest="${upload}/backups/nuvem-ruscher"
+    # A pasta das fotos é do usuário: não seguir um link plantado nela.
+    if [[ -L ${upload}/backups || -L $dest ]]; then
+        rm -f -- "$tmp"
+        die storage-unsafe "a pasta de backups é um link simbólico"
+    fi
     mkdir -p -- "$dest"
+    if [[ $(realpath -e -- "$dest") != "$dest" ]]; then
+        rm -f -- "$tmp"
+        die storage-unsafe "a pasta de backups é um link simbólico"
+    fi
     if [[ -e ${dest}/${name} ]]; then
         rm -f -- "$tmp"
         die backup-failed "já existe ${dest}/${name}"
