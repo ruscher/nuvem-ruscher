@@ -1,8 +1,15 @@
 # shellcheck shell=bash
-# Mensagens do pacote nuvem-ruscher. Nunca removem dados: só avisam.
+# Mensagens do pacote nuvem-ruscher. Nunca removem dados nem mexem no servidor: só avisam.
+# Caches de ícones e de .desktop são atualizados pelos hooks do pacman; o polkitd
+# relê as policies sozinho. Por isso nada mais é executado aqui.
 
 post_install() {
-  echo ":: Abra o \"Nuvem Ruscher\" no menu de aplicativos para configurar o servidor de fotos."
+  if [[ -f /etc/systemd/system/nuvem-ruscher-immich.service ]]; then
+    echo ":: O servidor de fotos já configurado continua como estava."
+    echo "   Abra o \"Nuvem Ruscher\" no menu de aplicativos para ver o painel."
+  else
+    echo ":: Abra o \"Nuvem Ruscher\" no menu de aplicativos para configurar o servidor de fotos."
+  fi
 }
 
 post_upgrade() {
