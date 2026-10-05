@@ -45,7 +45,7 @@ céu, `requires`/`recommends` de memória (6 GB) e tela. Validação:
 `appstreamcli validate --no-net`.
 
 > Observação: o BigLinux configura `PKGEXT='.pkg.tar'` (sem compressão) em `/etc/makepkg.conf`,
-> então o arquivo gerado é `nuvem-ruscher-1.0.0-1-any.pkg.tar`.
+> então o arquivo gerado é `nuvem-ruscher-2.0.0-1-any.pkg.tar`.
 
 ## Instalação
 

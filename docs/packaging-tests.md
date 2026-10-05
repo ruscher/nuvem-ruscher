@@ -61,3 +61,14 @@ horário de início, `ping` respondendo.
 ## Nix
 
 Não testado: sem Nix nesta máquina (ver packaging-nix.md).
+
+## v2.0.0 (05/10/2026)
+
+| Verificação | Resultado |
+|---|---|
+| `make test` | 395 passed (helper em sandbox, migração, RAID, discos, SMART, contas, simulador, fumaça da interface, i18n) |
+| `make lint` | limpo (ruff, shellcheck, desktop-file-validate, appstreamcli) |
+| `make pot` + `make update-po` | 969 mensagens em pt_BR, nenhuma pendente ou aproximada |
+| `makepkg -f` | gera `nuvem-ruscher-2.0.0-1-any.pkg.tar`; `check()`: 395 passed |
+| `namcap` | sem erros; só os avisos esperados de dependências chamadas em tempo de execução (`docker`, `rsync`, `systemd`…) |
+| Instalação do pacote v2 nesta máquina | **não feita** (aguarda autorização; o Immich real não foi tocado) |

@@ -5,7 +5,7 @@
 ```bash
 cd packaging
 makepkg -si          # gera e instala
-makepkg -f           # só gera nuvem-ruscher-1.0.0-1-any.pkg.tar (o BigLinux usa PKGEXT sem compressão)
+makepkg -f           # só gera nuvem-ruscher-2.0.0-1-any.pkg.tar (o BigLinux usa PKGEXT sem compressão)
 ```
 
 ## Como o PKGBUILD funciona
