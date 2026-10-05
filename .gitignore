@@ -9,3 +9,9 @@ __pycache__/
 /packaging/*.tar.gz
 /po/*.mo
 /screenshots/tmp/
+/packaging/*.log
+# Nix
+/result
+/result-*
+.direnv/
+.envrc.local
