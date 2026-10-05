@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-"""Lançador do Nuvem Ruscher (código-fonte ou instalado em /usr/share/nuvem-ruscher)."""
+"""Lançador do Nuvem Ruscher.
+
+Procura o código ao lado do lançador: no repositório (``bin/../nuvem_ruscher``) ou
+instalado (``<prefixo>/bin/../share/nuvem-ruscher``), seja o prefixo ``/usr`` ou o Nix
+Store. Nunca cai numa cópia de outro prefixo, para não misturar versões.
+"""
 
 import os
 import sys
 
-HERE = os.path.dirname(os.path.realpath(__file__))
-for candidate in (os.path.dirname(HERE), "/usr/share/nuvem-ruscher"):
+PREFIX = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+for candidate in (PREFIX, os.path.join(PREFIX, "share", "nuvem-ruscher")):
     if os.path.isdir(os.path.join(candidate, "nuvem_ruscher")):
         sys.path.insert(0, candidate)
         break
+else:
+    sys.exit(f"nuvem-ruscher: código do aplicativo não encontrado em {PREFIX}")
 
 from nuvem_ruscher.main import main  # noqa: E402
 

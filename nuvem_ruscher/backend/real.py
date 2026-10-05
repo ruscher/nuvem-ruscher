@@ -27,7 +27,6 @@ from nuvem_ruscher.constants import (
     CONTAINER_SERVER,
     CONTAINERS,
     GITHUB_RELEASES_API,
-    HELPER_PATH,
     IMMICH_PORT,
     RELEASE_DOWNLOAD,
     SERVICE_NAME,
@@ -41,6 +40,7 @@ from nuvem_ruscher.core.helper_protocol import parse_line, pkexec_error_code
 from nuvem_ruscher.core.immich_api import ImmichClient, ServerStats
 from nuvem_ruscher.core.releases import Release, ReleaseCache, parse_releases
 from nuvem_ruscher.core.validation import ValidationError, validate_photo_path
+from nuvem_ruscher.paths import helper_path
 
 
 class HelperCall(Operation):
@@ -294,10 +294,11 @@ class RealBackend(Backend):
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
     ) -> Operation:
-        if not os.access(HELPER_PATH, os.X_OK):
-            on_done(HelperResult(False, "helper-missing", f"{HELPER_PATH} não encontrado"))
+        helper = str(helper_path())
+        if not os.access(helper, os.X_OK):
+            on_done(HelperResult(False, "helper-missing", f"{helper} não encontrado"))
             return _Finished()
-        return HelperCall(["pkexec", HELPER_PATH, action, *args], on_event, on_done)
+        return HelperCall(["pkexec", helper, action, *args], on_event, on_done)
 
     # --- Docker ------------------------------------------------------------------------
     def pull(

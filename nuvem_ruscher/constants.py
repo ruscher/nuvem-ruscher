@@ -9,6 +9,7 @@ STACK_DIR: Final = "/var/lib/nuvem-ruscher/immich"
 DB_DIR: Final = f"{STACK_DIR}/postgres"
 CONF_FILE: Final = "/etc/nuvem-ruscher/nuvem-ruscher.conf"
 SERVICE_NAME: Final = "nuvem-ruscher-immich.service"
+# Helper do pacote do pacman. Instalado em outro prefixo (Nix), veja paths.helper_path().
 HELPER_PATH: Final = "/usr/lib/nuvem-ruscher/nuvem-ruscher-helper"
 COMPOSE_PROJECT: Final = "immich"
 

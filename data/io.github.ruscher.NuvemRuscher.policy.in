@@ -8,6 +8,8 @@
   (quem está no grupo docker já pode parar containers: não há ganho de privilégio).
   Todo o resto (fstab, pacotes, configuração, atualização, desinstalação) pede a senha
   de administrador. Veja docs/04-armazenamento-e-seguranca.md.
+  O exec.path é preenchido no "make install" com o caminho real do helper no prefixo
+  usado (o pkexec compara o caminho já resolvido, sem links simbólicos).
 -->
 <policyconfig>
   <vendor>Nuvem Ruscher</vendor>
@@ -24,7 +26,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/nuvem-ruscher/nuvem-ruscher-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">@HELPER_PATH@</annotate>
   </action>
 
   <action id="io.github.ruscher.NuvemRuscher.start">
@@ -37,7 +39,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/nuvem-ruscher/nuvem-ruscher-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">@HELPER_PATH@</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">start</annotate>
   </action>
 
@@ -51,7 +53,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/nuvem-ruscher/nuvem-ruscher-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">@HELPER_PATH@</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">stop</annotate>
   </action>
 
@@ -65,7 +67,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/nuvem-ruscher/nuvem-ruscher-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">@HELPER_PATH@</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">restart</annotate>
   </action>
 </policyconfig>
