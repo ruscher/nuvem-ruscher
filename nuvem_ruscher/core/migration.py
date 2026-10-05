@@ -175,7 +175,8 @@ def assess(
     if chosen is Mode.COPY:
         if destination.exists and not destination.empty and destination.resumable_from != source:
             problems.append("dest-not-empty")
-        if destination.free and destination.free < space_needed(stats.bytes):
+        # Espaço livre 0 (disco cheio, ou statvfs falhou) também recusa: sem saber, não começa.
+        if destination.parent_exists and destination.free < space_needed(stats.bytes):
             problems.append("no-space")
         if family is FsFamily.FAT and stats.largest > FAT_MAX_FILE:
             problems.append("fat-large-file")
@@ -185,8 +186,9 @@ def assess(
             warnings.append("same-fs-copy")
         if destination.resumable_from == source:
             warnings.append("resume")
-    if chosen is Mode.ADOPT and destination.files and stats.files and destination.files < stats.files * 0.98:
-        warnings.append("adopt-fewer-files")
+    # Mesma regra do helper (mig_check_adopt): menos de 98% dos arquivos não é uma cópia completa.
+    if chosen is Mode.ADOPT and stats.files and destination.files < stats.files * 0.98:
+        problems.append("adopt-incomplete")
     if stats.errors:
         warnings.append("source-unreadable-entries")
 

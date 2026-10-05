@@ -23,6 +23,14 @@ if [[ " $* " == *" -T "* ]]; then
     esac
     exit 0
 fi
+if [[ " $* " == *" -rn -o TARGET -S "* ]]; then
+    # SIM_MOUNTED_UUIDS="u1 u2": sistemas de arquivos montados em outro disco.
+    source_tag=${*: -1}
+    for uuid in ${SIM_MOUNTED_UUIDS:-}; do
+        [[ $source_tag == "UUID=${uuid}" ]] && echo /mnt/sim-other
+    done
+    exit 0
+fi
 if [[ " $* " == *" --verify "* ]]; then
     # Na sandbox, o UUID e o alvo não existem; reprovamos só erros de análise
     # (é o que pega um espaço mal escapado) ou quando o teste pedir.

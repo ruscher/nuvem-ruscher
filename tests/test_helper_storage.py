@@ -178,6 +178,11 @@ class TestCopy:
         assert state(sim)["STATE"] == "rolled-back"
         assert (sim.root / "state" / "service").read_text() == "active"
         assert tree(sim.photos) == tree(dest)  # a cópia nova fica, para análise
+        # O servidor chegou a usar a pasta nova: ela não pode mais ser "retomada" com --delete
+        # (apagaria envios feitos nela). Tentar de novo pede para adotar.
+        assert not Path(dest, ".nuvem-ruscher-migration").exists()
+        assert sim.error(sim.run("migrate-storage", "copy", dest)) == "dest-not-empty"
+        assert sim.results(sim.run("migrate-storage", "adopt", dest))["migration"] == "ok"
 
     def test_ntfs_destination_uses_portable_options(self, sim):
         installed(sim)
@@ -228,6 +233,16 @@ class TestRenameAndAdopt:
         assert proc.returncode == 0, proc.stdout
         assert env_values(sim.conf)["UPLOAD_LOCATION"] == str(dest)
 
+    def test_same_folder_under_another_path_is_refused(self, sim):
+        installed(sim)
+        alias = Path(new_disk(sim), "Atalho")
+        alias.mkdir()
+        for folder in ("library", "upload", "thumbs", "encoded-video", "profile", "backups"):
+            Path(alias, folder).symlink_to(Path(sim.photos, folder))
+        proc = sim.run("migrate-storage", "adopt", str(alias))
+        assert sim.error(proc) == "storage-unsafe"
+        assert env_values(sim.conf)["UPLOAD_LOCATION"] == sim.photos
+
     def test_adopt_refuses_empty_folder(self, sim):
         installed(sim)
         dest = Path(new_disk(sim), "Vazia")
@@ -268,6 +283,20 @@ class TestRemoveOldCopy:
             proc = sim.run("remove-old-copy", target)
             assert sim.error(proc) in ("invalid-argument", "storage-unsafe")
         assert Path(sim.photos, "library").is_dir()
+
+    def test_refuses_when_the_comparison_fails(self, sim):
+        self.migrated(sim)
+        proc = sim.run("remove-old-copy", sim.photos, SIM_RSYNC_COMPARE_FAIL="1")
+        assert sim.error(proc) == "old-copy-differs"
+        assert tree(sim.photos)  # nada foi apagado
+
+    def test_refuses_the_current_folder_under_another_path(self, sim):
+        dest = self.migrated(sim)
+        shutil.rmtree(dest)
+        Path(dest).symlink_to(sim.photos)  # o "local atual" é a própria cópia antiga
+        proc = sim.run("remove-old-copy", sim.photos)
+        assert sim.error(proc) == "storage-unsafe"
+        assert tree(sim.photos)
 
     def test_refuses_without_completed_migration(self, sim):
         installed(sim)
@@ -371,6 +400,59 @@ class TestRaid:
         proc = sim.run("raid-create", "raid1", "S-SDB,S-SDC", *disks, SIM_ROOT_DISK="")
         assert sim.error(proc) == "disk-protected"
         assert self.destructive_calls(sim) == []
+
+    def test_unmounted_photo_disk_is_protected(self, sim):
+        sim.setup()
+        disks = self.disks(sim, "sdb", "sdc")
+        # O disco das fotos está ligado mas não montado: o udisks usa o rótulo como pasta.
+        label = Path(sim.mountpoint).name
+        proc = sim.run(
+            "raid-create",
+            "raid1",
+            "S-SDB,S-SDC",
+            *disks,
+            SIM_BLKID_TAGS=f"LABEL={label}|{sim.root}/dev/sdc1",
+            SIM_PARENT_sdc1=str(sim.root / "dev/sdc"),
+        )
+        assert sim.error(proc) == "disk-protected"
+        assert self.destructive_calls(sim) == []
+
+    def test_disk_in_fstab_is_protected(self, sim):
+        sim.setup()
+        disks = self.disks(sim, "sdb", "sdc")
+        with sim.fstab.open("a") as fstab:
+            fstab.write("UUID=1234-ABCD /mnt/arquivo ext4 defaults,nofail 0 2\n")
+        proc = sim.run(
+            "raid-create",
+            "raid1",
+            "S-SDB,S-SDC",
+            *disks,
+            SIM_BLKID_TAGS=f"UUID=1234-ABCD|{sim.root}/dev/sdb1",
+            SIM_PARENT_sdb1=str(sim.root / "dev/sdb"),
+        )
+        assert sim.error(proc) == "disk-protected"
+        assert self.destructive_calls(sim) == []
+
+    @pytest.mark.parametrize(
+        ("case", "env"),
+        [
+            ("zfs", {"SIM_TREE_sdc": 'PATH="/dev/sdc1" TYPE="part" FSTYPE="zfs_member" MOUNTPOINT=""'}),
+            (
+                "btrfs member mounted elsewhere",
+                {
+                    "SIM_TREE_sdc": 'PATH="/dev/sdc1" TYPE="part" FSTYPE="btrfs" MOUNTPOINT="" UUID="b7f0"',
+                    "SIM_MOUNTED_UUIDS": "b7f0",
+                },
+            ),
+            ("lsblk fails", {"SIM_LSBLK_FAIL": "1"}),
+        ],
+    )
+    def test_refuses_disks_it_cannot_prove_free(self, sim, case, env):
+        sim.setup()
+        disks = self.disks(sim, "sdb", "sdc")
+        proc = sim.run("raid-create", "raid1", "S-SDB,S-SDC", *disks, **env)
+        assert sim.error(proc) == "disk-in-use", case
+        assert self.destructive_calls(sim) == [], case
 
     def test_raid10_needs_even_disks(self, sim):
         sim.setup()

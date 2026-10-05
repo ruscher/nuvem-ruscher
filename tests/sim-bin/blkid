@@ -2,6 +2,14 @@
 # shellcheck source=_common.sh
 source "${0%/*}/_common.sh"
 sim_log "$@"
+if [[ $1 == -o && $2 == device && $3 == -t ]]; then
+    # SIM_BLKID_TAGS="LABEL=Nome|/dev/x;UUID=…|/dev/y": sistemas de arquivos conhecidos.
+    IFS=';' read -ra tags <<<"${SIM_BLKID_TAGS:-}"
+    for entry in "${tags[@]}"; do
+        [[ ${entry%%|*} == "$4" ]] && echo "${entry#*|}"
+    done
+    exit 0
+fi
 if [[ $1 == -U ]]; then
     [[ $2 == "${SIM_UUID:-F22A6D342A6CF74F}" ]] && { echo /dev/sim1; exit 0; }
     exit 2

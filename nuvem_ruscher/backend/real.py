@@ -506,11 +506,21 @@ class RealBackend(Backend):
             by_id=dsk.stable_ids(dsk.read_by_id()),
             protected={
                 "cloud": conf.upload_location,
+                "old-copy": conf.raw.get("OLD_UPLOAD_LOCATION", ""),
                 "database": conf.db_data_location or "/var/lib/nuvem-ruscher",
                 "docker": "/var/lib/docker",
             },
             holders_of={name: dsk.holders(name) for name in names},
+            photos=dsk.photo_tags(conf.raw),
+            fstab=dsk.fstab_tags(self._fstab_sources()),
         )
+
+    @staticmethod
+    def _fstab_sources() -> list[str]:
+        try:
+            return [entry.source for entry in fstab.parse_fstab(Path("/etc/fstab").read_text(encoding="utf-8"))]
+        except OSError:
+            return []
 
     def raid_arrays(self) -> list[raid.RaidArray]:
         return raid.read_arrays()

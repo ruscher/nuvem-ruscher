@@ -305,7 +305,7 @@ class TestValidation:
         # da cópia antiga, depois de uma migração verificada (remove-old-copy).
         assert recursive == [
             'rm -r --one-file-system --preserve-root=all -- "$SNAPSHOT_DIR"',
-            'rm -r --one-file-system --preserve-root=all -- "${old:?}/${folder:?}"',
+            'rm -r --one-file-system --preserve-root=all -- "./${folder:?}"',
         ]
         assert "down -v" not in text and "--volumes" not in text
         assert not re.search(r"(^|[;&|]\s*)\s*(eval|source|\.)\s", text, re.MULTILINE), "nada de eval/source"

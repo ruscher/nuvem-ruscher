@@ -98,3 +98,35 @@ def test_kind():
         "hdd",
         "ssd",
     )
+
+
+def test_unmounted_photo_disk_is_protected_by_label():
+    # O disco das fotos está ligado mas desmontado: o udisks montaria em /run/media/<usuário>/<rótulo>.
+    tags = disks.photo_tags({"MOUNT_POINT": "/run/media/maria/Antigo"})
+    assert "cloud" in inv(photos=tags)["sdc"].reasons
+    assert not inv(photos=tags)["sdc"].available
+
+
+def test_unmounted_photo_disk_is_protected_by_recorded_uuid():
+    uuid = next(c["uuid"] for d in LSBLK["blockdevices"] for c in d.get("children") or [] if c["name"] == "sdc1")
+    assert "cloud" in inv(photos=disks.photo_tags({"OLD_PHOTO_FS_UUID": uuid}))["sdc"].reasons
+
+
+def test_disk_in_fstab_is_protected():
+    tags = disks.fstab_tags(["LABEL=Antigo", "tmpfs", "UUID=", "/dev/sdb"])
+    assert tags == {"LABEL=Antigo", "/dev/sdb"}
+    found = inv(fstab=tags)
+    assert "fstab" in found["sdc"].reasons and "fstab" in found["sdb"].reasons
+
+
+def test_pool_members_are_in_use():
+    data = json.loads(json.dumps(LSBLK))
+    sdb = next(d for d in data["blockdevices"] if d["name"] == "sdb")
+    sdg = next(d for d in data["blockdevices"] if d["name"] == "sdg")
+    mounted = next(d for d in data["blockdevices"] if d["name"] == "sda")["children"][0]["uuid"]
+    sdb["children"] = [{"name": "sdb1", "path": "/dev/sdb1", "type": "part", "fstype": "zfs_member"}]
+    # Segundo disco de um btrfs montado pelo sda: mesmo UUID, sem ponto de montagem.
+    sdg["children"] = [{"name": "sdg1", "path": "/dev/sdg1", "type": "part", "fstype": "btrfs", "uuid": mounted}]
+    found = {d.name: d for d in disks.inventory(data, protected=PROTECTED)}
+    assert "in-use" in found["sdb"].reasons
+    assert "in-use" in found["sdg"].reasons

@@ -4,6 +4,8 @@
 #   SIM_TREE_<nome>     linhas -P extras (partições montadas, LUKS…)
 #   SIM_ROOT_DISK       disco devolvido como "dono" de qualquer ponto de montagem (lsblk -s)
 #   SIM_DISKS           discos de "lsblk -dnp -o PATH,TYPE"
+#   SIM_PARENT_<nome>   disco por trás de uma partição (lsblk -s), em vez de SIM_ROOT_DISK
+#   SIM_LSBLK_FAIL=1    "lsblk -nP" falha
 # shellcheck source=_common.sh
 source "${0%/*}/_common.sh"
 sim_log "$@"
@@ -15,11 +17,17 @@ case " $* " in
     *" -nsp "*)
         # TYPE,PATH (o caminho por último); o disco do sistema da sandbox é SIM_ROOT_DISK.
         echo "part ${dev}"
-        [[ -n ${SIM_ROOT_DISK-/dev/sim-system} ]] && echo "disk ${SIM_ROOT_DISK-/dev/sim-system}"
+        var="SIM_PARENT_${var_name}"
+        if [[ -n ${!var:-} ]]; then
+            echo "disk ${!var}"
+        elif [[ -n ${SIM_ROOT_DISK-/dev/sim-system} ]]; then
+            echo "disk ${SIM_ROOT_DISK-/dev/sim-system}"
+        fi
         ;;
     *" -dn -o TYPE "*) var="SIM_TYPE_${var_name}"; echo "${!var:-disk}" ;;
     *" -dn -o SERIAL "*) var="SIM_SERIAL_${var_name}"; echo "${!var-SERIAL-${name}}" ;;
     *" -nP "*)
+        [[ ${SIM_LSBLK_FAIL:-0} == 1 ]] && exit 1
         printf 'PATH="%s" TYPE="disk" FSTYPE="" MOUNTPOINT=""\n' "$dev"
         var="SIM_TREE_${var_name}"
         [[ -n ${!var:-} ]] && printf '%s\n' "${!var}"

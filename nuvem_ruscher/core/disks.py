@@ -12,7 +12,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 LSBLK_COLUMNS = (
-    "NAME,PATH,TYPE,SIZE,MODEL,SERIAL,TRAN,RM,RO,HOTPLUG,ROTA,FSTYPE,UUID,LABEL,PARTTYPENAME,MOUNTPOINTS,PKNAME"
+    "NAME,PATH,TYPE,SIZE,MODEL,SERIAL,TRAN,RM,RO,HOTPLUG,ROTA,FSTYPE,UUID,LABEL,PARTUUID,PARTLABEL,"
+    "PARTTYPENAME,MOUNTPOINTS,PKNAME"
 )
 LSBLK_ARGV = ("lsblk", "-J", "-b", "-o", LSBLK_COLUMNS)
 
@@ -33,6 +34,7 @@ REASONS = (
     "luks",
     "in-use",
     "cloud",
+    "fstab",
     "database",
     "docker",
     "read-only",
@@ -99,6 +101,39 @@ def _mounts(node: dict[str, Any]) -> list[str]:
     return [m for m in (node.get("mountpoints") or []) if m]
 
 
+def _tags(node: dict[str, Any]) -> set[str]:
+    """Como o fstab e o blkid podem se referir a este nó (UUID=…, LABEL=…, /dev/…)."""
+    tags = {str(node.get("path") or "")}
+    for key, name in (("uuid", "UUID"), ("label", "LABEL"), ("partuuid", "PARTUUID"), ("partlabel", "PARTLABEL")):
+        if node.get(key):
+            tags.add(f"{name}={node[key]}")
+    return tags - {""}
+
+
+def photo_tags(conf_raw: dict[str, str]) -> set[str]:
+    """Identifica o disco das fotos (e o da cópia antiga) mesmo desmontado.
+
+    O UUID gravado pelo helper e, para discos do udisks, o nome da pasta em /run/media,
+    que é o rótulo do sistema de arquivos (ou o UUID, quando não há rótulo).
+    """
+    tags = {f"UUID={conf_raw[key]}" for key in ("PHOTO_FS_UUID", "OLD_PHOTO_FS_UUID") if conf_raw.get(key)}
+    mount = conf_raw.get("MOUNT_POINT", "")
+    if mount.startswith(("/run/media/", "/media/")) and mount.rstrip("/") not in ("/run/media", "/media"):
+        name = os.path.basename(mount.rstrip("/"))
+        tags |= {f"LABEL={name}", f"UUID={name}"}
+    return tags
+
+
+def fstab_tags(sources: list[str]) -> set[str]:
+    """Origens do /etc/fstab que apontam para discos (UUID=, LABEL=, PARTUUID=, /dev/…)."""
+    tags = set()
+    for raw in sources:
+        source = raw.replace("\\040", " ")
+        if source.startswith(("UUID=", "LABEL=", "PARTUUID=", "PARTLABEL=", "/dev/")) and not source.endswith("="):
+            tags.add(source)
+    return tags
+
+
 def owner_mount(path: str, mounts: list[str]) -> str:
     """O ponto de montagem mais específico que contém ``path``."""
     best = ""
@@ -162,17 +197,26 @@ def inventory(
     by_id: dict[str, str] | None = None,
     protected: dict[str, str] | None = None,
     holders_of: dict[str, list[str]] | None = None,
+    photos: set[str] | None = None,
+    fstab: set[str] | None = None,
 ) -> list[Disk]:
     """Discos inteiros e os motivos que impedem cada um de entrar num RAID.
 
-    ``protected``: {"cloud": pasta das fotos, "database": pasta do banco, "docker": /var/lib/docker}.
+    ``protected``: {"cloud": pasta das fotos, "old-copy": cópia antiga, "database": pasta do
+    banco, "docker": /var/lib/docker}.
+    ``photos``/``fstab``: identificadores (``photo_tags``/``fstab_tags``) de discos que
+    precisam ficar protegidos mesmo desmontados.
     """
     swaps = swaps or set()
     by_id = by_id or {}
     protected = protected or {}
     holders_of = holders_of or {}
+    photos = photos or set()
+    fstab = fstab or set()
     devices = list(lsblk.get("blockdevices") or [])
     all_mounts = [m for dev in devices for node in _walk(dev) for m in _mounts(node)]
+    # Um btrfs de vários discos aparece montado em só um deles: o UUID entrega os outros.
+    mounted_uuids = {str(node["uuid"]) for dev in devices for node in _walk(dev) if node.get("uuid") and _mounts(node)}
     protected_mounts = {key: owner_mount(path, all_mounts) for key, path in protected.items() if path}
 
     disks: list[Disk] = []
@@ -214,10 +258,15 @@ def inventory(
         paths = {str(node.get("path") or "") for node in tree}
         if "[SWAP]" in mounts or paths & swaps:
             reasons.append("swap")
-        for key in ("cloud", "database", "docker"):
-            mount = protected_mounts.get(key)
-            if mount and mount in mounts:
-                reasons.append(key)
+        for key, mount in protected_mounts.items():
+            reason = "cloud" if key == "old-copy" else key
+            if mount and mount in mounts and reason not in reasons:
+                reasons.append(reason)
+        tags = {tag for node in tree for tag in _tags(node)}
+        if tags & photos and "cloud" not in reasons:
+            reasons.append("cloud")
+        if tags & fstab and not {"system", "cloud"} & set(reasons):
+            reasons.append("fstab")
         if disk.mountpoints and "system" not in reasons:
             reasons.append("mounted")
         if "linux_raid_member" in fstypes or any(t.startswith("raid") for t in types):
@@ -226,7 +275,10 @@ def inventory(
             reasons.append("lvm")
         if "crypto_LUKS" in fstypes or "crypt" in types:
             reasons.append("luks")
-        if holders_of.get(disk.name) and not {"raid-member", "lvm", "luks"} & set(reasons):
+        pooled = {"zfs_member", "bcache"} & fstypes or any(
+            node.get("uuid") and not _mounts(node) and str(node["uuid"]) in mounted_uuids for node in tree
+        )
+        if (holders_of.get(disk.name) or pooled) and not {"raid-member", "lvm", "luks"} & set(reasons):
             reasons.append("in-use")
         if disk.read_only:
             reasons.append("read-only")

@@ -780,7 +780,7 @@ cmd_fstab_remove() {
 cmd_setup() {
     (($# == 5)) || die invalid-argument "usage: setup <version> <photo-folder> <time-zone> <transcode> <ml>"
     local version=$1 upload tz=$3 transcode=$4 ml=$5
-    local parent mountpoint mount_unit fstype options password existing hdd=0 rel_dir was_active=0
+    local parent mountpoint mount_unit fstype fs_uuid options password existing hdd=0 rel_dir was_active=0
     upload=$(strip_slash "$2")
     validate_version "$version"
     validate_path "$upload"
@@ -811,6 +811,7 @@ cmd_setup() {
     fi
     mountpoint=$(findmnt -n -o TARGET -T "$upload")
     fstype=$(findmnt -n -o FSTYPE -T "$upload")
+    fs_uuid=$(findmnt -n -o UUID -T "$upload" || true)
     options=$(findmnt -n -o OPTIONS -T "$upload")
     if [[ ,${options}, == *,ro,* ]]; then
         die storage-unsafe "the photo disk is read-only"
@@ -868,6 +869,7 @@ DB_DATA_LOCATION=${DB_DIR}
 MOUNT_POINT=${mountpoint}
 MOUNT_UNIT=${mount_unit}
 FS_TYPE=${fstype}
+PHOTO_FS_UUID=${fs_uuid}
 TRANSCODE=${transcode}
 ML=${ml}
 TZ=${tz}
@@ -1186,6 +1188,14 @@ path_inside() {
     [[ $1 == "$2" || $1 == "$2"/* ]]
 }
 
+# Mesmo diretório (dispositivo + inode), mesmo que por caminhos diferentes.
+same_dir() {
+    local a b
+    a=$(stat -L -c '%d:%i' -- "$1" 2>/dev/null) || return 1
+    b=$(stat -L -c '%d:%i' -- "$2" 2>/dev/null) || return 1
+    [[ $a == "$b" ]]
+}
+
 is_linux_fs() {
     case $1 in
         ext2 | ext3 | ext4 | btrfs | xfs | f2fs | bcachefs | jfs | zfs) return 0 ;;
@@ -1317,12 +1327,13 @@ mig_verify() {
     step verify
     err=$(mktemp "${WORK_DIR}/.verify.XXXXXX")
     if ! diffs=$(rsync -n -i "${RSYNC_OPTS[@]}" --delete --exclude="/${MIGRATION_MARKER}" \
-        -- "${src}/" "${dst}/" 2>"$err" | head -n 20); then
+        -- "${src}/" "${dst}/" 2>"$err"); then
         info "rsync --dry-run: $(head -c 400 -- "$err")"
         rm -f -- "${err:?}"
         die verify-failed "could not compare the two folders"
     fi
     rm -f -- "${err:?}"
+    diffs=$(head -n 20 <<<"$diffs")
     if [[ -n $diffs ]]; then
         while IFS= read -r a; do
             info "differs: ${a}"
@@ -1353,7 +1364,7 @@ drop_wants_link() {
 }
 
 mig_switch() {
-    local new=$1 mountpoint fstype mount_unit old_unit
+    local new=$1 mountpoint fstype fs_uuid mount_unit old_unit
     step switch
     cp -p -- "${STACK_DIR}/.env" "${WORK_DIR}/env.before-migration"
     cp -p -- "$CONF_FILE" "${WORK_DIR}/conf.before-migration"
@@ -1361,6 +1372,7 @@ mig_switch() {
     old_unit=$(conf_get MOUNT_UNIT || true)
     mountpoint=$(findmnt -n -o TARGET -T "$new")
     fstype=$(findmnt -n -o FSTYPE -T "$new")
+    fs_uuid=$(findmnt -n -o UUID -T "$new" || true)
     mount_unit=""
     if [[ $mountpoint != / ]]; then
         mount_unit=$(systemd-escape -p --suffix=mount "$mountpoint")
@@ -1371,7 +1383,9 @@ mig_switch() {
     conf_set MOUNT_POINT "$mountpoint"
     conf_set MOUNT_UNIT "$mount_unit"
     conf_set FS_TYPE "$fstype"
+    conf_set PHOTO_FS_UUID "$fs_uuid"
     conf_set OLD_UPLOAD_LOCATION "$MIG_OLD"
+    conf_set OLD_PHOTO_FS_UUID "$(findmnt -n -o UUID -T "$MIG_OLD" || true)"
     if [[ -n $old_unit && $old_unit != "$mount_unit" ]]; then
         drop_wants_link "$old_unit"
     fi
@@ -1421,18 +1435,20 @@ mig_on_exit() {
 }
 
 mig_check_copy() {
-    local new=$1 parent=$2 dst_fs=$3 marker need avail largest
+    local new=$1 parent=$2 dst_fs=$3 marker need avail largest copied=0 remaining
     if [[ -e $new ]]; then
         [[ -d $new ]] || die storage-unsafe "the new location is a file, not a folder"
         if [[ -n $(find "$new" -mindepth 1 -maxdepth 1 ! -name "$MIGRATION_MARKER" -print -quit) ]]; then
             marker=$(head -n 1 -- "${new}/${MIGRATION_MARKER}" 2>/dev/null || true)
             [[ $marker == "SOURCE=${MIG_OLD}" ]] || die dest-not-empty "the new folder is not empty"
             info "resuming an interrupted copy"
+            copied=$(tree_bytes "$new")
         fi
     fi
     MIG_FILES=$(tree_count "$MIG_OLD")
     MIG_BYTES=$(tree_bytes "$MIG_OLD")
-    need=$((MIG_BYTES + MIG_BYTES / 50 + 1073741824))
+    remaining=$((MIG_BYTES > copied ? MIG_BYTES - copied : 0))
+    need=$((remaining + MIG_BYTES / 50 + 1073741824))
     avail=$(df --output=avail -B1 -- "$parent" | tail -n 1 | tr -d ' ')
     [[ $avail =~ ^[0-9]+$ ]] || die internal "could not read the free space of ${parent}"
     if ((avail < need)); then
@@ -1464,6 +1480,9 @@ mig_check_adopt() {
     local new=$1 folder a b
     [[ -d $new ]] || die storage-missing "the new folder does not exist"
     for folder in "${IMMICH_FOLDERS[@]}"; do
+        if same_dir "${MIG_OLD}/${folder}" "${new}/${folder}"; then
+            die storage-unsafe "${new}/${folder} is the current ${folder} under another path"
+        fi
         if [[ -f ${MIG_OLD}/${folder}/.immich && ! -f ${new}/${folder}/.immich ]]; then
             die adopt-incomplete "the new location has no ${folder} folder from Immich"
         fi
@@ -1477,6 +1496,27 @@ mig_check_adopt() {
     MIG_BYTES=$(tree_bytes "$new")
 }
 
+# Pastas do Immich (com o arquivo .immich) na origem, anotadas antes de começar.
+MIG_MARKED=()
+mig_mark_folders() {
+    local folder
+    MIG_MARKED=()
+    for folder in "${IMMICH_FOLDERS[@]}"; do
+        if [[ -f ${MIG_OLD}/${folder}/.immich ]]; then
+            MIG_MARKED+=("$folder")
+        fi
+    done
+}
+
+# Recusa se uma pasta do Immich anotada no começo não está mais em "$1" (disco que caiu,
+# desmontagem no meio da cópia): sem isso, origem e cópia vazias pareceriam iguais.
+mig_require_marked() {
+    local dir=$1 folder
+    for folder in "${MIG_MARKED[@]}"; do
+        [[ -f ${dir}/${folder}/.immich ]] || die storage-missing "${dir}/${folder} disappeared during the move"
+    done
+}
+
 # Dentro do container: a pasta nova é a que está em /data e aceita gravação.
 mig_confirm() {
     local folder probe=""
@@ -1487,6 +1527,10 @@ mig_confirm() {
             break
         fi
     done
+    if [[ -z $probe ]] && ((${#MIG_MARKED[@]})); then
+        info "the new folder has none of the Immich folders"
+        return 1
+    fi
     if [[ -n $probe ]] && ! docker exec immich_server test -f "/data/${probe}/.immich"; then
         info "the container does not see /data/${probe}/.immich"
         return 1
@@ -1517,6 +1561,10 @@ cmd_migrate_storage() {
         die storage-unsafe "the current folder is inside the new one"
     fi
     [[ -d $MIG_OLD && ! -L $MIG_OLD ]] || die storage-missing "the current folder ${MIG_OLD} is not available"
+    if same_dir "$new" "$MIG_OLD"; then
+        die storage-unsafe "the new folder is the current one under another path"
+    fi
+    mig_mark_folders
     parent=${new%/*}
     parent=${parent:-/}
     [[ -d $parent ]] || die storage-missing "folder ${parent} does not exist (is the disk connected?)"
@@ -1561,9 +1609,15 @@ cmd_migrate_storage() {
             step stop
             systemctl stop "$SERVICE" || die service-failed "could not stop the server"
             MIG_STOPPED=1
+            mig_require_marked "$MIG_OLD"
             step sync
             run_rsync sync 0 "$MIG_OLD" "$new" --delete || die copy-failed "the final copy failed"
             mig_verify "$MIG_OLD" "$new"
+            mig_require_marked "$MIG_OLD"
+            mig_require_marked "$new"
+            # Daqui em diante o servidor pode gravar na pasta nova: ela deixa de ser uma
+            # cópia retomável (uma retomada com --delete apagaria envios novos).
+            rm -f -- "${new:?}/${MIGRATION_MARKER:?}"
             ;;
         rename)
             step stop
@@ -1572,11 +1626,13 @@ cmd_migrate_storage() {
             step move
             mv --no-copy -T -- "$MIG_OLD" "$new" || die copy-failed "could not rename the folder"
             MIG_RENAMED=1
+            mig_require_marked "$new"
             ;;
         adopt)
             step stop
             systemctl stop "$SERVICE" || die service-failed "could not stop the server"
             MIG_STOPPED=1
+            mig_require_marked "$new"
             ;;
     esac
 
@@ -1621,6 +1677,9 @@ cmd_remove_old_copy() {
     fi
     [[ -d $old && ! -L $old && $(realpath -e -- "$old") == "$old" ]] || die storage-missing "the old folder is not available"
     [[ -d $current ]] || die storage-missing "the current folder is not available"
+    # O mesmo diretório por dois caminhos (bind mount, subvolume montado duas vezes) se
+    # compararia consigo mesmo e passaria: a identidade é o dispositivo + inode.
+    same_dir "$old" "$current" && die storage-unsafe "the old folder is the current one under another path"
 
     step verify
     for folder in "${IMMICH_FOLDERS[@]}"; do
@@ -1628,22 +1687,36 @@ cmd_remove_old_copy() {
             die storage-unsafe "${old}/${folder} is a symbolic link"
         fi
         [[ -d ${old}/${folder} ]] || continue
+        [[ -d ${current}/${folder} ]] || die old-copy-differs "the current folder has no ${folder}"
+        same_dir "${old}/${folder}" "${current}/${folder}" &&
+            die storage-unsafe "${old}/${folder} is the current ${folder} under another path"
         # Tudo o que existe na cópia antiga precisa existir, com o mesmo tamanho, na atual.
-        diffs=$(rsync -n -r -i --size-only -- "${old}/${folder}/" "${current}/${folder}/" | head -n 5 || true)
+        # Qualquer erro do rsync (falta o programa, E/S, permissão) recusa: saída vazia
+        # de um rsync que falhou não quer dizer "sem diferenças".
+        if ! diffs=$(rsync -n -r -i --size-only -- "${old}/${folder}/" "${current}/${folder}/"); then
+            die old-copy-differs "could not compare ${folder} with the current folder; nothing was removed"
+        fi
         if [[ -n $diffs ]]; then
-            info "only in the old copy: ${diffs//$'\n'/; }"
+            info "only in the old copy: $(head -n 5 <<<"$diffs" | tr '\n' ';')"
             die old-copy-differs "the old copy has files that are not in the current folder"
         fi
     done
 
     step remove
-    for folder in "${IMMICH_FOLDERS[@]}"; do
-        if [[ -d ${old}/${folder} && ! -L ${old}/${folder} ]]; then
-            rm -r --one-file-system --preserve-root=all -- "${old:?}/${folder:?}"
-        fi
-    done
+    # De dentro da pasta antiga: trocar o caminho por um link depois da conferência não
+    # desvia a remoção, e "rm" sobre um link remove só o link.
+    (
+        cd -P -- "$old" || die storage-missing "the old folder is not available"
+        [[ $(pwd -P) == "$old" ]] || die storage-unsafe "the old folder changed during the check"
+        for folder in "${IMMICH_FOLDERS[@]}"; do
+            if [[ -d ./${folder} && ! -L ./${folder} ]]; then
+                rm -r --one-file-system --preserve-root=all -- "./${folder:?}"
+            fi
+        done
+    ) || exit 1
     rmdir -- "$old" 2>/dev/null || info "the old folder still has other files; they were kept"
     conf_set OLD_UPLOAD_LOCATION ""
+    conf_set OLD_PHOTO_FS_UUID ""
     MIG_MODE=$(mig_state_get MODE || true)
     MIG_OLD=$old
     MIG_NEW=$current
@@ -1706,14 +1779,53 @@ disk_of_path() {
     fi
 }
 
+# Discos de um sistema de arquivos dado por UUID=, LABEL=, PARTUUID= ou PARTLABEL=,
+# montado ou não.
+fs_disks() {
+    local dev
+    while IFS= read -r dev; do
+        if [[ $dev == "${ROOT}"/dev/* ]]; then
+            disks_behind "$dev"
+        fi
+    done < <(blkid -o device -t "$1" 2>/dev/null || true)
+}
+
+# Discos que o app conhece mesmo desmontados: o das fotos (UUID gravado, e o rótulo ou
+# UUID que o udisks usa como nome da pasta em /run/media) e tudo o que o fstab monta.
+known_fs_disks() {
+    local uuid mount name spec
+    for uuid in "$(conf_get PHOTO_FS_UUID 2>/dev/null || true)" "$(conf_get OLD_PHOTO_FS_UUID 2>/dev/null || true)"; do
+        if [[ -n $uuid ]]; then
+            fs_disks "UUID=${uuid}"
+        fi
+    done
+    mount=$(conf_get MOUNT_POINT 2>/dev/null || true)
+    mount=${mount#"$ROOT"}
+    if [[ $mount =~ ^/(run/media|media)/. ]]; then
+        name=${mount##*/}
+        fs_disks "LABEL=${name}"
+        fs_disks "UUID=${name}"
+    fi
+    if [[ -f $FSTAB ]]; then
+        while read -r spec _; do
+            spec=${spec//\\040/ }
+            case $spec in
+                UUID=?* | LABEL=?* | PARTUUID=?* | PARTLABEL=?*) fs_disks "$spec" ;;
+                /dev/?*) disks_behind "$spec" ;;
+            esac
+        done < <(grep -v '^[[:space:]]*#' -- "$FSTAB" || true)
+    fi
+}
+
 protected_disks() {
     local path swap
     for path in / /boot /boot/efi /efi /usr /var /home "$DB_DIR" "${ROOT}/var/lib/docker" \
-        "$(conf_get UPLOAD_LOCATION 2>/dev/null || true)"; do
+        "$(conf_get UPLOAD_LOCATION 2>/dev/null || true)" "$(conf_get OLD_UPLOAD_LOCATION 2>/dev/null || true)"; do
         if [[ -n $path && -e $path ]]; then
             disk_of_path "$path"
         fi
     done
+    known_fs_disks
     while read -r swap _; do
         if [[ $swap == /dev/* ]]; then
             disks_behind "$swap"
@@ -1724,15 +1836,19 @@ protected_disks() {
 
 # Recusa (die) se o disco estiver em uso por qualquer coisa.
 check_disk_free() {
-    local dev=$1 protected=$2 line name holder kind
+    local dev=$1 protected=$2 line name holder kind tree
     if grep -qxF -- "$dev" <<<"$protected"; then
         die disk-protected "${dev} holds the system, the photos, the database, Docker or swap"
     fi
+    # Falha fechada: sem a árvore do disco, nada é apagado.
+    tree=$(lsblk -nP -p -o PATH,TYPE,FSTYPE,MOUNTPOINT,UUID -- "$dev") ||
+        die disk-in-use "could not inspect ${dev}"
+    [[ -n $tree ]] || die disk-in-use "could not inspect ${dev}"
     while IFS= read -r line; do
         if [[ $line =~ MOUNTPOINT=\"([^\"]+)\" ]]; then
             die disk-in-use "${dev} is mounted at ${BASH_REMATCH[1]}"
         fi
-        if [[ $line =~ FSTYPE=\"(linux_raid_member|LVM2_member|crypto_LUKS|swap)\" ]]; then
+        if [[ $line =~ FSTYPE=\"(linux_raid_member|LVM2_member|crypto_LUKS|swap|zfs_member|bcache)\" ]]; then
             die disk-in-use "${dev} is part of ${BASH_REMATCH[1]}"
         fi
         if [[ $line =~ \ TYPE=\"([a-z0-9]+)\" ]]; then
@@ -1741,7 +1857,11 @@ check_disk_free() {
                 die disk-in-use "${dev} is in use by ${kind}"
             fi
         fi
-    done < <(lsblk -nP -p -o PATH,TYPE,FSTYPE,MOUNTPOINT -- "$dev")
+        # Um sistema de arquivos de vários discos (btrfs) aparece montado em só um deles.
+        if [[ $line =~ UUID=\"([^\"]+)\" ]] && [[ -n $(findmnt -rn -o TARGET -S "UUID=${BASH_REMATCH[1]}" 2>/dev/null || true) ]]; then
+            die disk-in-use "${dev} belongs to a mounted filesystem"
+        fi
+    done <<<"$tree"
     name=${dev##*/}
     for holder in "${ROOT}/sys/class/block/${name}"/holders/* "${ROOT}/sys/class/block/${name}"/*/holders/*; do
         if [[ -e $holder ]]; then

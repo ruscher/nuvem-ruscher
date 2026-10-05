@@ -100,7 +100,7 @@ def test_adopt_requires_a_complete_library():
     partial = plan(de=dest(exists=True, is_dir=True, empty=False, markers={"upload"}), mode=Mode.ADOPT)
     assert "mode-unavailable:adopt" in partial.problems
     fewer = plan(de=dest(exists=True, is_dir=True, empty=False, markers=set(ALL), files=1000))
-    assert "adopt-fewer-files" in fewer.warnings
+    assert "adopt-incomplete" in fewer.problems and not fewer.can_start
 
 
 def test_filesystem_warnings():
@@ -137,3 +137,8 @@ def test_state_file():
     st = migration.parse_state(text)
     assert st.finished_ok and (st.files, st.bytes, st.new) == (12, 34, "/x/y z")
     assert migration.read_state("/nao/existe") is None
+
+
+def test_unknown_or_zero_free_space_blocks():
+    # statvfs falhou ou o disco está cheio: sem espaço conhecido, a cópia não começa.
+    assert "no-space" in plan(de=dest(free=0)).problems
