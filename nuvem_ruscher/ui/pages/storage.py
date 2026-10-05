@@ -48,7 +48,7 @@ class LocationCard(Gtk.Box):
         top.append(self.icon)
         texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
         self.disk = label("—", css=("title-4",))
-        self.path = label("", css=("monospace", "caption"), selectable=True)
+        self.path = label("", css=("monospace", "caption"))
         self.path.set_width_chars(1)
         texts.append(self.disk)
         texts.append(self.path)
@@ -330,11 +330,10 @@ class DrivesSection:
             self.group.remove(row)
         self.rows = []
         for disk in disks:
-            parts = [
-                human_size(disk.size),
-                disk.transport.upper() if disk.transport else "",
-                {"hdd": "HDD", "ssd": "SSD", "nvme": "NVMe", "usb": "USB"}.get(disk.kind, ""),
-            ]
+            kind = {"hdd": "HDD", "ssd": "SSD", "nvme": "NVMe", "usb": "USB"}.get(disk.kind, "")
+            # O transporte só aparece quando diz algo além do tipo (ex.: SATA num HDD).
+            transport = disk.transport.upper() if disk.transport.upper() not in (kind.upper(), "") else ""
+            parts = [human_size(disk.size), transport, kind]
             role = self._role(disk)
             row = Adw.ExpanderRow(
                 title=GLib.markup_escape_text(disk.display_name),

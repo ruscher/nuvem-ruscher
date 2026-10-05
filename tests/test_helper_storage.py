@@ -100,6 +100,8 @@ class TestCopy:
         assert wants == [f"{mount_unit_name(str(Path(dest).parent))}.wants"]
         assert state(sim)["STATE"] == "migrated"
         assert (sim.root / "state" / "service").read_text() == "active"
+        # Nenhuma cópia do .env (com a senha do banco) fica para trás.
+        assert list((sim.root / "var/lib/nuvem-ruscher/tmp").glob("*before-migration")) == []
         steps = [e.value for e in sim.events(proc) if e.kind == "step"]
         assert steps.index("backup") < steps.index("copy") < steps.index("stop") < steps.index("verify")
         assert steps.index("verify") < steps.index("switch") < steps.index("start") < steps.index("confirm")

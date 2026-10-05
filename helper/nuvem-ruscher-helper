@@ -22,7 +22,7 @@ set -Eeuo pipefail
 umask 022
 export LC_ALL=C.UTF-8
 
-readonly HELPER_VERSION="1.0.0"
+readonly HELPER_VERSION="2.0.0"
 readonly SERVICE="nuvem-ruscher-immich.service"
 readonly PORT=2283
 readonly RELEASE_URL="https://github.com/immich-app/immich/releases/download"
@@ -1589,6 +1589,9 @@ cmd_migrate_storage() {
     mig_confirm || die migration-rolled-back "the server does not see the new folder correctly"
 
     rm -f -- "${new:?}/${MIGRATION_MARKER:?}"
+    # A volta não é mais necessária: as cópias (uma delas com a senha do banco) saem daqui.
+    rm -f -- "${WORK_DIR:?}/env.before-migration" "${WORK_DIR:?}/conf.before-migration" \
+        "${WORK_DIR:?}/unit.before-migration"
     MIG_ACTIVE=0
     trap - EXIT
     mig_state migrated

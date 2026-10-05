@@ -767,7 +767,8 @@ class RaidDialog(FlowDialog):
         page.add(self.steps)
         self.replace(page)
         self.set_busy(True, _("The RAID array is being created. Please wait."))
-        serials = ",".join(d.serial for d in self.selected)
+        # Mesma forma que o helper compara (lsblk SERIAL sem espaços).
+        serials = ",".join(d.serial.replace(" ", "") for d in self.selected)
         devices = [d.by_id for d in self.selected]
         mapping = {
             "check": "check",
