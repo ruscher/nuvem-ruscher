@@ -46,7 +46,8 @@ export PATH
 # No modo simulado, todo comando que altera o sistema PRECISA ser o falso da sandbox.
 # Se algum cair no real (ex.: sandbox num /tmp com noexec), paramos antes de tudo.
 if ((SIM)); then
-    for sim_cmd in systemctl docker pacman gpasswd groupadd ufw firewall-cmd blkid mountpoint curl findmnt; do
+    for sim_cmd in systemctl docker pacman gpasswd groupadd ufw firewall-cmd blkid mountpoint curl findmnt \
+        lsblk df mdadm wipefs mkfs.ext4 udevadm mount smartctl; do
         if [[ $(type -P "$sim_cmd" || true) != "${ROOT}/bin/${sim_cmd}" ]]; then
             printf '@@ERROR internal incomplete sandbox: %s is not the simulated command\n' "$sim_cmd"
             exit 1
@@ -79,14 +80,18 @@ OLD_VERSION=""
 
 # --- Protocolo -----------------------------------------------------------------------
 
-emit() { printf '@@%s\n' "$*"; }
+# A janela pode fechar no meio de uma operação longa: escrever no pipe fechado não pode
+# derrubar o helper (SIGPIPE é ignorado em migrate-storage; aqui o erro de escrita some).
+emit() { printf '@@%s\n' "$*" 2>/dev/null || true; }
 step() { emit "STEP $1"; }
 info() { emit "INFO $*"; }
 result() { emit "RESULT $1=$2"; }
 
+LAST_ERROR=""
 die() {
     local code=$1
     shift
+    LAST_ERROR="${code} $*"
     emit "ERROR ${code} $*"
     exit 1
 }
@@ -99,6 +104,7 @@ on_error() {
         info "unexpected failure during the update (line ${line}); rolling back to the previous version"
         rollback "$OLD_VERSION"
     fi
+    LAST_ERROR="internal command failed (code ${rc}) at line ${line}"
     emit "ERROR internal command failed (code ${rc}) at line ${line}"
     exit 1
 }
@@ -183,6 +189,15 @@ validate_path() {
             die storage-unsafe "temporary folder: ${rel}"
             ;;
     esac
+    # Pastas que só agrupam outras (GROUPING_FOLDERS/ONE_LEVEL_GROUPING em validation.py).
+    case $rel in
+        /home | /mnt | /media | /opt | /srv | /var | /var/lib | /run/media)
+            die storage-unsafe "folder that only groups other folders: ${rel}"
+            ;;
+    esac
+    if [[ $rel =~ ^/(home|run/media)/[^/]+$ ]]; then
+        die storage-unsafe "a user's home or disks folder itself: ${rel}"
+    fi
 }
 
 strip_slash() {
@@ -683,7 +698,7 @@ cmd_fstab_add() {
         if [[ -s $FSTAB && -n $(tail -c 1 -- "$FSTAB") ]]; then
             printf '\n'
         fi
-        printf '%s (adicionado em %s)\n' "$MARKER" "$(date +%F)"
+        printf '%s (added on %s)\n' "$MARKER" "$(date +%F)"
         printf 'UUID=%s %s %s %s 0 %s\n' "$uuid" "$(fstab_escape "$mountpoint")" "$KIND" "$OPTS" "$PASSNO"
     } >"$tmp"
     chmod 644 -- "$tmp"
@@ -917,9 +932,9 @@ cmd_restart() {
 # O dump é feito no disco interno e só depois copiado para o disco das fotos:
 # assim nunca precisamos apagar nada lá, nem um arquivo parcial.
 do_backup_db() {
-    local upload version user db dest name tmp
+    local upload version user db dest name tmp stamp n=2
     upload=$(conf_get UPLOAD_LOCATION) || die not-installed "incomplete configuration"
-    version=$(conf_get IMMICH_VERSION || echo desconhecida)
+    version=$(conf_get IMMICH_VERSION || echo unknown)
     user=$(env_get DB_USERNAME || echo postgres)
     db=$(env_get DB_DATABASE_NAME || echo immich)
     if [[ ! $user =~ ^[A-Za-z0-9_]+$ || ! $db =~ ^[A-Za-z0-9_]+$ ]]; then
@@ -933,7 +948,13 @@ do_backup_db() {
     fi
     mkdir -p -- "$WORK_DIR"
     chmod 700 -- "$WORK_DIR"
-    name="nuvem-ruscher-db-$(date +%Y%m%d-%H%M%S)-${version}.sql.gz"
+    stamp=$(date +%Y%m%d-%H%M%S)
+    name="nuvem-ruscher-db-${stamp}-${version}.sql.gz"
+    # Dois backups no mesmo segundo (ex.: migração retomada): nome livre, nunca sobrescrever.
+    while [[ -e ${upload}/backups/nuvem-ruscher/${name} ]]; do
+        name="nuvem-ruscher-db-${stamp}-${n}-${version}.sql.gz"
+        n=$((n + 1))
+    done
     tmp="${WORK_DIR}/${name}"
     step dump
     if ! docker exec immich_postgres pg_dump --clean --if-exists \
@@ -1151,6 +1172,705 @@ cmd_uninstall() {
     result kept-database "$DB_DIR"
 }
 
+# --- Troca do local das fotos (docs/08-storage-migration.md) ---------------------------
+
+readonly MIGRATION_STATE="${ROOT}/var/lib/nuvem-ruscher/migration.state"
+readonly MIGRATION_MARKER=".nuvem-ruscher-migration"
+readonly IMMICH_FOLDERS=(library upload thumbs encoded-video profile backups)
+MIG_ACTIVE=0 MIG_STOPPED=0 MIG_SWITCHED=0 MIG_RENAMED=0
+MIG_OLD="" MIG_NEW="" MIG_MODE="" MIG_STARTED="" MIG_FILES=0 MIG_BYTES=0 MIG_FINAL_STATE=""
+STDIN_OPEN=1
+RSYNC_OPTS=()
+
+path_inside() {
+    [[ $1 == "$2" || $1 == "$2"/* ]]
+}
+
+is_linux_fs() {
+    case $1 in
+        ext2 | ext3 | ext4 | btrfs | xfs | f2fs | bcachefs | jfs | zfs) return 0 ;;
+    esac
+    return 1
+}
+
+# Opções do rsync pelo sistema de arquivos de origem e de destino.
+rsync_options() {
+    local src_fs=$1 dst_fs=$2
+    if is_linux_fs "$dst_fs"; then
+        RSYNC_OPTS=(-aH --numeric-ids)
+        if is_linux_fs "$src_fs"; then
+            RSYNC_OPTS+=(-AX)
+        fi
+    else
+        # NTFS/exFAT/FAT: dono e permissões vêm das opções de montagem.
+        RSYNC_OPTS=(-rlt)
+    fi
+    case "${src_fs} ${dst_fs}" in
+        *vfat* | *exfat*) RSYNC_OPTS+=(--modify-window=1) ;;
+    esac
+}
+
+mig_state() {
+    local state=$1 error=${2:-}
+    mkdir -p -- "${MIGRATION_STATE%/*}"
+    write_file "$MIGRATION_STATE" 644 <<EOF
+# Escrito pelo nuvem-ruscher-helper (migrate-storage). Lido pela interface.
+STATE=${state}
+MODE=${MIG_MODE}
+OLD=${MIG_OLD}
+NEW=${MIG_NEW}
+FILES=${MIG_FILES}
+BYTES=${MIG_BYTES}
+STARTED=${MIG_STARTED}
+FINISHED=$(date -Iseconds)
+ERROR=${error//$'\n'/ }
+EOF
+}
+
+mig_state_get() {
+    local key=$1 line
+    [[ -f $MIGRATION_STATE ]] || return 1
+    while IFS= read -r line; do
+        if [[ $line == "${key}="* ]]; then
+            printf '%s' "${line#*=}"
+            return 0
+        fi
+    done <"$MIGRATION_STATE"
+    return 1
+}
+
+# Pedido de cancelamento: a interface escreve "cancel" no stdin. Fim da entrada (janela
+# fechada, ou stdin = /dev/null) não cancela nada: a operação continua.
+cancel_requested() {
+    local line="" rc=0
+    ((STDIN_OPEN)) || return 1
+    read -r -t 0.5 line || rc=$?
+    if ((rc == 0)); then
+        [[ $line == cancel ]]
+        return
+    fi
+    if ((rc <= 128)); then
+        STDIN_OPEN=0
+    fi
+    return 1
+}
+
+tree_count() {
+    find "$1" -name "$MIGRATION_MARKER" -prune -o -type f -printf '.' | wc -c
+}
+
+tree_bytes() {
+    find "$1" -name "$MIGRATION_MARKER" -prune -o -type f -printf '%s\n' | awk '{ s += $1 } END { printf "%.0f", s }'
+}
+
+# run_rsync <fase> <cancelável 0|1> <origem> <destino> [opções extras…]; 130 = cancelado.
+run_rsync() {
+    local phase=$1 cancellable=$2 src=$3 dst=$4 log pid rc=0 line
+    shift 4
+    log=$(mktemp "${WORK_DIR}/.rsync.XXXXXX")
+    rsync "${RSYNC_OPTS[@]}" "$@" --info=progress2 --no-inc-recursive --no-human-readable \
+        --exclude="/${MIGRATION_MARKER}" -- "${src}/" "${dst}/" >"$log" 2>&1 &
+    pid=$!
+    while kill -0 "$pid" 2>/dev/null; do
+        if ((cancellable)) && cancel_requested; then
+            kill -TERM "$pid" 2>/dev/null || true
+            wait "$pid" 2>/dev/null || true
+            rm -f -- "${log:?}"
+            return 130
+        fi
+        line=$(tail -c 600 -- "$log" | tr '\r' '\n' | grep -E '^ *[0-9]+ +[0-9]+%' | tail -n 1 || true)
+        if [[ $line =~ ^\ *([0-9]+)\ +([0-9]+)% ]]; then
+            emit "PROGRESS ${phase} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"
+        fi
+        if ! ((cancellable && STDIN_OPEN)); then
+            sleep 0.5
+        fi
+    done
+    wait "$pid" || rc=$?
+    if ((rc != 0)); then
+        info "rsync (${phase}) exited with code ${rc}"
+        while IFS= read -r line; do
+            info "rsync: ${line}"
+        done < <(tr '\r' '\n' <"$log" | grep -vE '^ *[0-9]+ +[0-9]+%' | tail -n 20)
+    fi
+    rm -f -- "${log:?}"
+    return "$rc"
+}
+
+mig_sample_check() {
+    local src=$1 dst=$2 rel n=0
+    while IFS= read -r -d '' rel; do
+        if [[ $(sha256sum -- "${src}/${rel}" | cut -d' ' -f1) != $(sha256sum -- "${dst}/${rel}" | cut -d' ' -f1) ]]; then
+            info "checksum differs: ${rel}"
+            return 1
+        fi
+        n=$((n + 1))
+    done < <(
+        find "$src" -type f -printf '%s\t%P\0' | sort -z -rn | head -z -n 20 | cut -z -f2-
+        find "$src" -type f -printf '%P\0' | shuf -z -n 200
+    )
+    result sampled "$n"
+}
+
+mig_verify() {
+    local src=$1 dst=$2 diffs err a b
+    step verify
+    err=$(mktemp "${WORK_DIR}/.verify.XXXXXX")
+    if ! diffs=$(rsync -n -i "${RSYNC_OPTS[@]}" --delete --exclude="/${MIGRATION_MARKER}" \
+        -- "${src}/" "${dst}/" 2>"$err" | head -n 20); then
+        info "rsync --dry-run: $(head -c 400 -- "$err")"
+        rm -f -- "${err:?}"
+        die verify-failed "could not compare the two folders"
+    fi
+    rm -f -- "${err:?}"
+    if [[ -n $diffs ]]; then
+        while IFS= read -r a; do
+            info "differs: ${a}"
+        done <<<"$diffs"
+        die verify-failed "the copy is different from the original"
+    fi
+    a=$(tree_count "$src")
+    b=$(tree_count "$dst")
+    [[ $a == "$b" ]] || die verify-failed "the original has ${a} files and the copy has ${b}"
+    a=$(tree_bytes "$src")
+    b=$(tree_bytes "$dst")
+    [[ $a == "$b" ]] || die verify-failed "the original has ${a} bytes and the copy has ${b}"
+    mig_sample_check "$src" "$dst" || die verify-failed "a sampled file has a different checksum"
+    result verified "${MIG_FILES} files, ${MIG_BYTES} bytes"
+}
+
+restore_file() {
+    cp -p -- "$1" "${2}.nuvem-ruscher-restore"
+    mv -f -- "${2}.nuvem-ruscher-restore" "$2"
+}
+
+# Remove o link "o disco <unidade> quer o servidor" (wants) criado por refresh_enablement.
+drop_wants_link() {
+    local unit=$1
+    [[ $unit =~ ^[A-Za-z0-9:_.\\-]+\.mount$ ]] || return 0
+    rm -f -- "${UNIT_DIR:?}/${unit:?}.wants/${SERVICE:?}"
+    rmdir -- "${UNIT_DIR:?}/${unit:?}.wants" 2>/dev/null || true
+}
+
+mig_switch() {
+    local new=$1 mountpoint fstype mount_unit old_unit
+    step switch
+    cp -p -- "${STACK_DIR}/.env" "${WORK_DIR}/env.before-migration"
+    cp -p -- "$CONF_FILE" "${WORK_DIR}/conf.before-migration"
+    cp -p -- "$UNIT_FILE" "${WORK_DIR}/unit.before-migration"
+    old_unit=$(conf_get MOUNT_UNIT || true)
+    mountpoint=$(findmnt -n -o TARGET -T "$new")
+    fstype=$(findmnt -n -o FSTYPE -T "$new")
+    mount_unit=""
+    if [[ $mountpoint != / ]]; then
+        mount_unit=$(systemd-escape -p --suffix=mount "$mountpoint")
+    fi
+    MIG_SWITCHED=1
+    env_set UPLOAD_LOCATION "$new"
+    conf_set UPLOAD_LOCATION "$new"
+    conf_set MOUNT_POINT "$mountpoint"
+    conf_set MOUNT_UNIT "$mount_unit"
+    conf_set FS_TYPE "$fstype"
+    conf_set OLD_UPLOAD_LOCATION "$MIG_OLD"
+    if [[ -n $old_unit && $old_unit != "$mount_unit" ]]; then
+        drop_wants_link "$old_unit"
+    fi
+    write_unit "$new" "$mountpoint" "$mount_unit"
+    refresh_enablement
+    result mountpoint "$mountpoint"
+}
+
+mig_restore_config() {
+    local unit
+    unit=$(conf_get MOUNT_UNIT || true)
+    if [[ -n $unit ]]; then
+        drop_wants_link "$unit"
+    fi
+    restore_file "${WORK_DIR}/env.before-migration" "${STACK_DIR}/.env"
+    restore_file "${WORK_DIR}/conf.before-migration" "$CONF_FILE"
+    restore_file "${WORK_DIR}/unit.before-migration" "$UNIT_FILE"
+    refresh_enablement
+}
+
+# Sai por aqui sempre que a migração não chegou ao fim: volta tudo para a origem.
+mig_on_exit() {
+    local rc=$?
+    ((MIG_ACTIVE)) || return 0
+    MIG_ACTIVE=0
+    trap - ERR
+    set +e
+    if ((MIG_SWITCHED)); then
+        info "going back to ${MIG_OLD}"
+        systemctl stop "$SERVICE" >/dev/null 2>&1
+        mig_restore_config
+        MIG_STOPPED=1
+    fi
+    if ((MIG_RENAMED)) && [[ -d $MIG_NEW && ! -e $MIG_OLD ]]; then
+        mv --no-copy -T -- "$MIG_NEW" "$MIG_OLD" || info "could not rename ${MIG_NEW} back to ${MIG_OLD}"
+    fi
+    if ((MIG_STOPPED)); then
+        systemctl reset-failed "$SERVICE" >/dev/null 2>&1
+        if systemctl start "$SERVICE" && wait_health 600; then
+            info "the server is back on ${MIG_OLD}"
+        else
+            info "the server did not come back by itself; see the service logs"
+        fi
+    fi
+    mig_state "${MIG_FINAL_STATE:-failed}" "${LAST_ERROR:-exit code ${rc}}"
+    return "$rc"
+}
+
+mig_check_copy() {
+    local new=$1 parent=$2 dst_fs=$3 marker need avail largest
+    if [[ -e $new ]]; then
+        [[ -d $new ]] || die storage-unsafe "the new location is a file, not a folder"
+        if [[ -n $(find "$new" -mindepth 1 -maxdepth 1 ! -name "$MIGRATION_MARKER" -print -quit) ]]; then
+            marker=$(head -n 1 -- "${new}/${MIGRATION_MARKER}" 2>/dev/null || true)
+            [[ $marker == "SOURCE=${MIG_OLD}" ]] || die dest-not-empty "the new folder is not empty"
+            info "resuming an interrupted copy"
+        fi
+    fi
+    MIG_FILES=$(tree_count "$MIG_OLD")
+    MIG_BYTES=$(tree_bytes "$MIG_OLD")
+    need=$((MIG_BYTES + MIG_BYTES / 50 + 1073741824))
+    avail=$(df --output=avail -B1 -- "$parent" | tail -n 1 | tr -d ' ')
+    [[ $avail =~ ^[0-9]+$ ]] || die internal "could not read the free space of ${parent}"
+    if ((avail < need)); then
+        die no-space "the new location needs ${need} bytes and has ${avail}"
+    fi
+    if [[ $dst_fs == vfat ]]; then
+        largest=$(find "$MIG_OLD" -type f -size +4194303k -print -quit)
+        [[ -z $largest ]] || die storage-unsafe "FAT32 cannot store files larger than 4 GB: ${largest}"
+    fi
+    if ! is_linux_fs "$dst_fs" && [[ -n $(find "$MIG_OLD" -type l -print -quit) ]]; then
+        die storage-unsafe "the library has symbolic links and the new disk (${dst_fs}) does not support them"
+    fi
+    result files "$MIG_FILES"
+    result bytes "$MIG_BYTES"
+}
+
+mig_check_rename() {
+    local new=$1 parent=$2
+    [[ ! -e $new ]] || die dest-not-empty "the new folder already exists"
+    if [[ $(findmnt -n -o TARGET -T "$MIG_OLD") != "$(findmnt -n -o TARGET -T "$parent")" ||
+        $(stat -c %d -- "$MIG_OLD") != "$(stat -c %d -- "$parent")" ]]; then
+        die invalid-argument "renaming only works inside the same disk"
+    fi
+    MIG_FILES=$(tree_count "$MIG_OLD")
+    MIG_BYTES=$(tree_bytes "$MIG_OLD")
+}
+
+mig_check_adopt() {
+    local new=$1 folder a b
+    [[ -d $new ]] || die storage-missing "the new folder does not exist"
+    for folder in "${IMMICH_FOLDERS[@]}"; do
+        if [[ -f ${MIG_OLD}/${folder}/.immich && ! -f ${new}/${folder}/.immich ]]; then
+            die adopt-incomplete "the new location has no ${folder} folder from Immich"
+        fi
+    done
+    a=$(tree_count "$MIG_OLD")
+    b=$(tree_count "$new")
+    if ((b * 100 < a * 98)); then
+        die adopt-incomplete "the new location has ${b} files and the current one has ${a}"
+    fi
+    MIG_FILES=$b
+    MIG_BYTES=$(tree_bytes "$new")
+}
+
+# Dentro do container: a pasta nova é a que está em /data e aceita gravação.
+mig_confirm() {
+    local folder probe=""
+    step confirm
+    for folder in "${IMMICH_FOLDERS[@]}"; do
+        if [[ -f ${MIG_NEW}/${folder}/.immich ]]; then
+            probe=$folder
+            break
+        fi
+    done
+    if [[ -n $probe ]] && ! docker exec immich_server test -f "/data/${probe}/.immich"; then
+        info "the container does not see /data/${probe}/.immich"
+        return 1
+    fi
+    docker exec immich_server sh -c ': > /data/.nuvem-ruscher-write-test && rm -f /data/.nuvem-ruscher-write-test'
+}
+
+cmd_migrate_storage() {
+    (($# == 2)) || die invalid-argument "usage: migrate-storage <copy|rename|adopt> <new-folder>"
+    local mode=$1 new parent options src_fs dst_fs rc=0
+    validate_choice "$mode" copy rename adopt
+    new=$(strip_slash "$2")
+    validate_path "$new"
+    target_user
+    require_installed
+    take_lock
+    MIG_OLD=$(conf_get UPLOAD_LOCATION) || die not-installed "incomplete configuration"
+    MIG_NEW=$new
+    MIG_MODE=$mode
+    trap '' PIPE
+
+    step check
+    [[ $new != "$MIG_OLD" ]] || die invalid-argument "the new folder is the current one"
+    if path_inside "$new" "$MIG_OLD"; then
+        die storage-unsafe "the new folder is inside the current one"
+    fi
+    if path_inside "$MIG_OLD" "$new"; then
+        die storage-unsafe "the current folder is inside the new one"
+    fi
+    [[ -d $MIG_OLD && ! -L $MIG_OLD ]] || die storage-missing "the current folder ${MIG_OLD} is not available"
+    parent=${new%/*}
+    parent=${parent:-/}
+    [[ -d $parent ]] || die storage-missing "folder ${parent} does not exist (is the disk connected?)"
+    [[ $(realpath -e -- "$parent") == "$parent" ]] || die storage-unsafe "the new folder path goes through a symbolic link"
+    [[ ! -L $new ]] || die storage-unsafe "the new folder is a symbolic link"
+    options=$(findmnt -n -o OPTIONS -T "$parent")
+    [[ ,${options}, != *,ro,* ]] || die storage-unsafe "the new disk is read-only"
+    src_fs=$(findmnt -n -o FSTYPE -T "$MIG_OLD")
+    dst_fs=$(findmnt -n -o FSTYPE -T "$parent")
+    rsync_options "$src_fs" "$dst_fs"
+    case $mode in
+        copy) mig_check_copy "$new" "$parent" "$dst_fs" ;;
+        rename) mig_check_rename "$new" "$parent" ;;
+        adopt) mig_check_adopt "$new" ;;
+    esac
+    if ! systemctl is-active --quiet "$SERVICE" || ! wait_health 60; then
+        die not-running "turn the server on first: the database is backed up before the move"
+    fi
+
+    MIG_ACTIVE=1
+    MIG_STARTED=$(date -Iseconds)
+    trap mig_on_exit EXIT
+    mig_state running
+
+    step backup
+    do_backup_db
+
+    case $mode in
+        copy)
+            if [[ ! -d $new ]]; then
+                mkdir -- "$new"
+            fi
+            printf 'SOURCE=%s\n' "$MIG_OLD" | write_file "${new}/${MIGRATION_MARKER}" 644
+            step copy
+            run_rsync copy 1 "$MIG_OLD" "$new" || rc=$?
+            if ((rc == 130)); then
+                MIG_FINAL_STATE=cancelled
+                die migration-cancelled "the copy was cancelled; the server keeps using ${MIG_OLD}"
+            elif ((rc != 0)); then
+                die copy-failed "the copy failed (rsync code ${rc}); the server keeps using ${MIG_OLD}"
+            fi
+            step stop
+            systemctl stop "$SERVICE" || die service-failed "could not stop the server"
+            MIG_STOPPED=1
+            step sync
+            run_rsync sync 0 "$MIG_OLD" "$new" --delete || die copy-failed "the final copy failed"
+            mig_verify "$MIG_OLD" "$new"
+            ;;
+        rename)
+            step stop
+            systemctl stop "$SERVICE" || die service-failed "could not stop the server"
+            MIG_STOPPED=1
+            step move
+            mv --no-copy -T -- "$MIG_OLD" "$new" || die copy-failed "could not rename the folder"
+            MIG_RENAMED=1
+            ;;
+        adopt)
+            step stop
+            systemctl stop "$SERVICE" || die service-failed "could not stop the server"
+            MIG_STOPPED=1
+            ;;
+    esac
+
+    mig_switch "$new"
+    step start
+    systemctl reset-failed "$SERVICE" >/dev/null 2>&1 || true
+    MIG_FINAL_STATE=rolled-back
+    systemctl start "$SERVICE" || die migration-rolled-back "the server did not start with the new folder"
+    wait_health 600 || die migration-rolled-back "the server did not respond with the new folder"
+    mig_confirm || die migration-rolled-back "the server does not see the new folder correctly"
+
+    rm -f -- "${new:?}/${MIGRATION_MARKER:?}"
+    MIG_ACTIVE=0
+    trap - EXIT
+    mig_state migrated
+    result old "$MIG_OLD"
+    result new "$new"
+    result files "$MIG_FILES"
+    result bytes "$MIG_BYTES"
+    result migration ok
+}
+
+# Apaga a cópia antiga deixada por uma migração verificada (só as pastas do Immich).
+cmd_remove_old_copy() {
+    (($# == 1)) || die invalid-argument "usage: remove-old-copy <old-folder>"
+    local old current folder diffs
+    old=$(strip_slash "$1")
+    validate_path "$old"
+    require_installed
+    take_lock
+    step check
+    [[ $(conf_get OLD_UPLOAD_LOCATION || true) == "$old" ]] ||
+        die invalid-argument "this is not the folder left by the last move"
+    [[ $(mig_state_get STATE || true) == migrated && $(mig_state_get OLD || true) == "$old" ]] ||
+        die invalid-argument "the last move was not completed and verified"
+    current=$(conf_get UPLOAD_LOCATION)
+    if [[ $old == "$current" ]] || path_inside "$current" "$old" || path_inside "$old" "$current"; then
+        die storage-unsafe "the old folder overlaps the current one"
+    fi
+    [[ -d $old && ! -L $old && $(realpath -e -- "$old") == "$old" ]] || die storage-missing "the old folder is not available"
+    [[ -d $current ]] || die storage-missing "the current folder is not available"
+
+    step verify
+    for folder in "${IMMICH_FOLDERS[@]}"; do
+        if [[ -L ${old}/${folder} ]]; then
+            die storage-unsafe "${old}/${folder} is a symbolic link"
+        fi
+        [[ -d ${old}/${folder} ]] || continue
+        # Tudo o que existe na cópia antiga precisa existir, com o mesmo tamanho, na atual.
+        diffs=$(rsync -n -r -i --size-only -- "${old}/${folder}/" "${current}/${folder}/" | head -n 5 || true)
+        if [[ -n $diffs ]]; then
+            info "only in the old copy: ${diffs//$'\n'/; }"
+            die old-copy-differs "the old copy has files that are not in the current folder"
+        fi
+    done
+
+    step remove
+    for folder in "${IMMICH_FOLDERS[@]}"; do
+        if [[ -d ${old}/${folder} && ! -L ${old}/${folder} ]]; then
+            rm -r --one-file-system --preserve-root=all -- "${old:?}/${folder:?}"
+        fi
+    done
+    rmdir -- "$old" 2>/dev/null || info "the old folder still has other files; they were kept"
+    conf_set OLD_UPLOAD_LOCATION ""
+    MIG_MODE=$(mig_state_get MODE || true)
+    MIG_OLD=$old
+    MIG_NEW=$current
+    mig_state removed-old
+    result removed "$old"
+}
+
+# --- Ferramentas opcionais ------------------------------------------------------------
+
+cmd_install_tools() {
+    (($# >= 1 && $# <= 3)) || die invalid-argument "usage: install-tools <rsync|mdadm|smartmontools>…"
+    local pkg
+    for pkg in "$@"; do
+        validate_choice "$pkg" rsync mdadm smartmontools
+    done
+    take_lock
+    step install
+    if pgrep -x pacman >/dev/null 2>&1; then
+        die pacman-failed "another program is installing packages right now"
+    fi
+    pacman -S --needed --noconfirm -- "$@" || die pacman-failed "pacman -S $* failed"
+    result installed "$*"
+}
+
+# --- Discos: saúde (SMART) e RAID (docs/09-raid-management.md) ----------------------
+
+readonly RAID_NAME="nuvem-ruscher"
+readonly RAID_DEVICE="${ROOT}/dev/md/${RAID_NAME}"
+readonly RAID_MOUNT="${ROOT}/mnt/nuvem-ruscher-raid"
+readonly MDADM_CONF="${ROOT}/etc/mdadm.conf"
+
+validate_disk_path() {
+    local path=$1 rel=$1
+    if ((SIM)); then
+        [[ $path == "$ROOT"/* ]] || die invalid-argument "outside the simulated root"
+        rel=${path#"$ROOT"}
+    fi
+    if [[ ! $rel =~ ^/dev/disk/by-id/[A-Za-z0-9._:+-]+$ || $rel =~ -part[0-9]+$ ]]; then
+        die invalid-argument "disk must be given as a whole disk in /dev/disk/by-id: ${path}"
+    fi
+}
+
+# Discos inteiros por trás de um dispositivo, seguindo LUKS/LVM/md (lsblk -s). O caminho
+# vem por último na linha, para nunca ser cortado num espaço.
+disks_behind() {
+    local type path
+    while read -r type path; do
+        if [[ $type == disk ]]; then
+            printf '%s\n' "$path"
+        fi
+    done < <(lsblk -nsp -o TYPE,PATH -- "$1" 2>/dev/null || true)
+}
+
+disk_of_path() {
+    local source
+    source=$(findmnt -n -o SOURCE -T "$1" 2>/dev/null || true)
+    source=${source%%\[*}
+    if [[ $source == /dev/* ]]; then
+        disks_behind "$source"
+    fi
+}
+
+protected_disks() {
+    local path swap
+    for path in / /boot /boot/efi /efi /usr /var /home "$DB_DIR" "${ROOT}/var/lib/docker" \
+        "$(conf_get UPLOAD_LOCATION 2>/dev/null || true)"; do
+        if [[ -n $path && -e $path ]]; then
+            disk_of_path "$path"
+        fi
+    done
+    while read -r swap _; do
+        if [[ $swap == /dev/* ]]; then
+            disks_behind "$swap"
+        fi
+    done < <(tail -n +2 /proc/swaps 2>/dev/null || true)
+    return 0
+}
+
+# Recusa (die) se o disco estiver em uso por qualquer coisa.
+check_disk_free() {
+    local dev=$1 protected=$2 line name holder kind
+    if grep -qxF -- "$dev" <<<"$protected"; then
+        die disk-protected "${dev} holds the system, the photos, the database, Docker or swap"
+    fi
+    while IFS= read -r line; do
+        if [[ $line =~ MOUNTPOINT=\"([^\"]+)\" ]]; then
+            die disk-in-use "${dev} is mounted at ${BASH_REMATCH[1]}"
+        fi
+        if [[ $line =~ FSTYPE=\"(linux_raid_member|LVM2_member|crypto_LUKS|swap)\" ]]; then
+            die disk-in-use "${dev} is part of ${BASH_REMATCH[1]}"
+        fi
+        if [[ $line =~ \ TYPE=\"([a-z0-9]+)\" ]]; then
+            kind=${BASH_REMATCH[1]}
+            if [[ $kind != disk && $kind != part ]]; then
+                die disk-in-use "${dev} is in use by ${kind}"
+            fi
+        fi
+    done < <(lsblk -nP -p -o PATH,TYPE,FSTYPE,MOUNTPOINT -- "$dev")
+    name=${dev##*/}
+    for holder in "${ROOT}/sys/class/block/${name}"/holders/* "${ROOT}/sys/class/block/${name}"/*/holders/*; do
+        if [[ -e $holder ]]; then
+            die disk-in-use "${dev} is used by ${holder##*/}"
+        fi
+    done
+}
+
+cmd_disk_health() {
+    (($# <= 16)) || die invalid-argument "too many disks"
+    local dev real out
+    local -a devs=()
+    command -v smartctl >/dev/null 2>&1 || die tool-missing "smartmontools is not installed"
+    if (($# == 0)); then
+        mapfile -t devs < <(lsblk -dnp -o PATH,TYPE | awk '$2 == "disk" { print $1 }')
+    else
+        devs=("$@")
+    fi
+    for dev in "${devs[@]}"; do
+        if [[ $dev == */by-id/* ]]; then
+            validate_disk_path "$dev"
+        elif [[ ! ${dev#"$ROOT"} =~ ^/dev/(sd[a-z]{1,2}|nvme[0-9]+n[0-9]+|vd[a-z]+|hd[a-z])$ ]]; then
+            die invalid-argument "not a disk: ${dev}"
+        fi
+        real=$(realpath -e -- "$dev" 2>/dev/null) || continue
+        out=$(timeout 30 smartctl -j -H -A -i -- "$real" 2>/dev/null || true)
+        result "smart:${dev}" "$(tr -d '\n' <<<"$out")"
+    done
+}
+
+cmd_raid_create() {
+    (($# >= 4)) || die invalid-argument "usage: raid-create <level> <serials,…> <disk-by-id>…"
+    local level=$1 serials=$2 dev real serial protected seen="" brief fs_uuid min=2 part
+    shift 2
+    validate_choice "$level" raid1 raid5 raid6 raid10 raid0
+    case $level in
+        raid5) min=3 ;;
+        raid6 | raid10) min=4 ;;
+    esac
+    (($# >= min && $# <= 8)) || die invalid-argument "${level} needs at least ${min} disks"
+    if [[ $level == raid10 ]] && (($# % 2)); then
+        die invalid-argument "raid10 needs an even number of disks"
+    fi
+    [[ $serials =~ ^[A-Za-z0-9._:+-]+(,[A-Za-z0-9._:+-]+)*$ ]] || die invalid-argument "invalid confirmation"
+    target_user
+    take_lock
+    command -v mdadm >/dev/null 2>&1 || die tool-missing "mdadm is not installed"
+    if [[ -e $RAID_DEVICE ]] || grep -q "name=[^ ]*${RAID_NAME}" "$MDADM_CONF" 2>/dev/null; then
+        die raid-exists "there is already a Nuvem Ruscher array"
+    fi
+
+    step check
+    protected=$(protected_disks | sort -u)
+    # Falha fechada: sem saber qual é o disco do sistema, nada é apagado.
+    if [[ -z $(disk_of_path /) ]]; then
+        die disk-protected "could not identify the system disk; nothing was changed"
+    fi
+    local -a reals=()
+    for dev in "$@"; do
+        validate_disk_path "$dev"
+        real=$(realpath -e -- "$dev") || die storage-missing "${dev} is not connected"
+        if [[ ,${seen}, == *,${real},* ]]; then
+            die invalid-argument "the same disk was given twice"
+        fi
+        seen+=",${real}"
+        [[ $(lsblk -dn -o TYPE -- "$real") == disk ]] || die invalid-argument "${dev} is not a whole disk"
+        serial=$(lsblk -dn -o SERIAL -- "$real" | tr -d ' ')
+        [[ -n $serial ]] || die invalid-argument "${dev} has no serial number to confirm"
+        if [[ ,${serials}, != *,${serial},* ]]; then
+            die not-confirmed "the erase confirmation does not include ${serial}"
+        fi
+        check_disk_free "$real" "$protected"
+        reals+=("$real")
+    done
+    if (($(tr ',' '\n' <<<"$serials" | sort -u | wc -l) != ${#reals[@]})); then
+        die not-confirmed "the erase confirmation does not match the selected disks"
+    fi
+
+    step wipe
+    for real in "${reals[@]}"; do
+        info "erasing signatures on ${real}"
+        while IFS= read -r part; do
+            if [[ $part != "$real" ]]; then
+                wipefs -a -- "$part" >/dev/null
+            fi
+        done < <(lsblk -lnp -o PATH -- "$real" | tac)
+        wipefs -a -- "$real" >/dev/null
+    done
+
+    step create
+    mdadm --create "$RAID_DEVICE" --run --level="${level#raid}" --raid-devices=${#reals[@]} \
+        --metadata=1.2 --name="$RAID_NAME" -- "${reals[@]}" </dev/null ||
+        die raid-failed "mdadm could not create the array"
+    udevadm settle --timeout=30 || true
+    [[ -e $RAID_DEVICE ]] || die raid-failed "the array did not appear at ${RAID_DEVICE}"
+
+    step format
+    fs_uuid=$(cat /proc/sys/kernel/random/uuid)
+    if ((SIM)) && [[ -n ${NUVEM_RUSCHER_SIM_UUID:-} ]]; then
+        fs_uuid=$NUVEM_RUSCHER_SIM_UUID
+    fi
+    mkfs.ext4 -F -q -L "$RAID_NAME" -U "$fs_uuid" -m 0 -- "$RAID_DEVICE" || die raid-failed "mkfs.ext4 failed"
+
+    step config
+    if [[ -f $MDADM_CONF ]]; then
+        cp -a -- "$MDADM_CONF" "${MDADM_CONF}.nuvem-ruscher-$(date +%Y%m%d-%H%M%S).bak"
+    fi
+    brief=$(mdadm --detail --brief -- "$RAID_DEVICE" | head -n 1)
+    [[ $brief == ARRAY* ]] || die raid-failed "could not read the array description"
+    printf '%s\n' "# Nuvem Ruscher: photo array (added on $(date +%F))" "$brief" >>"$MDADM_CONF"
+
+    step mount
+    mkdir -p -- "$RAID_MOUNT"
+    cmd_fstab_add "$fs_uuid" "$RAID_MOUNT"
+    mount -- "$RAID_MOUNT" || die raid-failed "the new array could not be mounted"
+    result device "$RAID_DEVICE"
+    result mountpoint "$RAID_MOUNT"
+    result suggested "${RAID_MOUNT}/immich"
+    result level "$level"
+}
+
+cmd_raid_check() {
+    (($# == 1)) || die invalid-argument "usage: raid-check <mdN>"
+    local md=$1 action_file
+    [[ $md =~ ^md[0-9]{1,3}$ ]] || die invalid-argument "invalid array: ${md}"
+    action_file="${ROOT}/sys/block/${md}/md/sync_action"
+    [[ -w $action_file ]] || die storage-missing "array ${md} not found"
+    [[ $(<"$action_file") == idle ]] || die busy "the array is already busy"
+    printf 'check\n' >"$action_file"
+    result check started
+}
+
 usage() {
     cat <<'EOF'
 usage: nuvem-ruscher-helper <action> [arguments]
@@ -1160,6 +1880,9 @@ actions:
   fstab-add <uuid> <mount-point> | fstab-remove <uuid>
   setup <version> <photo-folder> <time-zone> <cpu|vaapi|quicksync|nvenc> <cpu|off|openvino|rocm|cuda>
   start | stop | restart | backup-db | update <version> | uninstall [--remove-images]
+  migrate-storage <copy|rename|adopt> <new-folder> | remove-old-copy <old-folder>
+  install-tools <rsync|mdadm|smartmontools>… | disk-health [disk…]
+  raid-create <level> <serials,…> <disk-by-id>… | raid-check <mdN>
   version
 EOF
 }
@@ -1198,6 +1921,12 @@ main() {
         backup-db) cmd_backup_db "$@" ;;
         update) cmd_update "$@" ;;
         uninstall) cmd_uninstall "$@" ;;
+        migrate-storage) cmd_migrate_storage "$@" ;;
+        remove-old-copy) cmd_remove_old_copy "$@" ;;
+        install-tools) cmd_install_tools "$@" ;;
+        disk-health) cmd_disk_health "$@" ;;
+        raid-create) cmd_raid_create "$@" ;;
+        raid-check) cmd_raid_check "$@" ;;
         *) die invalid-argument "unknown action: ${action}" ;;
     esac
 }

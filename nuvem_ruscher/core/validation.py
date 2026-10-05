@@ -35,6 +35,12 @@ FORBIDDEN_PREFIXES = (
     "/var/tmp",
 )
 
+# Pastas que só agrupam outras pastas: escolher a própria pasta é quase sempre um engano
+# (as fotos ficariam misturadas com as pastas de outras pessoas ou do sistema).
+GROUPING_FOLDERS = ("/home", "/mnt", "/media", "/opt", "/srv", "/var", "/var/lib", "/run/media")
+# Aqui, o primeiro nível é a casa de um usuário ou a pasta de discos de um usuário.
+ONE_LEVEL_GROUPING = ("/home", "/run/media")
+
 VERSION_RE = re.compile(r"^v(\d{1,3})\.(\d{1,3})\.(\d{1,4})$")
 UUID_RE = re.compile(r"^[A-Za-z0-9-]{4,36}$")
 TIMEZONE_RE = re.compile(r"^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+){0,2}$")
@@ -82,6 +88,13 @@ def validate_photo_path(path: str) -> str:
             )
     if path == "/run" or (path.startswith("/run/") and not path.startswith("/run/media/")):
         raise ValidationError(_("Folders in /run are temporary. Choose a real disk."))
+    parent = path.rsplit("/", 1)[0]
+    if path in GROUPING_FOLDERS or parent in ONE_LEVEL_GROUPING:
+        raise ValidationError(
+            _("“{path}” holds other folders of the system or of other people. Choose a folder inside it.").format(
+                path=path
+            )
+        )
     return path
 
 

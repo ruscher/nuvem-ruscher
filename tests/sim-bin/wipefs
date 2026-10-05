@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+exit 0

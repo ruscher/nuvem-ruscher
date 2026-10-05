@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# df falso: SIM_DF_AVAIL força o espaço livre; sem ele, o df real da sandbox.
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+if [[ -n ${SIM_DF_AVAIL:-} ]]; then
+    printf '%s\n' "Avail" "${SIM_DF_AVAIL}"
+    exit 0
+fi
+exec /usr/bin/df "$@"

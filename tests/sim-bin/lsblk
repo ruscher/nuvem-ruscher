@@ -1,2 +1,31 @@
 #!/usr/bin/env bash
-echo 0
+# lsblk falso. Discos da sandbox são arquivos em $ROOT/dev; o comportamento vem do ambiente:
+#   SIM_SERIAL_<nome>   número de série (padrão SERIAL-<nome>)
+#   SIM_TREE_<nome>     linhas -P extras (partições montadas, LUKS…)
+#   SIM_ROOT_DISK       disco devolvido como "dono" de qualquer ponto de montagem (lsblk -s)
+#   SIM_DISKS           discos de "lsblk -dnp -o PATH,TYPE"
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+dev=${*: -1}
+name=${dev##*/}
+var_name=${name//[^A-Za-z0-9]/_}
+case " $* " in
+    *" -dno ROTA "* | *" ROTA "*) echo 0 ;;
+    *" -nsp "*)
+        # TYPE,PATH (o caminho por último); o disco do sistema da sandbox é SIM_ROOT_DISK.
+        echo "part ${dev}"
+        [[ -n ${SIM_ROOT_DISK-/dev/sim-system} ]] && echo "disk ${SIM_ROOT_DISK-/dev/sim-system}"
+        ;;
+    *" -dn -o TYPE "*) var="SIM_TYPE_${var_name}"; echo "${!var:-disk}" ;;
+    *" -dn -o SERIAL "*) var="SIM_SERIAL_${var_name}"; echo "${!var-SERIAL-${name}}" ;;
+    *" -nP "*)
+        printf 'PATH="%s" TYPE="disk" FSTYPE="" MOUNTPOINT=""\n' "$dev"
+        var="SIM_TREE_${var_name}"
+        [[ -n ${!var:-} ]] && printf '%s\n' "${!var}"
+        ;;
+    *" -lnp -o PATH "*) echo "$dev" ;;
+    *" -dnp -o PATH,TYPE "*) for d in ${SIM_DISKS:-}; do echo "$d disk"; done ;;
+    *) echo 0 ;;
+esac
+exit 0

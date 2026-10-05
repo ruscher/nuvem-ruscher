@@ -265,6 +265,6 @@ class TestMetadata:
         assert metainfo.findtext("project_license") == "GPL-3.0-or-later"
         policy = ET.fromstring((ROOT / f"data/{APP_ID}.policy.in").read_text())
         assert {a.get("id") for a in policy.iter("action")} == {
-            f"{APP_ID}.{name}" for name in ("manage", "start", "stop", "restart")
+            f"{APP_ID}.{name}" for name in ("manage", "start", "stop", "restart", "health")
         }
         assert policy.findtext("icon_name") == APP_ID
