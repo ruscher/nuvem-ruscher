@@ -34,6 +34,9 @@ PROBLEMS = {
     "dest-read-only": N_("This disk can only be read. Nothing can be saved on it."),
     "dest-not-empty": N_("The new folder already has other files. Choose an empty folder."),
     "no-space": N_("Not enough free space on the new disk."),
+    "adopt-incomplete": N_(
+        "The new folder has fewer files than the current one: it is not a full copy of this library."
+    ),
     "fat-large-file": N_("This disk is FAT32 and some videos are larger than 4 GB."),
     "symlinks-unsupported": N_("The library has shortcuts that this kind of disk cannot store."),
     "mode-unavailable:adopt": N_("The new folder does not have a complete copy of this library."),
@@ -43,7 +46,6 @@ PROBLEMS = {
 WARNINGS = {
     "same-fs-copy": N_("Same disk: the copy needs as much free space as the library itself."),
     "resume": N_("A previous copy was interrupted here. It continues from where it stopped."),
-    "adopt-fewer-files": N_("The new folder has fewer files than the current one. Check it before continuing."),
     "source-unreadable-entries": N_("Some files could not be read and were not counted."),
     "dest-ntfs": N_("Disk formatted on Windows (NTFS): it works, but is slower and needs “Safely remove”."),
     "dest-exfat": N_("exFAT disk: it works, but power failures are riskier."),
@@ -69,6 +71,7 @@ DISK_REASONS = {
     "system": N_("Holds the operating system"),
     "swap": N_("Used as swap"),
     "cloud": N_("Holds your photos"),
+    "fstab": N_("Mounted at startup (in /etc/fstab)"),
     "database": N_("Holds the Immich database"),
     "docker": N_("Holds Docker data"),
     "mounted": N_("In use (mounted)"),
@@ -492,10 +495,15 @@ class MigrationDialog(FlowDialog):
         )
 
     def _remove(self, old: str) -> None:
+        if self._busy:
+            return  # um segundo clique enquanto a primeira remoção roda
         self.set_busy(True, _("Removing the old copy…"))
+        done_page = self.nav.get_visible_page()
+        done_page.set_sensitive(False)
 
         def done(result: HelperResult) -> None:
             self.set_busy(False)
+            done_page.set_sensitive(True)
             if result.ok:
                 toast(self, _("Old copy removed"))
                 self.close()
@@ -822,4 +830,9 @@ class RaidDialog(FlowDialog):
     def _move_now(self, dest: str) -> None:
         root = self.get_root()
         self.close()
-        MigrationDialog(self.ctx, dest).present(root)
+        MigrationDialog(self.ctx, dest, on_finished=self._moved).present(root)
+
+    def _moved(self) -> None:
+        # A página Armazenamento (dona deste diálogo) se atualiza depois da mudança também.
+        if self.on_created:
+            self.on_created("")

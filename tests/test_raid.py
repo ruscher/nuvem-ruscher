@@ -168,3 +168,11 @@ def test_labels_from_dev_md(tmp_path):
 )
 def test_usable_size(level, sizes, usable):
     assert raid.usable_size(level, sizes) == usable
+
+
+def test_raid10_losing_a_whole_mirror_pair_is_failed():
+    lost = only(RAID10.replace("[4/3] [UU_U]", "[4/2] [UU__]"))
+    assert lost.near_copies == 2
+    assert lost.state is raid.RaidState.FAILED
+    # Um disco de cada par: degradado, mas sem perda.
+    assert only(RAID10.replace("[4/3] [UU_U]", "[4/2] [U_U_]")).state is raid.RaidState.DEGRADED

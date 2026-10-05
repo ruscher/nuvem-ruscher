@@ -25,6 +25,7 @@ from nuvem_ruscher.ui.common import (
     status_icon,
     toast,
 )
+from nuvem_ruscher.ui.flow import BUSY
 from nuvem_ruscher.ui.format import duration
 from nuvem_ruscher.ui.page import Page, advanced_expander, group, icon_tile
 from nuvem_ruscher.ui.storage_flows import DISK_REASONS, MigrationDialog, RaidDialog, disk_reason, property_row
@@ -477,7 +478,7 @@ class StoragePage(Page):
             row.add_suffix(open_button)
             remove = Gtk.Button(label=_("Remove…"), valign=Gtk.Align.CENTER)
             remove.add_css_class("destructive-action")
-            remove.connect("clicked", lambda *_: self._ask_remove_old(old))
+            remove.connect("clicked", lambda b: self._ask_remove_old(b, old))
             row.add_suffix(remove)
             self.move_group.add(row)
             self._move_rows.append(row)
@@ -497,9 +498,16 @@ class StoragePage(Page):
             self._move_rows.append(row)
         self.move_group.set_visible(bool(self._move_rows))
 
-    def _ask_remove_old(self, old: str) -> None:
+    def _ask_remove_old(self, button: Gtk.Button, old: str) -> None:
         def run() -> None:
+            if self in BUSY:
+                return
+            button.set_sensitive(False)
+            BUSY.add(self)  # a janela avisa antes de fechar
+
             def done(result: HelperResult) -> None:
+                BUSY.discard(self)
+                button.set_sensitive(True)
                 if result.ok:
                     toast(self, _("Old copy removed"))
                     self.on_shown()
@@ -543,6 +551,12 @@ class StoragePage(Page):
 
         self.backend.helper("raid-check", [device], None, done)
 
+    def _tools_installed(self, result: HelperResult) -> None:
+        if result.ok:
+            self.check_health()
+        else:
+            show_error(self, result.error_code, result.error_detail, result.log)
+
     def check_health(self) -> None:
         if not self.backend.tool_available("smartctl"):
             confirm(
@@ -550,7 +564,7 @@ class StoragePage(Page):
                 _("Install the health tool?"),
                 _("Reading the drives’ health needs smartmontools, from the official repositories."),
                 _("Install"),
-                lambda: self.backend.helper("install-tools", ["smartmontools"], None, lambda _r: self.check_health()),
+                lambda: self.backend.helper("install-tools", ["smartmontools"], None, self._tools_installed),
             )
             return
         self.drives.check_button.set_sensitive(False)

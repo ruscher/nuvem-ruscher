@@ -50,6 +50,7 @@ class RaidArray:
     finish: str = ""  # "84.2min", como o kernel informa
     speed: str = ""
     label: str = ""  # nome em /dev/md/<label>
+    near_copies: int = 0  # raid10 "2 near-copies": as cópias ficam em discos vizinhos
 
     @property
     def name(self) -> str:
@@ -89,6 +90,12 @@ class RaidArray:
         if tolerated is None:
             return False
         if self.level == "raid10":
+            n = self.near_copies
+            if n > 1 and len(self.status_map) == self.raid_disks and self.raid_disks % n == 0:
+                # Layout "near" com discos múltiplos de n: cada grupo de n vizinhos guarda as
+                # mesmas cópias; um grupo inteiro fora perde dados.
+                groups = (self.status_map[i : i + n] for i in range(0, self.raid_disks, n))
+                return any(set(g) == {"_"} for g in groups)
             # Sem saber os pares, só dá para afirmar perda quando falta mais da metade.
             return self.missing > self.raid_disks // 2
         return self.missing > tolerated
@@ -98,6 +105,7 @@ _HEAD = re.compile(r"^(md\w+)\s*:\s*(active|inactive)(?:\s*\((?:auto-)?read-only
 _MEMBER = re.compile(r"^(\S+?)\[(\d+)\]((?:\([A-Z]\))*)$")
 _COUNTS = re.compile(r"(\d+)\s+blocks.*\[(\d+)/(\d+)\]\s*\[([U_]+)\]")
 _BLOCKS = re.compile(r"(\d+)\s+blocks")
+_NEAR = re.compile(r"(\d+)\s+near-copies")
 _PROGRESS = re.compile(
     r"\b(resync|recovery|reshape|check|repair)\s*=\s*([\d.]+)%(?:.*?finish=(\S+))?(?:.*?speed=(\S+))?"
 )
@@ -137,6 +145,9 @@ def parse_mdstat(text: str) -> list[RaidArray]:
             current.raid_disks = int(counts.group(2))
             current.working_disks = int(counts.group(3))
             current.status_map = counts.group(4)
+            near = _NEAR.search(line)
+            if near:
+                current.near_copies = int(near.group(1))
             continue
         blocks = _BLOCKS.search(line)
         if blocks and not current.size_bytes:

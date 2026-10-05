@@ -25,6 +25,14 @@ ROLES = (
     ("viewer", N_("Can view")),
 )
 ROLE_TEXT = {"owner": N_("Owner"), "editor": N_("Can add"), "viewer": N_("Can view")}
+# O mesmo papel no meio de uma frase ("Ana (pode adicionar)"), com a caixa certa em cada idioma.
+ROLE_INLINE = {"owner": N_("owner"), "editor": N_("can add"), "viewer": N_("can view")}
+
+
+def role_inline(role: str) -> str:
+    return _(ROLE_INLINE[role]) if role in ROLE_INLINE else role
+
+
 ROLE_HELP = N_(
     "Can view: see and download. Can add: also add their own photos, rename the folder and invite other "
     "people. Only the owner can delete the folder or remove other people’s photos."
@@ -32,7 +40,7 @@ ROLE_HELP = N_(
 
 
 def members_text(album: Album) -> str:
-    names = [f"{m.name} ({_(ROLE_TEXT.get(m.role, m.role)).lower()})" for m in album.members]
+    names = [_("{name} ({role})").format(name=m.name, role=role_inline(m.role)) for m in album.members]
     return ", ".join(names) if names else _("Only you")
 
 
@@ -68,8 +76,8 @@ class SharingPage(Page):
         self.partners = group(
             _("Whole libraries"),
             _(
-                "A partner sees all of your photos (except archived and locked ones) in their own timeline, "
-                "including locations. It works in one direction."
+                "A partner sees all of your photos (except archived and locked ones), including locations, "
+                "and can choose to show them in their own timeline. It works in one direction."
             ),
         )
         for widget in (self.by_me, self.with_me, self.partners):
@@ -156,7 +164,7 @@ class SharingPage(Page):
                 subtitle=GLib.markup_escape_text(
                     _("From {owner} · you {role}").format(
                         owner=album.owner.name if album.owner else "?",
-                        role=_(ROLE_TEXT.get(mine_role, mine_role)).lower(),
+                        role=role_inline(mine_role),
                     )
                 ),
             )
@@ -335,16 +343,22 @@ class NewSharedFolderDialog(FlowDialog):
         self.push(page)
 
     def _validate(self) -> None:
-        self.create.set_sensitive(bool(self.name.get_text().strip()) and bool(self.members.chosen()))
+        ready = bool(self.name.get_text().strip()) and bool(self.members.chosen())
+        self.create.set_sensitive(ready and not self._busy)
 
     def _create(self) -> None:
+        if self._busy:
+            return
         self.create.set_sensitive(False)
+        self.set_busy(True, _("Creating the shared folder…"))
 
         def done(album: Album) -> None:
+            self.set_busy(False)
             self.on_created(album)
             self.close()
 
         def failed(exc: BaseException) -> None:
+            self.set_busy(False)
             self.create.set_sensitive(True)
             self.error.set_text(api_message(exc))
             self.error.set_visible(True)
@@ -409,7 +423,9 @@ class SharedFolderDialog(Adw.Dialog):
         row.add_prefix(Adw.Avatar(size=32, text=member.name, show_initials=True))
         row.set_model(Gtk.StringList.new([_(text) for _key, text in ROLES]))
         row.set_selected(0 if member.role == "editor" else 1)
-        row.connect("notify::selected", lambda r, _p, m=member: self._set_role(m, ROLES[r.get_selected()][0]))
+        # O papel salvo no servidor: muda só quando a chamada dá certo.
+        row.saved_role = member.role
+        row.connect("notify::selected", lambda r, _p, m=member: self._set_role(r, m, ROLES[r.get_selected()][0]))
         remove = Gtk.Button(icon_name="user-trash-symbolic", valign=Gtk.Align.CENTER)
         remove.add_css_class("flat")
         remove.set_tooltip_text(_("Remove from this folder"))
@@ -420,17 +436,21 @@ class SharedFolderDialog(Adw.Dialog):
         row.add_suffix(remove)
         return row
 
-    def _set_role(self, member: AlbumMember, role: str) -> None:
-        if role == member.role:
+    def _set_role(self, row: Adw.ComboRow, member: AlbumMember, role: str) -> None:
+        if role == row.saved_role:
             return
-        run_async(
-            self.ctx.backend.set_album_role,
-            self.album.id,
-            member.user_id,
-            role,
-            on_done=lambda _r: (toast(self, _("Saved")), self.on_changed()),
-            on_error=lambda e: toast(self, api_message(e), 6),
-        )
+
+        def done(_result: object) -> None:
+            row.saved_role = role
+            toast(self, _("Saved"))
+            self.on_changed()
+
+        def failed(error: Exception) -> None:
+            # Volta a mostrar o que vale no servidor.
+            row.set_selected(0 if row.saved_role == "editor" else 1)
+            toast(self, api_message(error), 6)
+
+        run_async(self.ctx.backend.set_album_role, self.album.id, member.user_id, role, on_done=done, on_error=failed)
 
     def _remove(self, member: AlbumMember) -> None:
         def run() -> None:

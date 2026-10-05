@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -92,7 +93,28 @@ class QuotaRow(Adw.ComboRow):
         if QUOTAS[index][1] == -1 and quota:
             self.custom.set_value(round(quota / GIB))
             self.custom.set_visible(True)
-        self.connect("notify::selected", lambda *_: self.custom.set_visible(QUOTAS[self.get_selected()][1] == -1))
+        self._previous = quota
+        # Escolher "Personalizado" ainda não é uma quota: só vale depois de mexer no número.
+        self.custom_pending = False
+        self._setting = False
+        self.connect("notify::selected", lambda *_: self._selected())
+        self.custom.connect("notify::value", lambda *_: self._value_changed())
+
+    def _selected(self) -> None:
+        custom = QUOTAS[self.get_selected()][1] == -1
+        self.custom.set_visible(custom)
+        if not custom:
+            self._previous = QUOTAS[self.get_selected()][1]
+            return
+        # Começa do valor anterior (nunca de 1 GB), para não cortar o espaço de ninguém.
+        self.custom_pending = True
+        self._setting = True
+        self.custom.set_value(max(1, round(self._previous / GIB)) if self._previous else 100)
+        self._setting = False
+
+    def _value_changed(self) -> None:
+        if not self._setting:
+            self.custom_pending = False
 
     @property
     def quota(self) -> int | None:
@@ -100,6 +122,9 @@ class QuotaRow(Adw.ComboRow):
         if value == -1:
             return int(self.custom.get_value()) * GIB
         return value
+
+    def remember(self, quota: int | None) -> None:
+        self._previous = quota
 
 
 class SignInPanel(Gtk.Box):
@@ -149,8 +174,10 @@ class SignInPanel(Gtk.Box):
             self.on_signed_in()
             for page in ("users", "sharing", "home"):
                 target = self.ctx.extras.get(page)
-                if target is not None and target is not self and hasattr(target, "session_changed"):
-                    target.session_changed()
+                notify = getattr(target, "session_changed", None)
+                # A página dona deste painel já foi avisada (on_signed_in).
+                if notify is not None and notify != self.on_signed_in:
+                    notify()
 
         def failed(exc: BaseException) -> None:
             self.button.set_sensitive(True)
@@ -239,9 +266,13 @@ class AddAccountDialog(FlowDialog):
             problems.append(_("The storage label can only have lowercase letters, numbers, - and _."))
         self.error.set_text(" ".join(problems))
         self.error.set_visible(bool(problems))
-        self.create.set_sensitive(bool(self.name.get_text().strip()) and bool(email) and not problems)
+        ready = bool(self.name.get_text().strip()) and bool(email) and not problems
+        # Durante a criação, editar um campo não reabilita o botão (seria uma segunda conta).
+        self.create.set_sensitive(ready and not self._busy)
 
     def _create(self) -> None:
+        if self._busy:
+            return
         self.create.set_sensitive(False)
         self.set_busy(True, _("Creating the account…"))
         password = self.password.get_text()
@@ -316,6 +347,9 @@ class AccountDialog(Adw.Dialog):
         self.on_changed = on_changed
         session = ctx.backend.session
         self.is_me = session is not None and session.user_id == user.id
+        self._quota_timer = 0
+        self._quota_seq = 0
+        self._reverting = False
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(Adw.HeaderBar())
         page = Adw.PreferencesPage()
@@ -368,7 +402,7 @@ class AccountDialog(Adw.Dialog):
         if self.is_me:
             self.admin.set_sensitive(False)
             self.admin.set_subtitle(_("Your own access can only be changed by another administrator."))
-        self.admin.connect("notify::active", lambda *_: self._save(is_admin=self.admin.get_active()))
+        self.admin.connect("notify::active", lambda *_: self._admin_changed())
         advanced.add_row(self.admin)
         settings.add(advanced)
         settings.set_sensitive(not user.disabled)
@@ -421,20 +455,47 @@ class AccountDialog(Adw.Dialog):
         return row
 
     def _quota_changed(self) -> None:
-        quota = self.quota.quota
-        if quota != self.user.quota:
-            self._save(quota=quota)
+        # Cada clique no número não vira uma chamada: salva o último valor, um instante depois.
+        if self._quota_timer:
+            GLib.source_remove(self._quota_timer)
+        self._quota_timer = GLib.timeout_add(700, self._save_quota)
 
-    def _save(self, **changes: object) -> None:
+    def _save_quota(self) -> bool:
+        self._quota_timer = 0
+        quota = self.quota.quota
+        if not self.quota.custom_pending and quota != self.user.quota:
+            self._quota_seq += 1
+            self._save(quota=quota, seq=self._quota_seq)
+        return GLib.SOURCE_REMOVE
+
+    def _admin_changed(self) -> None:
+        if self._reverting or self.admin.get_active() == self.user.is_admin:
+            return
+        self._save(is_admin=self.admin.get_active())
+
+    def _revert(self) -> None:
+        """Mostra de novo o que vale no servidor, sem disparar outra gravação."""
+        self._reverting = True
+        self.admin.set_active(self.user.is_admin)
+        self._reverting = False
+
+    def _save(self, seq: int | None = None, **changes: object) -> None:
         def done(user: ImmichUser) -> None:
+            if seq is not None and seq != self._quota_seq:
+                return  # uma resposta antiga, já substituída por outra quota
             self.user = user
+            self.quota.remember(user.quota)
             toast(self, _("Saved"))
             self.on_changed()
 
         def failed(exc: BaseException) -> None:
+            if "is_admin" in changes:
+                self._revert()
             toast(self, api_message(exc), 6)
 
-        run_async(self.ctx.backend.update_account, self.user.id, **changes, on_done=done, on_error=failed)
+        # run_async só repassa argumentos posicionais: as mudanças vão no partial.
+        update = functools.partial(self.ctx.backend.update_account, self.user.id, **changes)
+        run_async(update, on_done=done, on_error=failed)
 
     def _reset(self) -> None:
         def done(password: str) -> None:
@@ -449,6 +510,7 @@ class AccountDialog(Adw.Dialog):
             box.append(entry)
             copy = Gtk.Button(icon_name="edit-copy-symbolic")
             copy.set_tooltip_text(_("Copy"))
+            copy.update_property([Gtk.AccessibleProperty.LABEL], [_("Copy the temporary password")])
             copy.connect("clicked", lambda b: (copy_text(b, password), toast(b, _("Copied"))))
             box.append(copy)
             alert.set_extra_child(box)

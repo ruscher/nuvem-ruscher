@@ -13,8 +13,8 @@ from nuvem_ruscher.i18n import _
 from nuvem_ruscher.ui.common import label
 from nuvem_ruscher.ui.widgets.rows import InstallStep
 
-# Diálogos com uma operação privilegiada em andamento.
-BUSY: set[Adw.Dialog] = set()
+# Diálogos (ou páginas) com uma operação privilegiada em andamento.
+BUSY: set[Gtk.Widget] = set()
 
 
 class FlowPage(Adw.NavigationPage):

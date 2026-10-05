@@ -141,3 +141,62 @@ def test_failure_paths_show_human_errors(errors):
         shell.deactivate_monitor()
         window.destroy()
     assert errors == [], [str(e[1]) for e in errors]
+
+
+def test_uninstall_returns_to_the_wizard(errors):
+    from nuvem_ruscher.backend.simulated import SimulatedBackend
+    from nuvem_ruscher.ui.window import MainWindow
+
+    Adw.init()
+    app = Adw.Application(application_id="io.github.ruscher.NuvemRuscher.SmokeTest")
+    app.register(None)
+    backend = SimulatedBackend("installed")
+    backend.time_scale = 0.01
+    backend.state_set("wizard_done", True)
+    window = MainWindow(app, backend, Gio.Menu())
+    try:
+        assert window.shell is not None
+        window._uninstalled()
+        pump(0.3)
+        assert window.shell is None and window.wizard is not None
+        assert window.stack.get_visible_child_name() == "wizard"
+    finally:
+        if window.shell is not None:
+            window.shell.deactivate_monitor()
+        window.close()  # destroy() numa janela de aplicativo sem laço principal derruba o GTK
+        pump(0.2)
+    assert errors == [], [str(e[1]) for e in errors]
+
+
+def test_custom_quota_saves_only_what_the_admin_typed(errors):
+    from nuvem_ruscher.ui.accounts_ui import QUOTAS, AccountDialog
+
+    backend, window, shell = build("family")
+    try:
+        backend.sign_in("ruscher@example.com", "x")
+        user = backend.accounts()[1]
+        calls = []
+        real_update = backend.update_account
+
+        def spy(user_id, **changes):
+            calls.append(changes)
+            return real_update(user_id, **changes)
+
+        backend.update_account = spy
+        dialog = AccountDialog(shell.ctx, user, lambda: None)
+        dialog.present(window)
+        pump(0.2)
+        # Escolher "Personalizado" não grava nada (nem 1 GB).
+        dialog.quota.set_selected(len(QUOTAS) - 1)
+        pump(1.0)
+        assert calls == []
+        # Vários cliques no número viram uma gravação só, com o último valor.
+        for value in (40, 41, 42):
+            dialog.quota.custom.set_value(value)
+        pump(1.2)
+        assert calls == [{"quota": 42 * 1024**3}]
+        dialog.force_close()
+    finally:
+        shell.deactivate_monitor()
+        window.destroy()
+    assert errors == [], [str(e[1]) for e in errors]

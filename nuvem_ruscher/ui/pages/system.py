@@ -14,6 +14,7 @@ from nuvem_ruscher.core.docker import Health, container_description, container_l
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.i18n import _
 from nuvem_ruscher.ui.common import confirm, label, show_error, toast
+from nuvem_ruscher.ui.flow import BUSY
 from nuvem_ruscher.ui.page import Page, advanced_expander, group
 
 if TYPE_CHECKING:
@@ -164,7 +165,7 @@ class SystemPage(Page):
 
         self.backend.helper("restart", [], None, done)
 
-    def _ask_uninstall(self, _button: Gtk.Button) -> None:
+    def _ask_uninstall(self, button: Gtk.Button) -> None:
         conf = self.monitor.conf
         images = Gtk.CheckButton(label=_("Also delete the downloaded components (frees about 5 GB)"))
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
@@ -182,22 +183,30 @@ class SystemPage(Page):
             _("Remove the Immich server?"),
             body,
             _("Remove server"),
-            lambda: self._uninstall(images.get_active()),
+            lambda: self._uninstall(button, images.get_active()),
             destructive=True,
             extra=box,
             body_markup=True,
         )
 
-    def _uninstall(self, remove_images: bool) -> None:
+    def _uninstall(self, button: Gtk.Button, remove_images: bool) -> None:
         def done(result: HelperResult) -> None:
+            BUSY.discard(self)
+            button.set_sensitive(True)
             if result.ok:
                 self.backend.state_set("wizard_done", False)
                 self.backend.state_set("install_step", "")
                 toast(self, _("Server removed. Your photos are still on the disk."))
                 self.ctx.on_uninstalled()
             else:
+                # Nada foi removido (ou a senha foi cancelada): o painel volta a acompanhar.
+                self.monitor.start()
                 show_error(self, result.error_code, result.error_detail, result.log)
 
+        if self in BUSY:
+            return
+        button.set_sensitive(False)
+        BUSY.add(self)
         toast(self, _("Removing the server…"))
         self.monitor.stop()
         self.backend.helper("uninstall", ["--remove-images"] if remove_images else [], None, done)

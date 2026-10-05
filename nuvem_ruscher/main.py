@@ -14,7 +14,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     from nuvem_ruscher.i18n import _
 
     parser = argparse.ArgumentParser(
-        prog="nuvem-ruscher", description=_("Installs and looks after Immich on BigLinux.")
+        prog="nuvem-ruscher",
+        description=_("Installs and looks after Immich on BigLinux."),
+        allow_abbrev=False,
     )
     # --simular/--cenario/ajuda: nomes da primeira versão, mantidos como apelidos.
     parser.add_argument(

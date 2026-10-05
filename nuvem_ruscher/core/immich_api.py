@@ -5,6 +5,7 @@ Endpoints conferidos na OpenAPI da v3.2.4 (docs/01-pesquisa-immich.md).
 
 from __future__ import annotations
 
+import http.client
 import json
 import re
 import secrets
@@ -64,7 +65,7 @@ class ImmichClient:
                 raw = response.read()
         except urllib.error.HTTPError as exc:
             raise ApiError(exc.code, _error_message(exc)) from None
-        except (urllib.error.URLError, OSError, TimeoutError) as exc:
+        except (urllib.error.URLError, OSError, TimeoutError, http.client.HTTPException) as exc:
             raise ApiError(0, str(getattr(exc, "reason", exc))) from None
         if not raw:
             return None
@@ -154,9 +155,11 @@ class ImmichClient:
     def usage_by_user(self, token: str) -> dict[str, tuple[int, int, int]]:
         """userId → (fotos, vídeos, bytes)."""
         s = self._request("GET", "/server/statistics", token=token) or {}
+        rows = s.get("usageByUser") if isinstance(s, dict) else None
         return {
-            str(u["userId"]): (int(u.get("photos", 0)), int(u.get("videos", 0)), int(u.get("usage", 0)))
-            for u in s.get("usageByUser", [])
+            str(u["userId"]): (int(u.get("photos") or 0), int(u.get("videos") or 0), int(u.get("usage") or 0))
+            for u in rows or []
+            if isinstance(u, dict) and u.get("userId")
         }
 
     def create_user(
@@ -381,8 +384,10 @@ def album_from_api(row: dict[str, Any]) -> Album:
 def _error_message(exc: urllib.error.HTTPError) -> str:
     try:
         payload = json.loads(exc.read() or b"{}")
-    except ValueError:
+    except (ValueError, OSError, http.client.HTTPException):
         return exc.reason or str(exc.code)
+    if not isinstance(payload, dict):
+        return str(exc.reason or exc.code)
     message = payload.get("message")
     if isinstance(message, list):
         return "; ".join(str(m) for m in message)

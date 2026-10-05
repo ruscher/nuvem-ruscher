@@ -93,9 +93,9 @@ class MainWindow(Adw.ApplicationWindow):
             self.stack.remove(wizard)
 
     def _uninstalled(self) -> None:
-        if self.dashboard is not None:
-            self.dashboard.deactivate_monitor()
-            dashboard = self.dashboard
+        if self.shell is not None:
+            self.shell.deactivate_monitor()
+            shell = self.shell
             self.shell = None
             self.show_wizard("welcome")
-            self.stack.remove(dashboard)
+            self.stack.remove(shell)
