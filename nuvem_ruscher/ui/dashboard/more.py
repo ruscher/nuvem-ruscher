@@ -49,10 +49,10 @@ class MorePage(Gtk.Box):
 
         # Acesso fora de casa
         self.away = Adw.PreferencesGroup(
-            title=_("Acesso fora de casa"),
-            description=_("Com o Tailscale (gratuito), o celular envia fotos de qualquer lugar, com segurança."),
+            title=_("Access away from home"),
+            description=_("With Tailscale (free), the phone uploads photos from anywhere, securely."),
         )
-        self.away_row = Adw.ActionRow(title=_("Verificando o Tailscale…"))
+        self.away_row = Adw.ActionRow(title=_("Checking Tailscale…"))
         self.away_row.set_subtitle_lines(4)
         self.away_icon = status_icon("pending")
         self.away_row.add_prefix(self.away_icon)
@@ -62,40 +62,40 @@ class MorePage(Gtk.Box):
         body.append(self.away)
 
         # Disco
-        self.disk = Adw.PreferencesGroup(title=_("Disco das fotos"))
+        self.disk = Adw.PreferencesGroup(title=_("Photo disk"))
         self.boot = Adw.SwitchRow(
-            title=_("Ligar o disco junto com o computador"),
-            subtitle=_("O servidor funciona logo depois de reiniciar, mesmo antes de você entrar."),
+            title=_("Mount the disk when the computer starts"),
+            subtitle=_("The server works right after a restart, even before you log in."),
             sensitive=False,
         )
         self.boot.set_subtitle_lines(3)
         self._boot_handler = self.boot.connect("notify::active", self._toggle_boot)
         self.disk.add(self.boot)
-        self.folder = Adw.ActionRow(title=_("Pasta das fotos"))
+        self.folder = Adw.ActionRow(title=_("Photo folder"))
         self.folder.set_subtitle_selectable(True)
-        self.folder.add_suffix(icon_button("folder-open-symbolic", _("Abrir a pasta das fotos"), self._open_folder))
+        self.folder.add_suffix(icon_button("folder-open-symbolic", _("Open the photo folder"), self._open_folder))
         self.disk.add(self.folder)
         body.append(self.disk)
 
         # Firewall
-        self.firewall = Adw.PreferencesGroup(title=_("Rede"), visible=False)
+        self.firewall = Adw.PreferencesGroup(title=_("Network"), visible=False)
         fw = Adw.ActionRow(
-            title=_("Liberar a porta {p} no firewall").format(p=IMMICH_PORT),
-            subtitle=_("Só para redes de casa e Tailscale. Use se o celular não encontrar o servidor."),
+            title=_("Open port {p} in the firewall").format(p=IMMICH_PORT),
+            subtitle=_("Only for home networks and Tailscale. Use it if the phone cannot find the server."),
         )
         fw.set_subtitle_lines(3)
-        fw_button = Gtk.Button(label=_("Liberar"), valign=Gtk.Align.CENTER)
+        fw_button = Gtk.Button(label=_("Open port"), valign=Gtk.Align.CENTER)
         fw_button.connect("clicked", self._firewall)
         fw.add_suffix(fw_button)
         self.firewall.add(fw)
         body.append(self.firewall)
 
         # Detalhes técnicos
-        tech = Adw.PreferencesGroup(title=_("Detalhes técnicos"))
+        tech = Adw.PreferencesGroup(title=_("Technical details"))
         for title, value in (
-            (_("Serviço do sistema"), SERVICE_NAME),
-            (_("Configuração"), CONF_FILE),
-            (_("Registros do serviço"), f"journalctl -u {SERVICE_NAME}"),
+            (_("System service"), SERVICE_NAME),
+            (_("Configuration"), CONF_FILE),
+            (_("Service logs"), f"journalctl -u {SERVICE_NAME}"),
         ):
             row = Adw.ActionRow(title=title, subtitle=GLib.markup_escape_text(value))
             row.set_subtitle_selectable(True)
@@ -104,13 +104,13 @@ class MorePage(Gtk.Box):
         body.append(tech)
 
         # Desinstalar
-        danger = Adw.PreferencesGroup(title=_("Remover"))
+        danger = Adw.PreferencesGroup(title=_("Remove"))
         row = Adw.ActionRow(
-            title=_("Desinstalar o servidor"),
-            subtitle=_("Remove o Immich deste computador. Suas fotos e vídeos não são apagados."),
+            title=_("Uninstall the server"),
+            subtitle=_("Removes Immich from this computer. Your photos and videos are not deleted."),
         )
         row.set_subtitle_lines(3)
-        button = Gtk.Button(label=_("Desinstalar…"), valign=Gtk.Align.CENTER)
+        button = Gtk.Button(label=_("Uninstall…"), valign=Gtk.Align.CENTER)
         button.add_css_class("destructive-action")
         button.connect("clicked", self._ask_uninstall)
         row.add_suffix(button)
@@ -133,33 +133,33 @@ class MorePage(Gtk.Box):
         if not info.installed:
             self._away(
                 "info",
-                _("O Tailscale não está instalado"),
+                _("Tailscale is not installed"),
                 _(
-                    "Instale pela loja de programas (pacote “tailscale”), entre na sua conta e "
-                    "instale também o app Tailscale no celular."
+                    "Install it from the software store (package “tailscale”), sign in to your account and "
+                    "also install the Tailscale app on the phone."
                 ),
             )
-            more = Gtk.Button(label=_("Saiba mais"))
+            more = Gtk.Button(label=_("Learn more"))
             more.connect("clicked", lambda b: open_uri(b, TAILSCALE_DOWNLOAD_URL))
             self.away_suffix.append(more)
         elif not info.running or not info.ip:
             self._away(
                 "warning",
-                _("O Tailscale está desligado"),
-                _("Ligue o Tailscale neste computador (“sudo tailscale up”) e entre na sua conta."),
+                _("Tailscale is turned off"),
+                _("Turn on Tailscale on this computer (“sudo tailscale up”) and sign in to your account."),
             )
         else:
             host = info.dns_name or info.ip
             url = f"http://{host}:{IMMICH_PORT}"
-            self._away("ok", _("Pronto para usar fora de casa"), url)
+            self._away("ok", _("Ready to use away from home"), url)
             self.away_suffix.append(
                 icon_button(
                     "edit-copy-symbolic",
-                    _("Copiar endereço"),
-                    lambda b: (copy_text(b, url), toast(b, _("Endereço copiado"))),
+                    _("Copy address"),
+                    lambda b: (copy_text(b, url), toast(b, _("Address copied"))),
                 )
             )
-            qr = Gtk.Button(label=_("Mostrar QR"))
+            qr = Gtk.Button(label=_("Show QR"))
             qr.connect("clicked", lambda *_: self.show_phone_away())
             self.away_suffix.append(qr)
 
@@ -179,15 +179,15 @@ class MorePage(Gtk.Box):
             self.boot.set_visible(volume is None)
             self.boot.set_sensitive(False)
             if volume is None:
-                self.boot.set_subtitle(_("Conecte o disco das fotos para ver esta opção."))
+                self.boot.set_subtitle(_("Connect the photo disk to see this option."))
         elif report.fstab_state == "foreign":
             self.boot.set_active(True)
             self.boot.set_sensitive(False)
-            self.boot.set_subtitle(_("Já configurado no sistema (/etc/fstab), fora do Nuvem Ruscher."))
+            self.boot.set_subtitle(_("Already configured in the system (/etc/fstab), outside Nuvem Ruscher."))
         elif report.fstab_state == "unsupported":
             self.boot.set_active(False)
             self.boot.set_sensitive(False)
-            self.boot.set_subtitle(_("Este tipo de disco não pode ligar automaticamente."))
+            self.boot.set_subtitle(_("This type of disk cannot be mounted automatically at startup."))
         else:
             self.boot.set_active(report.fstab_state == "ours")
             self.boot.set_sensitive(True)
@@ -211,7 +211,7 @@ class MorePage(Gtk.Box):
             def done(result: HelperResult) -> None:
                 self.boot.set_sensitive(True)
                 if result.ok:
-                    toast(self, _("Pronto!") if enable else _("Montagem automática desligada"))
+                    toast(self, _("Done!") if enable else _("Automatic mounting turned off"))
                     self.refresh()
                 else:
                     revert()
@@ -227,12 +227,12 @@ class MorePage(Gtk.Box):
         else:
             dialog = confirm(
                 self,
-                _("Desligar a montagem automática?"),
+                _("Turn off automatic mounting?"),
                 _(
-                    "Depois de reiniciar, o servidor só vai ligar quando você entrar na sessão e o disco aparecer. "
-                    "Apenas a linha criada pelo Nuvem Ruscher sai do /etc/fstab (com cópia de segurança)."
+                    "After a restart, the server will only start when you log in and the disk appears. Only "
+                    "the line created by Nuvem Ruscher is removed from /etc/fstab (with a backup copy)."
                 ),
-                _("Desligar"),
+                _("Turn off"),
                 run,
             )
             dialog.connect("response", lambda _d, r: revert() if r != "confirm" else None)
@@ -246,7 +246,7 @@ class MorePage(Gtk.Box):
         def done(result: HelperResult) -> None:
             if result.ok:
                 self.backend.state_set("firewall_allowed", True)
-                toast(self, _("Porta liberada para a rede de casa"))
+                toast(self, _("Port opened to the home network"))
             else:
                 show_error(self, result.error_code, result.error_detail, result.log)
 
@@ -255,22 +255,22 @@ class MorePage(Gtk.Box):
     # --- Desinstalar -----------------------------------------------------------------------------
     def _ask_uninstall(self, _button: Gtk.Button) -> None:
         conf = self.monitor.conf
-        images = Gtk.CheckButton(label=_("Apagar também os componentes baixados (libera cerca de 5 GB)"))
+        images = Gtk.CheckButton(label=_("Also delete the downloaded components (frees about 5 GB)"))
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         box.append(images)
         body = _(
-            "Suas fotos e vídeos continuam em <b>{photos}</b>, intactos.\n\n"
-            "O banco de dados (álbuns, pessoas, favoritos) fica guardado em <b>{db}</b> para uma futura "
-            "reinstalação reaproveitar tudo."
+            "Your photos and videos stay in <b>{photos}</b>, untouched.\n\nThe database (albums, "
+            "people, favorites) is kept in <b>{db}</b> so a future reinstallation can reuse "
+            "everything."
         ).format(
             photos=GLib.markup_escape_text(conf.upload_location or "—"),
             db=GLib.markup_escape_text(conf.db_data_location or "/var/lib/nuvem-ruscher"),
         )
         confirm(
             self,
-            _("Remover o servidor do Immich?"),
+            _("Remove the Immich server?"),
             body,
-            _("Remover servidor"),
+            _("Remove server"),
             lambda: self._uninstall(images.get_active()),
             destructive=True,
             extra=box,
@@ -284,12 +284,12 @@ class MorePage(Gtk.Box):
                 self.backend.state_set("install_step", "")
                 toast(
                     self,
-                    _("Servidor removido. Suas fotos continuam no disco."),
+                    _("Server removed. Your photos are still on the disk."),
                 )
                 self.on_uninstalled()
             else:
                 show_error(self, result.error_code, result.error_detail, result.log)
 
-        toast(self, _("Removendo o servidor…"))
+        toast(self, _("Removing the server…"))
         self.monitor.stop()
         self.backend.helper("uninstall", ["--remove-images"] if remove_images else [], None, done)

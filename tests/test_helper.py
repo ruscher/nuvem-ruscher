@@ -103,7 +103,7 @@ def test_sandbox_refuses_real_commands(tmp_path):
         stub.chmod(0o644)
     proc = sim.run("setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu")
     assert proc.returncode == 1
-    assert "sandbox incompleta" in proc.stdout
+    assert "incomplete sandbox" in proc.stdout
     assert not (sim.root / "var").exists()
 
 

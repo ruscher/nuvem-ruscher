@@ -37,7 +37,7 @@ def test_simulated_backend_never_runs_commands(no_processes, scenario):
     try:
         backend.releases()
     except OSError:
-        assert scenario == "sem-internet"
+        assert scenario == "offline"
     backend.containers()
     backend.stats()
     backend.backups()
@@ -48,12 +48,12 @@ def test_simulated_backend_never_runs_commands(no_processes, scenario):
 
 
 def test_scenarios_produce_expected_problems(no_processes):
-    assert SimulatedBackend("sem-docker").check("docker_installed").status is CheckStatus.ERROR
-    assert SimulatedBackend("porta-ocupada").check("port").status is CheckStatus.ERROR
-    assert SimulatedBackend("pouca-ram").check("memory").status is CheckStatus.WARNING
-    assert SimulatedBackend("sem-grupo").check("docker_group").fix.action == "add-docker-group"
+    assert SimulatedBackend("no-docker").check("docker_installed").status is CheckStatus.ERROR
+    assert SimulatedBackend("port-busy").check("port").status is CheckStatus.ERROR
+    assert SimulatedBackend("low-memory").check("memory").status is CheckStatus.WARNING
+    assert SimulatedBackend("no-docker-group").check("docker_group").fix.action == "add-docker-group"
     assert SimulatedBackend("firewall").check("firewall").status is CheckStatus.INFO
-    assert SimulatedBackend("disco-ausente").inspect_storage("/run/media/ruscher/X/immich").disk_missing
+    assert SimulatedBackend("disk-missing").inspect_storage("/run/media/ruscher/X/immich").disk_missing
     fat = SimulatedBackend("fat32").inspect_storage("/run/media/ruscher/Novo volume/immich-ruscher")
     assert fat.warnings[0].level == "error"
 

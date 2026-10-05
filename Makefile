@@ -45,7 +45,9 @@ pot:
 		-o po/nuvem-ruscher.pot $(filter %.py,$(PY_FILES))
 
 update-po:
-	@for po in $(PO_FILES); do msgmerge --quiet --update --backup=none --previous "$$po" po/nuvem-ruscher.pot; done
+	@for po in $(PO_FILES); do \
+		msgmerge --quiet --update --backup=none --previous "$$po" po/nuvem-ruscher.pot && \
+		msgattrib --no-obsolete --output-file="$$po" "$$po"; done
 
 test:
 	python3 -m pytest

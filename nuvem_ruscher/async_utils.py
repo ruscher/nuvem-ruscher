@@ -97,7 +97,7 @@ class StreamingProcess(Operation):
             )
         except OSError as exc:
             self._proc = None
-            self._push(f"não foi possível executar {argv[0]}: {exc}")
+            self._push(f"could not run {argv[0]}: {exc}")
             self._finish(127)
             return
         threading.Thread(target=self._reader, daemon=True).start()

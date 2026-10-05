@@ -61,8 +61,8 @@ def test_fs_warnings(fstype, family, level):
         assert warnings == []
     else:
         assert warnings[0].level == level
-        # O aviso sempre lembra que o banco não vai para esse disco.
-        assert any("banco de dados" in d for d in warnings[0].details)
+        # O aviso sempre lembra que o banco de dados não vai para esse disco.
+        assert any("database" in d for d in warnings[0].details)
 
 
 def test_fat32_mentions_4gb():

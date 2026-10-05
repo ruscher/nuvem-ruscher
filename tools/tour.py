@@ -55,7 +55,7 @@ def main() -> int:
     parser.add_argument("out")
     parser.add_argument("--escuro", action="store_true")
     parser.add_argument("--estreito", action="store_true")
-    parser.add_argument("--cenario", default="feliz")
+    parser.add_argument("--cenario", "--scenario", dest="cenario", default="fresh")
     parser.add_argument("--somente", default="", help="prefixos separados por vírgula")
     parser.add_argument("--ate", default="", help="encerra depois desta captura (prefixo)")
     args = parser.parse_args()
@@ -66,7 +66,7 @@ def main() -> int:
     app = NuvemApplication(backend)
     app.set_flags(app.get_flags() | gi.repository.Gio.ApplicationFlags.NON_UNIQUE)
     suffix = ("-escuro" if args.escuro else "") + ("-estreito" if args.estreito else "")
-    if args.cenario != "feliz":
+    if args.cenario != "fresh":
         suffix += f"-{args.cenario}"
 
     steps: list[tuple[int, Callable[[], None]]] = []

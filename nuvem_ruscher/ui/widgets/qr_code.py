@@ -34,7 +34,7 @@ class QrCode(Gtk.Widget):
 
     def set_text(self, text: str) -> None:
         self._matrix = qr_matrix(text)
-        self.update_property([Gtk.AccessibleProperty.LABEL], [_("Código QR para {text}").format(text=text)])
+        self.update_property([Gtk.AccessibleProperty.LABEL], [_("QR code for {text}").format(text=text)])
         self.queue_draw()
 
     def do_measure(self, orientation: Gtk.Orientation, for_size: int) -> tuple[int, int, int, int]:

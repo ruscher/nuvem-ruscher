@@ -95,8 +95,8 @@ def prefix(tmp_path_factory) -> Path:
     # do conteúdo das traduções reais (que também são instaladas e testadas abaixo).
     po = (tree / "po" / "nuvem-ruscher.pot").read_text()
     po = po.replace(
-        'msgid "Instala e cuida do Immich no BigLinux."\nmsgstr ""',
-        'msgid "Instala e cuida do Immich no BigLinux."\nmsgstr "Tradução de teste."',
+        'msgid "Installs and looks after Immich on BigLinux."\nmsgstr ""',
+        'msgid "Installs and looks after Immich on BigLinux."\nmsgstr "Tradução de teste."',
     )
     (tree / "po" / "xx.po").write_text(po)
     prefix = tmp_path_factory.mktemp("loja") / "0123-nuvem-ruscher"
@@ -192,15 +192,15 @@ class TestRelocatedPrefix:
     def test_translation_from_prefix(self, prefix):
         assert (prefix / "share/locale/xx/LC_MESSAGES/nuvem-ruscher.mo").is_file()
         assert "Tradução de teste." in self.run(prefix, "--help", LANGUAGE="xx").stdout
-        # Texto-fonte em pt-BR: sem catálogo, e é para onde qualquer idioma sem tradução cai.
-        assert "Instala e cuida do Immich" in self.run(prefix, "--help", LANGUAGE="pt_BR").stdout
-        assert "Instala e cuida do Immich" in self.run(prefix, "--help", LANGUAGE="de").stdout
+        # Texto-fonte em inglês: é para onde qualquer idioma sem catálogo cai.
+        assert "Installs and looks after Immich" in self.run(prefix, "--help", LANGUAGE="en").stdout
+        assert "Installs and looks after Immich" in self.run(prefix, "--help", LANGUAGE="de").stdout
 
     def test_real_catalogs_installed(self, prefix):
         for po in sorted((ROOT / "po").glob("*.po")):
             assert (prefix / f"share/locale/{po.stem}/LC_MESSAGES/nuvem-ruscher.mo").is_file(), po.name
-        if (ROOT / "po/en.po").exists():
-            assert "Installs and looks after Immich" in self.run(prefix, "--help", LANGUAGE="en_US").stdout
+        if (ROOT / "po/pt_BR.po").exists():
+            assert "Instala e cuida do Immich" in self.run(prefix, "--help", LANGUAGE="pt_BR").stdout
 
     def test_helper_and_policy_follow_prefix(self, prefix):
         helper = prefix / "lib/nuvem-ruscher/nuvem-ruscher-helper"

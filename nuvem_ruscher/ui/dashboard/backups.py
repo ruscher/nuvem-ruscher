@@ -21,9 +21,9 @@ def friendly_date(timestamp: float) -> str:
     today = time.localtime()
     hour = f"{t.tm_hour:02d}:{t.tm_min:02d}"
     if (t.tm_year, t.tm_yday) == (today.tm_year, today.tm_yday):
-        return _("Hoje, {hour}").format(hour=hour)
+        return _("Today, {hour}").format(hour=hour)
     if t.tm_year == today.tm_year and t.tm_yday == today.tm_yday - 1:
-        return _("Ontem, {hour}").format(hour=hour)
+        return _("Yesterday, {hour}").format(hour=hour)
     return f"{t.tm_mday} {MONTHS[t.tm_mon - 1]} {t.tm_year}, {hour}"
 
 
@@ -43,15 +43,15 @@ class BackupsPage(Gtk.Box):
 
         head = Gtk.Box(spacing=12)
         texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True)
-        texts.append(label(_("Backups do banco de dados"), css=("title-2",)))
+        texts.append(label(_("Database backups"), css=("title-2",)))
         texts.append(
             label(
-                _("Guardam álbuns, pessoas, favoritos e informações das fotos. O Immich faz um todo dia às 2h."),
+                _("They keep albums, people, favorites and photo information. Immich makes one every day at 2 AM."),
                 css=("dim-label",),
             )
         )
         head.append(texts)
-        self.now = Gtk.Button(label=_("Fazer backup agora"), valign=Gtk.Align.CENTER)
+        self.now = Gtk.Button(label=_("Back up now"), valign=Gtk.Align.CENTER)
         self.now.add_css_class("pill")
         self.now.add_css_class("suggested-action")
         self.now.connect("clicked", self._backup_now)
@@ -61,18 +61,19 @@ class BackupsPage(Gtk.Box):
         self.list = Adw.PreferencesGroup()
         self.empty = StatusBlock(
             "document-save-symbolic",
-            _("Nenhum backup ainda"),
-            _("O primeiro backup automático acontece esta noite. Se quiser, faça um agora."),
+            _("No backups yet"),
+            _("The first automatic backup happens tonight. If you want, make one now."),
         )
         body.append(self.empty)
         body.append(self.list)
 
         note = Adw.PreferencesGroup()
         row = Adw.ActionRow(
-            title=_("E as fotos?"),
+            title=_("What about the photos?"),
             subtitle=_(
-                "O backup do banco não inclui as fotos. Para protegê-las de verdade, copie de vez em quando "
-                "a pasta das fotos para outro disco. Os backups ficam no disco das fotos, separados do banco."
+                "The database backup does not include the photos. To really protect them, copy the "
+                "photo folder to another disk from time to time. Backups are stored on the photo disk, "
+                "apart from the database."
             ),
         )
         row.set_subtitle_lines(5)
@@ -91,7 +92,7 @@ class BackupsPage(Gtk.Box):
         self.empty.set_visible(not backups)
         self.list.set_visible(bool(backups))
         for backup in backups[:40]:
-            kind = _("Automático") if backup.automatic else _("Manual")
+            kind = _("Automatic") if backup.automatic else _("Manual")
             parts = [kind, human_size(backup.size)]
             if backup.version:
                 parts.append(_("Immich {v}").format(v=backup.version))
@@ -104,7 +105,7 @@ class BackupsPage(Gtk.Box):
             row.add_suffix(
                 icon_button(
                     "folder-open-symbolic",
-                    _("Mostrar na pasta"),
+                    _("Show in folder"),
                     lambda b, p=backup.path: show_in_folder(b, p),
                 )
             )
@@ -114,20 +115,20 @@ class BackupsPage(Gtk.Box):
 
     def _backup_now(self, _button: Gtk.Button) -> None:
         if self.monitor.overall != "ok":
-            show_error(self, "not-running", _("o servidor precisa estar ligado para o backup"))
+            show_error(self, "not-running", _("the server must be on for the backup"))
             return
         self.now.set_sensitive(False)
-        self.now.set_label(_("Fazendo backup…"))
+        self.now.set_label(_("Backing up…"))
 
         def done(result: HelperResult) -> None:
             self.now.set_sensitive(True)
-            self.now.set_label(_("Fazer backup agora"))
+            self.now.set_label(_("Back up now"))
             if result.ok:
                 toast(
                     self,
-                    _("Backup feito ({size})").format(size=human_size(int(result.results.get("size", "0") or 0)))
+                    _("Backup done ({size})").format(size=human_size(int(result.results.get("size", "0") or 0)))
                     if result.results.get("size")
-                    else _("Backup feito"),
+                    else _("Backup done"),
                 )
                 GLib.timeout_add(300, lambda: self.refresh() or False)
             else:

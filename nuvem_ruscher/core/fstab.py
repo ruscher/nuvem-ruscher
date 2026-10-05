@@ -51,7 +51,7 @@ def mount_spec(fstype: str, uid: int, gid: int, uuid: str = "") -> tuple[str, li
         return "btrfs", [*options, "noatime"], 0
     if family is FsFamily.LINUX:
         return fstype, [*options, "noatime"], 2
-    raise ValueError(f"sistema de arquivos sem suporte para montagem automática: {fstype}")
+    raise ValueError(f"file system not supported for automatic mounting: {fstype}")
 
 
 def fstab_line(uuid: str, mountpoint: str, fstype: str, uid: int, gid: int) -> str:

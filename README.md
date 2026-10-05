@@ -136,7 +136,7 @@ endereço e o QR certos.
 make test     # pytest: núcleo, helper em sandbox, modo simulado, instalação
 make lint     # ruff, shellcheck, desktop-file-validate, appstreamcli
 make pot      # extrai os textos para po/nuvem-ruscher.pot
-make update-po  # leva os textos novos para po/*.po (hoje: en)
+make update-po  # leva os textos novos para po/*.po (hoje: pt_BR)
 python3 tools/tour.py /tmp/capturas [--escuro] [--estreito] [--cenario NOME]
 ```
 

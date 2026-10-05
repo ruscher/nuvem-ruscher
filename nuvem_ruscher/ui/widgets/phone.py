@@ -15,26 +15,29 @@ from nuvem_ruscher.ui.widgets.qr_code import QrCode, qr_frame
 TIPS = (
     (
         "battery-symbolic",
-        N_("Tire o Immich da economia de bateria"),
+        N_("Take Immich out of battery saving"),
         N_(
-            "No Android: Configurações → Apps → Immich → Bateria → “Sem restrições”. "
-            "Assim o backup continua mesmo com a tela desligada."
+            "On Android: Settings → Apps → Immich → Battery → “Unrestricted”. This way the backup "
+            "continues even with the screen off."
         ),
     ),
     (
         "camera-photo-symbolic",
-        N_("Escolha a pasta da câmera"),
-        N_("No app, toque no ícone de nuvem e selecione “Camera” (e outras pastas que quiser, como WhatsApp Images)."),
+        N_("Choose the camera folder"),
+        N_(
+            "In the app, tap the cloud icon and select “Camera” (and any other folders you want, "
+            "such as WhatsApp Images)."
+        ),
     ),
     (
         "network-wireless-symbolic",
-        N_("Use o mesmo Wi-Fi"),
-        N_("Em casa, o celular precisa estar na mesma rede que este computador."),
+        N_("Use the same Wi-Fi"),
+        N_("At home, the phone must be on the same network as this computer."),
     ),
     (
         "nr-status-ok-symbolic",
-        N_("Ative o backup em segundo plano"),
-        N_("Em Backup, ligue “Backup em segundo plano”. As fotos novas sobem sozinhas."),
+        N_("Turn on background backup"),
+        N_("In Backup, turn on “Background backup”. New photos upload by themselves."),
     ),
 )
 
@@ -47,18 +50,18 @@ class PhoneView(Gtk.Box):
         self._tailscale = TailscaleInfo(False)
 
         if show_title:
-            self.append(label(_("Conecte seu celular"), css=("title-1",), xalign=0.5))
+            self.append(label(_("Connect your phone"), css=("title-1",), xalign=0.5))
             self.append(
                 label(
-                    _("Dois passos com a câmera do celular. Leva um minuto."),
+                    _("Two steps with the phone camera. It takes a minute."),
                     css=("dim-label", "lead"),
                     xalign=0.5,
                 )
             )
 
         self.where = Adw.ToggleGroup(halign=Gtk.Align.CENTER, visible=False)
-        self.where.add(Adw.Toggle(name="home", label=_("Em casa (Wi-Fi)")))
-        self.where.add(Adw.Toggle(name="away", label=_("Fora de casa (Tailscale)")))
+        self.where.add(Adw.Toggle(name="home", label=_("At home (Wi-Fi)")))
+        self.where.add(Adw.Toggle(name="away", label=_("Away from home (Tailscale)")))
         self.where.set_active_name("home")
         self.where.connect("notify::active-name", lambda *_: self._refresh_address())
         self.append(self.where)
@@ -67,7 +70,7 @@ class PhoneView(Gtk.Box):
         self.append(cards)
 
         # 1. app
-        app_card = self._card(_("1. Instale o app Immich"), _("Aponte a câmera para o código ou toque em uma loja."))
+        app_card = self._card(_("1. Install the Immich app"), _("Point the camera at the code or tap a store."))
         app_qr = QrCode(PLAY_STORE_URL, 156)
         app_card.append(qr_frame(app_qr))
         stores = Gtk.Box(spacing=8, halign=Gtk.Align.CENTER)
@@ -84,21 +87,21 @@ class PhoneView(Gtk.Box):
 
         # 2. servidor
         server_card = self._card(
-            _("2. Entre no app com este endereço"),
-            _("No app, toque em “Endereço do servidor” e digite (ou cole) o endereço abaixo."),
+            _("2. Sign in to the app with this address"),
+            _("In the app, tap “Server endpoint URL” and type (or paste) the address below."),
         )
         self.server_qr = QrCode("", 156)
         server_card.append(qr_frame(self.server_qr))
         address_row = Gtk.Box(spacing=6, halign=Gtk.Align.CENTER)
         self.address = label("…", css=("address", "monospace"), wrap=False, xalign=0.5, selectable=True)
         address_row.append(self.address)
-        address_row.append(icon_button("edit-copy-symbolic", _("Copiar endereço"), self._copy))
+        address_row.append(icon_button("edit-copy-symbolic", _("Copy address"), self._copy))
         server_card.append(address_row)
         self.address_note = label("", css=("dim-label", "caption"), xalign=0.5)
         server_card.append(self.address_note)
         cards.append(server_card)
 
-        tips = Adw.PreferencesGroup(title=_("Dicas para não perder nenhuma foto"))
+        tips = Adw.PreferencesGroup(title=_("Tips to never lose a photo"))
         for icon, title, body in TIPS:
             row = Adw.ActionRow(title=_(title), subtitle=_(body))
             row.set_subtitle_lines(4)
@@ -141,12 +144,12 @@ class PhoneView(Gtk.Box):
         self.address.set_text(url)
         self.server_qr.set_text(url)
         if self.where.get_active_name() == "away":
-            self.address_note.set_text(_("Funciona de qualquer lugar com o Tailscale ligado no celular (mesma conta)."))
+            self.address_note.set_text(_("Works from anywhere with Tailscale on in the phone (same account)."))
         elif self._lan.startswith("127."):
-            self.address_note.set_text(_("Não encontramos este computador na rede. Ele está conectado ao Wi-Fi?"))
+            self.address_note.set_text(_("We could not find this computer on the network. Is it connected to Wi-Fi?"))
         else:
-            self.address_note.set_text(_("Funciona quando o celular está no mesmo Wi-Fi."))
+            self.address_note.set_text(_("Works when the phone is on the same Wi-Fi."))
 
     def _copy(self, button: Gtk.Button) -> None:
         copy_text(button, self.current_url())
-        toast(button, _("Endereço copiado"))
+        toast(button, _("Address copied"))

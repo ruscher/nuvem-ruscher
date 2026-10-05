@@ -34,88 +34,88 @@ def parse_line(line: str) -> HelperEvent:
 # código → (título, o que fazer)
 ERRORS: dict[str, tuple[str, str]] = {
     "auth-cancelled": (
-        N_("A autorização foi cancelada"),
-        N_("Nada foi alterado. Tente de novo e digite a senha de administrador quando ela for pedida."),
+        N_("Authorization was canceled"),
+        N_("Nothing was changed. Try again and type the administrator password when asked."),
     ),
     "not-authorized": (
-        N_("Seu usuário não tem permissão de administrador"),
-        N_("Peça para alguém com acesso de administrador abrir o Nuvem Ruscher e fazer esta etapa."),
+        N_("Your user does not have administrator permission"),
+        N_("Ask someone with administrator access to open Nuvem Ruscher and do this step."),
     ),
     "helper-missing": (
-        N_("O Nuvem Ruscher não está instalado por completo"),
-        N_("Instale o pacote nuvem-ruscher (ou rode “sudo make install”) e abra o app de novo."),
+        N_("Nuvem Ruscher is not fully installed"),
+        N_("Install the nuvem-ruscher package (or run “sudo make install”) and open the app again."),
     ),
     "invalid-argument": (
-        N_("Um dado enviado não passou na verificação de segurança"),
-        N_("Nada foi alterado. Confira a pasta escolhida e tente de novo."),
+        N_("Some data sent did not pass the security check"),
+        N_("Nothing was changed. Check the chosen folder and try again."),
     ),
     "storage-missing": (
-        N_("O disco das fotos não está conectado"),
-        N_("Conecte o disco, espere ele aparecer no gerenciador de arquivos e tente de novo."),
+        N_("The photo disk is not connected"),
+        N_("Connect the disk, wait for it to appear in the file manager and try again."),
     ),
     "storage-unsafe": (
-        N_("A pasta das fotos não está num lugar seguro"),
-        N_("Escolha uma pasta dentro de um disco montado. Nada foi alterado."),
+        N_("The photo folder is not in a safe place"),
+        N_("Choose a folder inside a mounted disk. Nothing was changed."),
     ),
     "download-failed": (
-        N_("Não foi possível baixar os arquivos do Immich"),
-        N_("Verifique a internet e tente de novo. O processo continua de onde parou."),
+        N_("Could not download the Immich files"),
+        N_("Check the internet connection and try again. The process resumes where it stopped."),
     ),
     "pacman-failed": (
-        N_("A instalação de pacotes falhou"),
-        N_("Atualize o sistema pela loja de programas (ou “sudo pacman -Syu”) e tente de novo."),
+        N_("Package installation failed"),
+        N_("Update the system through the software store (or “sudo pacman -Syu”) and try again."),
     ),
     "fstab-exists": (
-        N_("Esse disco já tem uma regra de montagem"),
-        N_("Ele já está configurado no sistema. Nenhuma alteração foi feita."),
+        N_("This disk already has a mount rule"),
+        N_("It is already configured in the system. No changes were made."),
     ),
     "fstab-invalid": (
-        N_("A regra de montagem não passou na verificação"),
-        N_("Nada foi alterado: o arquivo original foi restaurado automaticamente."),
+        N_("The mount rule did not pass the check"),
+        N_("Nothing was changed: the original file was restored automatically."),
     ),
     "unsupported-fs": (
-        N_("Esse tipo de disco não pode ser montado automaticamente"),
-        N_("O servidor ainda funciona, mas só depois que você entrar na sessão e abrir o disco."),
+        N_("This type of disk cannot be mounted automatically"),
+        N_("The server still works, but only after you log in and open the disk."),
     ),
     "db-password-missing": (
-        N_("Existe um banco de dados antigo sem a senha correspondente"),
-        N_("Para não perder nada, a instalação parou. Veja os detalhes técnicos para recuperar."),
+        N_("There is an old database without its matching password"),
+        N_("To avoid losing anything, the installation stopped. See the technical details to recover."),
     ),
     "service-failed": (
-        N_("O servidor não conseguiu ligar"),
-        N_("Confira se o disco das fotos está conectado e veja os registros para mais detalhes."),
+        N_("The server could not start"),
+        N_("Check that the photo disk is connected and see the logs for more details."),
     ),
     "not-installed": (
-        N_("O servidor ainda não foi instalado"),
-        N_("Rode o assistente de instalação primeiro."),
+        N_("The server has not been installed yet"),
+        N_("Run the setup assistant first."),
     ),
     "not-running": (
-        N_("O servidor está desligado"),
-        N_("Ligue o servidor e tente de novo."),
+        N_("The server is turned off"),
+        N_("Turn on the server and try again."),
     ),
     "backup-failed": (
-        N_("O backup do banco de dados falhou"),
-        N_("Confira o espaço livre no disco das fotos e tente de novo."),
+        N_("The database backup failed"),
+        N_("Check the free space on the photo disk and try again."),
     ),
     "update-rolled-back": (
-        N_("A atualização não deu certo, mas tudo voltou como estava"),
-        N_("Seu servidor continua na versão anterior, com todos os dados. Veja os detalhes técnicos."),
+        N_("The update did not work, but everything is back as it was"),
+        N_("Your server is still on the previous version, with all its data. See the technical details."),
     ),
     "rollback-failed": (
-        N_("A atualização falhou e a volta automática também"),
-        N_("Suas fotos estão seguras no disco. Veja os detalhes técnicos: há uma cópia do banco guardada."),
+        N_("The update failed and so did the automatic rollback"),
+        N_("Your photos are safe on the disk. See the technical details: a copy of the database was kept."),
     ),
     "no-space": (
-        N_("Falta espaço no disco do sistema"),
-        N_("Libere espaço e tente de novo."),
+        N_("Not enough space on the system disk"),
+        N_("Free up space and try again."),
     ),
     "firewall-failed": (
-        N_("Não foi possível ajustar o firewall"),
-        N_("Você pode liberar a porta 2283 manualmente nas configurações do firewall."),
+        N_("Could not adjust the firewall"),
+        N_("You can open port 2283 manually in the firewall settings."),
     ),
     "internal": (
-        N_("Algo inesperado aconteceu"),
-        N_("Nada nas suas fotos foi alterado. Veja os detalhes técnicos e tente de novo."),
+        N_("Something unexpected happened"),
+        N_("Nothing in your photos was changed. See the technical details and try again."),
     ),
 }
 

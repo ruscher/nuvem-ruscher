@@ -82,7 +82,7 @@ class HelperCall(Operation):
         self.result.ok = code == 0 and not self.result.error_code
         if not self.result.ok and not self.result.error_code:
             self.result.error_code = "internal"
-            self.result.error_detail = f"código de saída {code}"
+            self.result.error_detail = f"exit code {code}"
         self._on_done(self.result)
 
 
@@ -283,7 +283,7 @@ class RealBackend(Backend):
         with urllib.request.urlopen(request, timeout=30) as response:
             text = response.read().decode()
         if "name: immich" not in text or "${UPLOAD_LOCATION}:/data" not in text:
-            raise ValueError("docker-compose.yml com formato inesperado")
+            raise ValueError("docker-compose.yml has an unexpected format")
         return text
 
     # --- helper ----------------------------------------------------------------------
@@ -296,7 +296,7 @@ class RealBackend(Backend):
     ) -> Operation:
         helper = str(helper_path())
         if not os.access(helper, os.X_OK):
-            on_done(HelperResult(False, "helper-missing", f"{helper} não encontrado"))
+            on_done(HelperResult(False, "helper-missing", f"{helper} not found"))
             return _Finished()
         return HelperCall(["pkexec", helper, action, *args], on_event, on_done)
 

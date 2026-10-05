@@ -65,7 +65,7 @@ class ImmichClient:
         try:
             return json.loads(raw)
         except ValueError:
-            raise ApiError(0, "resposta inválida do servidor") from None
+            raise ApiError(0, "invalid server response") from None
 
     def ping(self) -> bool:
         try:

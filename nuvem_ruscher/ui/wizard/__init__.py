@@ -7,6 +7,7 @@ from collections.abc import Callable
 from gi.repository import Adw, Gio, Gtk
 
 from nuvem_ruscher.backend.base import Backend
+from nuvem_ruscher.i18n import _
 from nuvem_ruscher.ui.wizard.base import WizardContext, WizardPage
 
 PAGE_ORDER = ("welcome", "checks", "storage", "configure", "install", "account", "phone", "done")
@@ -24,7 +25,7 @@ class Wizard(Adw.Bin):
 
     def menu_button(self) -> Gtk.MenuButton:
         button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=self._menu_model, primary=True)
-        button.set_tooltip_text("Menu")
+        button.set_tooltip_text(_("Menu"))
         return button
 
     def _page(self, tag: str) -> WizardPage:

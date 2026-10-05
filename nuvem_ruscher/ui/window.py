@@ -48,7 +48,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.stack.add_named(self.wizard, "wizard")
         self.wizard.start(start)
         self.stack.set_visible_child_name("wizard")
-        self.set_title(_("Configurar o {name}").format(name=APP_NAME))
+        self.set_title(_("Set up {name}").format(name=APP_NAME))
 
     def show_dashboard(self) -> None:
         from nuvem_ruscher.ui.dashboard import Dashboard

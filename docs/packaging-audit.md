@@ -45,8 +45,9 @@ Nenhum subprocesso usa `shell=True`; o único `sh -c` é o `sg docker -c` com `s
 ## Problemas encontrados
 
 1. **Traduções quebrariam fora de `/usr`** (ver tabela). Não havia nenhum `po/*.po`, então
-   o efeito ainda não aparecia. Agora há `po/en.po` (458 mensagens, inglês); o texto-fonte
-   continua pt-BR e é o que aparece para idiomas sem catálogo.
+   o efeito ainda não aparecia. Na v1.0.0 houve um `po/en.po`; desde a v2 o texto-fonte é
+   inglês e a tradução é `po/pt_BR.po` (ver 13-i18n-migration.md); o inglês é o que
+   aparece para idiomas sem catálogo.
 2. **Lançador podia carregar outra cópia do app** (fallback `/usr/share/nuvem-ruscher`).
 3. **Policy e helper presos a `/usr`**, impedindo qualquer outro prefixo.
 4. **PKGBUILD compilava dentro do repositório** (`make -C ..`), escrevendo em `build/` da

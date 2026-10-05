@@ -41,12 +41,12 @@ class Dashboard(Adw.BreakpointBin):
         self.more = MorePage(backend, self.monitor, self._phone_away, on_uninstalled)
 
         for name, title, icon, widget in (
-            ("overview", _("Início"), "computer-symbolic", self.overview),
-            ("phone", _("Celular"), "phone-symbolic", phone_scroller),
-            ("logs", _("Registros"), "utilities-terminal-symbolic", self.logs),
+            ("overview", _("Home"), "computer-symbolic", self.overview),
+            ("phone", _("Phone"), "phone-symbolic", phone_scroller),
+            ("logs", _("Logs"), "utilities-terminal-symbolic", self.logs),
             ("backups", _("Backups"), "document-save-symbolic", self.backups),
-            ("updates", _("Atualizar"), "software-update-available-symbolic", self.updates),
-            ("more", _("Mais"), "view-more-horizontal-symbolic", self.more),
+            ("updates", _("Update"), "software-update-available-symbolic", self.updates),
+            ("more", _("More"), "view-more-horizontal-symbolic", self.more),
         ):
             self.stack.add_titled_with_icon(widget, name, title, icon)
         self.stack.connect("notify::visible-child-name", self._page_changed)

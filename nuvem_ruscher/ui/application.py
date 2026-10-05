@@ -45,11 +45,11 @@ class NuvemApplication(Adw.Application):
     def menu(self) -> Gio.Menu:
         menu = Gio.Menu()
         section = Gio.Menu()
-        section.append(_("Abrir o Immich no navegador"), "app.open-immich")
+        section.append(_("Open Immich in the browser"), "app.open-immich")
         menu.append_section(None, section)
         section = Gio.Menu()
-        section.append(_("Atalhos de teclado"), "app.shortcuts")
-        section.append(_("Sobre o {name}").format(name=APP_NAME), "app.about")
+        section.append(_("Keyboard shortcuts"), "app.shortcuts")
+        section.append(_("About {name}").format(name=APP_NAME), "app.about")
         menu.append_section(None, section)
         return menu
 
@@ -68,16 +68,16 @@ class NuvemApplication(Adw.Application):
             application_name=APP_NAME,
             application_icon=APP_ID,
             developer_name="ruscher",
-            version=VERSION + (" (" + _("simulação") + ")" if self.backend.simulated else ""),
+            version=_("{version} (simulation)").format(version=VERSION) if self.backend.simulated else VERSION,
             website=PROJECT_URL,
             issue_url=PROJECT_URL + "/issues",
             license_type=Gtk.License.GPL_3_0,
             comments=_(
-                "Instala, configura e cuida do Immich — sua alternativa livre ao Google Fotos — "
-                "neste computador, com as fotos guardadas no disco que você escolher."
+                "Installs, configures and looks after Immich — your free alternative to Google Photos — "
+                "on this computer, with the photos stored on the disk you choose."
             ),
         )
-        about.add_link(_("Documentação do Immich"), IMMICH_DOCS_URL)
+        about.add_link(_("Immich documentation"), IMMICH_DOCS_URL)
         about.add_legal_section(
             "Immich",
             "© Immich contributors",
@@ -88,25 +88,25 @@ class NuvemApplication(Adw.Application):
 
     def _shortcuts(self, *_args: object) -> None:
         dialog = Adw.ShortcutsDialog()
-        section = Adw.ShortcutsSection(title=_("Geral"))
+        section = Adw.ShortcutsSection(title=_("General"))
         for accel, title in (
-            ("<primary>q", _("Sair")),
-            ("<primary>w", _("Fechar a janela")),
-            ("<primary>question", _("Atalhos de teclado")),
-            ("<alt>Left", _("Voltar no assistente")),
+            ("<primary>q", _("Quit")),
+            ("<primary>w", _("Close the window")),
+            ("<primary>question", _("Keyboard shortcuts")),
+            ("<alt>Left", _("Go back in the assistant")),
         ):
             section.add(Adw.ShortcutsItem(title=title, accelerator=accel))
         dialog.add(section)
-        panel = Adw.ShortcutsSection(title=_("Painel"))
+        panel = Adw.ShortcutsSection(title=_("Dashboard"))
         for accel, title in (
-            ("<primary>1", _("Início")),
-            ("<primary>2", _("Celular")),
-            ("<primary>3", _("Registros")),
+            ("<primary>1", _("Home")),
+            ("<primary>2", _("Phone")),
+            ("<primary>3", _("Logs")),
             ("<primary>4", _("Backups")),
-            ("<primary>5", _("Atualizar")),
-            ("<primary>6", _("Mais")),
-            ("F5", _("Atualizar informações")),
-            ("<primary>f", _("Buscar nos registros")),
+            ("<primary>5", _("Update")),
+            ("<primary>6", _("More")),
+            ("F5", _("Refresh information")),
+            ("<primary>f", _("Search the logs")),
         ):
             panel.add(Adw.ShortcutsItem(title=title, accelerator=accel))
         dialog.add(panel)

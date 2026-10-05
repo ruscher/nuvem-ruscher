@@ -67,17 +67,17 @@ class ContainerRow(Adw.ActionRow):
     def update(self, state: str, health: Health | None, cpu: float | None, mem: int | None) -> None:
         if state == "running":
             if health in (Health.HEALTHY, Health.NONE):
-                text, cls = _("saudável"), "ok"
+                text, cls = _("healthy"), "ok"
             elif health is Health.STARTING:
-                text, cls = _("iniciando"), "busy"
+                text, cls = _("starting"), "busy"
             else:
-                text, cls = _("com problema"), "error"
+                text, cls = _("unhealthy"), "error"
         elif state == "restarting":
-            text, cls = _("reiniciando"), "warning"
+            text, cls = _("restarting"), "warning"
         elif state == "missing":
-            text, cls = _("não criado"), "stopped"
+            text, cls = _("not created"), "stopped"
         else:
-            text, cls = _("parado"), "stopped"
+            text, cls = _("stopped"), "stopped"
         self.pill.set_text(text)
         _set_class(self.pill, cls, PILL_CLASSES)
         if cpu is not None and mem is not None and state == "running":
@@ -118,7 +118,7 @@ class OverviewPage(Gtk.Box):
         self.dot.set_margin_end(4)
         top.append(self.dot)
         texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True)
-        self.title = label(_("Carregando…"), css=("title-2",))
+        self.title = label(_("Loading…"), css=("title-2",))
         self.title.set_accessible_role(Gtk.AccessibleRole.HEADING)
         self.subtitle = label("", css=("dim-label",))
         texts.append(self.title)
@@ -126,17 +126,17 @@ class OverviewPage(Gtk.Box):
         top.append(texts)
         hero.append(top)
         buttons = Adw.WrapBox(child_spacing=8, line_spacing=8)
-        self.open_button = Gtk.Button(label=_("Abrir o Immich"))
+        self.open_button = Gtk.Button(label=_("Open Immich"))
         self.open_button.add_css_class("pill")
         self.open_button.add_css_class("suggested-action")
         self.open_button.connect("clicked", lambda b: open_uri(b, backend.local_url))
         self.power = Gtk.Button()
         self.power.add_css_class("pill")
         self.power.connect("clicked", self._power)
-        self.restart = Gtk.Button(label=_("Reiniciar"))
+        self.restart = Gtk.Button(label=_("Restart"))
         self.restart.add_css_class("pill")
         self.restart.connect("clicked", lambda *_: self._service("restart"))
-        phone = Gtk.Button(label=_("Conectar celular"))
+        phone = Gtk.Button(label=_("Connect phone"))
         phone.add_css_class("pill")
         phone.connect("clicked", lambda *_: go_phone())
         for button in (self.open_button, self.power, self.restart, phone):
@@ -146,9 +146,9 @@ class OverviewPage(Gtk.Box):
 
         # Números
         cards = Adw.WrapBox(child_spacing=12, line_spacing=12)
-        self.photos = StatCard(_("Fotos"), "camera-photo-symbolic")
-        self.videos = StatCard(_("Vídeos"), "camera-video-symbolic")
-        self.disk = StatCard(_("Disco das fotos"), "drive-harddisk-symbolic")
+        self.photos = StatCard(_("Photos"), "camera-photo-symbolic")
+        self.videos = StatCard(_("Videos"), "camera-video-symbolic")
+        self.disk = StatCard(_("Photo disk"), "drive-harddisk-symbolic")
         self.disk_bar = Gtk.LevelBar(min_value=0, max_value=1)
         for offset in (Gtk.LEVEL_BAR_OFFSET_LOW, Gtk.LEVEL_BAR_OFFSET_HIGH, Gtk.LEVEL_BAR_OFFSET_FULL):
             self.disk_bar.remove_offset_value(offset)
@@ -158,14 +158,14 @@ class OverviewPage(Gtk.Box):
         for card in (self.photos, self.videos, self.disk):
             cards.append(card)
         body.append(cards)
-        self.connect_stats = Gtk.Button(label=_("Mostrar contagem de fotos"), halign=Gtk.Align.START, visible=False)
+        self.connect_stats = Gtk.Button(label=_("Show photo count"), halign=Gtk.Align.START, visible=False)
         self.connect_stats.add_css_class("flat")
         self.connect_stats.connect("clicked", self._connect_stats)
         body.append(self.connect_stats)
 
         # Componentes
         group = Adw.PreferencesGroup(
-            title=_("Componentes"), description=_("As quatro partes do Immich, cada uma em seu container.")
+            title=_("Components"), description=_("The four parts of Immich, each in its own container.")
         )
         self.rows = {name: ContainerRow(name) for name in CONTAINERS}
         for row in self.rows.values():
@@ -173,13 +173,13 @@ class OverviewPage(Gtk.Box):
         body.append(group)
 
         # Onde estão os dados
-        data = Adw.PreferencesGroup(title=_("Onde estão seus dados"))
-        self.photos_row = Adw.ActionRow(title=_("Fotos e vídeos"))
+        data = Adw.PreferencesGroup(title=_("Where your data is"))
+        self.photos_row = Adw.ActionRow(title=_("Photos and videos"))
         self.photos_row.set_subtitle_selectable(True)
-        self.photos_row.add_suffix(icon_button("folder-open-symbolic", _("Abrir a pasta das fotos"), self._open_photos))
-        self.db_row = Adw.ActionRow(title=_("Banco de dados (álbuns, pessoas, informações)"))
+        self.photos_row.add_suffix(icon_button("folder-open-symbolic", _("Open the photo folder"), self._open_photos))
+        self.db_row = Adw.ActionRow(title=_("Database (albums, people, information)"))
         self.db_row.set_subtitle_selectable(True)
-        self.version_row = Adw.ActionRow(title=_("Versão do Immich"))
+        self.version_row = Adw.ActionRow(title=_("Immich version"))
         for row in (self.photos_row, self.db_row, self.version_row):
             data.add(row)
         body.append(data)
@@ -194,28 +194,28 @@ class OverviewPage(Gtk.Box):
         overall = m.overall
         url = self.backend.server_url()
         texts = {
-            "loading": (_("Carregando…"), "", "stopped"),
-            "ok": (_("Seu servidor está no ar"), url, "ok"),
-            "starting": (_("Ligando o servidor…"), _("Isso leva cerca de um minuto."), "busy"),
-            "stopping": (_("Desligando…"), "", "busy"),
+            "loading": (_("Loading…"), "", "stopped"),
+            "ok": (_("Your server is up"), url, "ok"),
+            "starting": (_("Starting the server…"), _("This takes about a minute."), "busy"),
+            "stopping": (_("Turning off…"), "", "busy"),
             "stopped": (
-                _("O servidor está desligado"),
-                _("Ligue para o celular voltar a enviar fotos."),
+                _("The server is turned off"),
+                _("Turn it on so the phone can upload photos again."),
                 "stopped",
             ),
             "problem": (
-                _("O servidor está com problemas"),
-                _("Veja os registros ou tente reiniciar."),
+                _("The server has problems"),
+                _("See the logs or try restarting."),
                 "warning",
             ),
             "failed": (
-                _("O servidor não conseguiu ligar"),
-                _("Veja os registros ou tente de novo."),
+                _("The server could not start"),
+                _("See the logs or try again."),
                 "warning",
             ),
             "disk-missing": (
-                _("O disco das fotos não está conectado"),
-                _("Conecte o disco e o servidor liga sozinho."),
+                _("The photo disk is not connected"),
+                _("Connect the disk and the server starts by itself."),
                 "warning",
             ),
         }
@@ -225,7 +225,7 @@ class OverviewPage(Gtk.Box):
         _set_class(self.dot, dot, DOT_CLASSES)
         busy = bool(m.busy_action)
         running = overall in ("ok", "starting", "problem")
-        self.power.set_label(_("Desligar") if running else _("Ligar"))
+        self.power.set_label(_("Turn off") if running else _("Turn on"))
         self.power.set_sensitive(not busy and overall not in ("loading", "disk-missing"))
         if running:
             self.power.remove_css_class("suggested-action")
@@ -236,13 +236,13 @@ class OverviewPage(Gtk.Box):
 
         # Banner
         if overall == "disk-missing":
-            disk = os.path.basename(m.conf.mount_point) or _("das fotos")
-            self.banner.set_title(_("O disco “{disk}” não está conectado.").format(disk=disk))
+            disk = os.path.basename(m.conf.mount_point) or _("photos")
+            self.banner.set_title(_("The “{disk}” disk is not connected.").format(disk=disk))
             self.banner.set_button_label(None)
             self.banner.set_revealed(True)
         elif overall in ("stopped", "failed"):
-            self.banner.set_title(_("O servidor está desligado. Suas fotos não estão sendo copiadas."))
-            self.banner.set_button_label(_("Ligar"))
+            self.banner.set_title(_("The server is turned off. Your photos are not being backed up."))
+            self.banner.set_button_label(_("Turn on"))
             self.banner.set_revealed(True)
         else:
             self.banner.set_revealed(False)
@@ -252,26 +252,26 @@ class OverviewPage(Gtk.Box):
             self.photos.set(thousands(m.statistics.photos))
             self.videos.set(
                 thousands(m.statistics.videos),
-                _("{size} no total").format(size=human_size(m.statistics.usage)),
+                _("{size} in total").format(size=human_size(m.statistics.usage)),
             )
             self.connect_stats.set_visible(False)
         else:
             has_key = self.backend.has_stats_key()
             if overall != "ok":
-                note = _("Disponível com o servidor ligado")
+                note = _("Available with the server on")
             elif not has_key:
-                note = _("Conecte sua conta para ver")
+                note = _("Connect your account to see")
             else:
-                note = _("Carregando…")
+                note = _("Loading…")
             self.photos.set("—", note)
             self.videos.set("—")
             self.connect_stats.set_visible(not has_key and overall == "ok")
         total, used, free = m.disk
         if total:
-            self.disk.set(human_size(free), _("livres de {total}").format(total=human_size(total)))
+            self.disk.set(human_size(free), _("free of {total}").format(total=human_size(total)))
             self.disk_bar.set_value(used / total)
         else:
-            self.disk.set("—", _("Disco não encontrado"))
+            self.disk.set("—", _("Disk not found"))
             self.disk_bar.set_value(0)
 
         conf = m.conf
@@ -310,9 +310,9 @@ class OverviewPage(Gtk.Box):
             root = self.get_root()
             if result.ok:
                 messages = {
-                    "start": _("Ligando o servidor…"),
-                    "stop": _("Servidor desligado"),
-                    "restart": _("Reiniciando…"),
+                    "start": _("Starting the server…"),
+                    "stop": _("Server turned off"),
+                    "restart": _("Restarting…"),
                 }
                 if root is not None and hasattr(root, "toast"):
                     root.toast(messages[action])

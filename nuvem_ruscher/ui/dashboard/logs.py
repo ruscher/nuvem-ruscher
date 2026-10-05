@@ -28,22 +28,22 @@ class LogsPage(Gtk.Box):
         for margin in ("top", "bottom", "start", "end"):
             getattr(bar, f"set_margin_{margin}")(12)
         self.container = Gtk.DropDown.new_from_strings([container_label(n) for n in CONTAINERS])
-        self.container.set_tooltip_text(_("Componente"))
-        self.container.update_property([Gtk.AccessibleProperty.LABEL], [_("Componente")])
+        self.container.set_tooltip_text(_("Component"))
+        self.container.update_property([Gtk.AccessibleProperty.LABEL], [_("Component")])
         self.container.connect("notify::selected", lambda *_: self._restart())
         bar.append(self.container)
-        self.search = Gtk.SearchEntry(hexpand=True, placeholder_text=_("Filtrar registros (ex.: erro)"))
-        self.search.update_property([Gtk.AccessibleProperty.LABEL], [_("Filtrar registros")])
+        self.search = Gtk.SearchEntry(hexpand=True, placeholder_text=_("Filter logs (e.g.: error)"))
+        self.search.update_property([Gtk.AccessibleProperty.LABEL], [_("Filter logs")])
         self._refilter = Debouncer(200, self._render)
         self.search.connect("search-changed", lambda *_: self._refilter())
         bar.append(self.search)
         self.follow = Gtk.ToggleButton(icon_name="go-bottom-symbolic", active=True)
-        self.follow.set_tooltip_text(_("Acompanhar os registros novos"))
-        self.follow.update_property([Gtk.AccessibleProperty.LABEL], [_("Acompanhar os registros novos")])
+        self.follow.set_tooltip_text(_("Follow new log entries"))
+        self.follow.update_property([Gtk.AccessibleProperty.LABEL], [_("Follow new log entries")])
         bar.append(self.follow)
         copy = Gtk.Button(icon_name="edit-copy-symbolic")
-        copy.set_tooltip_text(_("Copiar os registros mostrados"))
-        copy.update_property([Gtk.AccessibleProperty.LABEL], [_("Copiar os registros mostrados")])
+        copy.set_tooltip_text(_("Copy the logs shown"))
+        copy.update_property([Gtk.AccessibleProperty.LABEL], [_("Copy the logs shown")])
         copy.connect("clicked", self._copy)
         bar.append(copy)
         self.append(bar)
@@ -59,13 +59,13 @@ class LogsPage(Gtk.Box):
         view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         for side in ("top", "bottom", "left", "right"):
             getattr(view, f"set_{side}_margin")(12)
-        view.update_property([Gtk.AccessibleProperty.LABEL], [_("Registros do servidor")])
+        view.update_property([Gtk.AccessibleProperty.LABEL], [_("Server logs")])
         self.scroller = Gtk.ScrolledWindow(vexpand=True, child=view)
         self.stack = Gtk.Stack()
         empty = Adw.StatusPage(
             icon_name="utilities-terminal-symbolic",
-            title=_("Nada por aqui ainda"),
-            description=_("Os registros aparecem quando o servidor está ligado."),
+            title=_("Nothing here yet"),
+            description=_("Logs appear when the server is on."),
         )
         self.stack.add_named(empty, "empty")
         self.stack.add_named(self.scroller, "logs")
@@ -142,4 +142,4 @@ class LogsPage(Gtk.Box):
     def _copy(self, button: Gtk.Button) -> None:
         start, end = self.buffer.get_bounds()
         copy_text(button, self.buffer.get_text(start, end, False))
-        toast(button, _("Registros copiados"))
+        toast(button, _("Logs copied"))

@@ -34,7 +34,7 @@ def systemd_quote(path: str) -> str:
     Só aceita caminhos já validados (sem aspas, barra invertida ou ``%``).
     """
     if FORBIDDEN_PATH_CHARS.intersection(path) or "\n" in path:
-        raise ValueError(f"caminho impróprio para o systemd: {path!r}")
+        raise ValueError(f"path not allowed for systemd: {path!r}")
     return f'"{path}"'
 
 

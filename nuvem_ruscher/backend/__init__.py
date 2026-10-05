@@ -5,7 +5,7 @@ from __future__ import annotations
 from nuvem_ruscher.backend.base import Backend
 
 
-def create_backend(simulate: bool, scenario: str = "feliz") -> Backend:
+def create_backend(simulate: bool, scenario: str = "fresh") -> Backend:
     if simulate:
         from nuvem_ruscher.backend.simulated import SimulatedBackend
 

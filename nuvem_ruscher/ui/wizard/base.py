@@ -75,7 +75,7 @@ class WizardPage(Adw.NavigationPage):
 
         if self.step is None:
             return ""
-        return _("Passo {n} de {total}").format(n=self.step + 1, total=TOTAL_STEPS)
+        return _("Step {n} of {total}").format(n=self.step + 1, total=TOTAL_STEPS)
 
     def set_header_title(self, title: str) -> None:
         self.header.set_title_widget(Adw.WindowTitle(title=title, subtitle=self.step_subtitle()))

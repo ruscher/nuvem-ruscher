@@ -18,11 +18,11 @@ from nuvem_ruscher.ui.dashboard.monitor import ServerMonitor
 from nuvem_ruscher.ui.widgets.rows import InstallStep
 
 UPDATE_STEPS = (
-    ("download", N_("Baixando a nova versão")),
-    ("backup", N_("Fazendo backup do banco de dados")),
-    ("snapshot", N_("Guardando uma cópia instantânea do banco")),
-    ("switch", N_("Trocando a versão")),
-    ("health", N_("Conferindo se está tudo certo")),
+    ("download", N_("Downloading the new version")),
+    ("backup", N_("Backing up the database")),
+    ("snapshot", N_("Saving a snapshot of the database")),
+    ("switch", N_("Switching versions")),
+    ("health", N_("Checking that everything is fine")),
 )
 HELPER_TO_STEP = {
     "download": "download",
@@ -40,7 +40,7 @@ HELPER_TO_STEP = {
 
 class UpdateDialog(Adw.Dialog):
     def __init__(self, backend: Backend, target: str, on_finished: Callable[[bool], None]) -> None:
-        super().__init__(title=_("Atualizando o Immich"), content_width=520, can_close=False)
+        super().__init__(title=_("Updating Immich"), content_width=520, can_close=False)
         self.backend = backend
         self.target = target
         self.on_finished = on_finished
@@ -52,7 +52,7 @@ class UpdateDialog(Adw.Dialog):
         for margin in ("top", "bottom", "start", "end"):
             getattr(box, f"set_margin_{margin}")(18)
         self.headline = label(
-            _("Atualizando para a {v}. Seu servidor fica fora do ar por alguns minutos.").format(v=target),
+            _("Updating to {v}. Your server will be offline for a few minutes.").format(v=target),
             css=("dim-label",),
         )
         box.append(self.headline)
@@ -77,8 +77,8 @@ class UpdateDialog(Adw.Dialog):
         view = Gtk.TextView(buffer=self.log, editable=False, monospace=True, wrap_mode=Gtk.WrapMode.WORD_CHAR)
         view.add_css_class("log-view")
         scroller = Gtk.ScrolledWindow(min_content_height=140, max_content_height=200, child=view)
-        box.append(Gtk.Expander(label=_("Detalhes técnicos"), child=scroller))
-        self.close_button = pill_button(_("Fechar"), lambda *_: self._close(), suggested=True)
+        box.append(Gtk.Expander(label=_("Technical details"), child=scroller))
+        self.close_button = pill_button(_("Close"), lambda *_: self._close(), suggested=True)
         self.close_button.set_visible(False)
         box.append(self.close_button)
         toolbar.set_content(box)
@@ -105,14 +105,14 @@ class UpdateDialog(Adw.Dialog):
     def _start(self) -> None:
         self._set_current("download")
         step = self.steps["download"]
-        step.set_detail(_("Buscando os arquivos da {v}…").format(v=self.target))
+        step.set_detail(_("Fetching the files for {v}…").format(v=self.target))
 
         def got_compose(text: str) -> None:
             def progress(p: PullProgress, line: str) -> None:
                 step.set_fraction(p.fraction)
                 if p.total:
                     step.set_detail(
-                        _("{percent}% · {done} baixados").format(
+                        _("{percent}% · {done} downloaded").format(
                             percent=int(p.fraction * 100), done=human_size(p.downloaded)
                         )
                     )
@@ -122,7 +122,7 @@ class UpdateDialog(Adw.Dialog):
                     self._finish(False, "download-failed", "; ".join(p.errors[-2:]))
                     return
                 step.set_fraction(1)
-                step.set_detail(_("Componentes novos baixados"))
+                step.set_detail(_("New components downloaded"))
                 self._run_helper()
 
             self._op = self.backend.pull(progress, pulled, version=self.target, compose_text=text)
@@ -139,7 +139,7 @@ class UpdateDialog(Adw.Dialog):
             if ev.kind == "step":
                 if ev.value == "rollback":
                     self.steps["health"].set_state(
-                        "warning", _("A nova versão não respondeu. Voltando para a anterior…")
+                        "warning", _("The new version did not respond. Going back to the previous one…")
                     )
                     self._current = "health"
                 elif ev.value in HELPER_TO_STEP:
@@ -166,8 +166,8 @@ class UpdateDialog(Adw.Dialog):
             for step in self.steps.values():
                 if step.state != "ok":
                     step.set_state("ok")
-            self.result_row.set_title(_("Atualizado para a {v}!").format(v=self.target))
-            self.result_row.set_subtitle(_("Um backup e uma cópia do banco anterior ficaram guardados, por segurança."))
+            self.result_row.set_title(_("Updated to {v}!").format(v=self.target))
+            self.result_row.set_subtitle(_("A backup and a copy of the previous database were kept, to be safe."))
             self.result_icon.set_from_icon_name("nr-status-ok-symbolic")
         else:
             title, hint = human_error(code)
@@ -203,8 +203,8 @@ class UpdatesPage(Gtk.Box):
 
         self.status = StatusBlock("software-update-available-symbolic")
         buttons = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER)
-        self.check_button = pill_button(_("Verificar agora"), lambda *_: self.refresh(force=True))
-        self.update_button = pill_button(_("Atualizar com segurança"), self._ask_update, suggested=True)
+        self.check_button = pill_button(_("Check now"), lambda *_: self.refresh(force=True))
+        self.update_button = pill_button(_("Update safely"), self._ask_update, suggested=True)
         self.update_button.set_visible(False)
         buttons.append(self.check_button)
         buttons.append(self.update_button)
@@ -213,16 +213,16 @@ class UpdatesPage(Gtk.Box):
 
         self.breaking = Adw.PreferencesGroup(visible=False)
         self.body.append(self.breaking)
-        self.notes = Adw.PreferencesGroup(title=_("Novidades"), visible=False)
+        self.notes = Adw.PreferencesGroup(title=_("What’s new"), visible=False)
         self.body.append(self.notes)
         self._dynamic: list[tuple[Adw.PreferencesGroup, Gtk.Widget]] = []
         explain = Adw.PreferencesGroup()
         row = Adw.ActionRow(
-            title=_("Como a atualização protege seus dados"),
+            title=_("How the update protects your data"),
             subtitle=_(
-                "Antes de trocar a versão, fazemos um backup do banco e uma cópia instantânea dele. "
-                "Depois conferimos se o servidor respondeu. "
-                "Se não responder, tudo volta sozinho para a versão anterior."
+                "Before switching versions, we back up the database and take a snapshot of it. Then we "
+                "check that the server responded. If it does not, everything goes back to the previous "
+                "version by itself."
             ),
         )
         row.set_subtitle_lines(6)
@@ -236,7 +236,7 @@ class UpdatesPage(Gtk.Box):
             return
         self._loading = True
         self.check_button.set_sensitive(False)
-        self.status.set_title(_("Procurando atualizações…"))
+        self.status.set_title(_("Looking for updates…"))
         self.status.set_description(None)
         current = self.monitor.conf.immich_version or self.backend.load_config().immich_version
 
@@ -248,8 +248,8 @@ class UpdatesPage(Gtk.Box):
         def failed(_exc: BaseException) -> None:
             self._loading = False
             self.check_button.set_sensitive(True)
-            self.status.set_title(_("Não foi possível verificar agora"))
-            self.status.set_description(_("Sem conexão com o GitHub. Tente de novo mais tarde."))
+            self.status.set_title(_("Could not check right now"))
+            self.status.set_description(_("No connection to GitHub. Try again later."))
 
         run_async(self.backend.releases, force, on_done=done, on_error=failed)
 
@@ -263,7 +263,7 @@ class UpdatesPage(Gtk.Box):
         self._clear()
         if not info.available or info.latest is None:
             self.status.set_icon_name("nr-status-ok-symbolic")
-            self.status.set_title(_("Você está na versão mais recente"))
+            self.status.set_title(_("You are on the latest version"))
             self.status.set_description(_("Immich {v}").format(v=info.current))
             self.update_button.set_visible(False)
             self.breaking.set_visible(False)
@@ -271,9 +271,9 @@ class UpdatesPage(Gtk.Box):
             return
         latest = info.latest
         self.status.set_icon_name("software-update-available-symbolic")
-        self.status.set_title(_("A versão {v} está disponível").format(v=latest.tag))
+        self.status.set_title(_("Version {v} is available").format(v=latest.tag))
         self.status.set_description(
-            _("Você está na {cur}. Publicada em {date}.").format(cur=info.current, date=br_date(latest.published))
+            _("You are on {cur}. Released on {date}.").format(cur=info.current, date=br_date(latest.published))
         )
         self.update_button.set_visible(True)
 
@@ -281,13 +281,13 @@ class UpdatesPage(Gtk.Box):
         self.breaking.set_visible(bool(warnings) or info.major_change)
         if warnings or info.major_change:
             expander = Adw.ExpanderRow(
-                title=_("Mudanças importantes nesta atualização"),
-                subtitle=_("Leia antes de atualizar. Normalmente não exigem nada de você."),
+                title=_("Important changes in this update"),
+                subtitle=_("Read before updating. They usually require nothing from you."),
                 expanded=True,
             )
             expander.add_prefix(status_icon("warning"))
             if info.major_change:
-                expander.add_row(self._text_row(_("É uma versão principal nova: a mudança é maior que o normal.")))
+                expander.add_row(self._text_row(_("This is a new major version: the change is bigger than usual.")))
             for tag, section in warnings:
                 expander.add_row(self._text_row(f"<b>{tag}</b>\n" + simple_markdown_to_pango(section), markup=True))
             self.breaking.add(expander)
@@ -297,7 +297,7 @@ class UpdatesPage(Gtk.Box):
         for release in info.pending[:8]:
             expander = Adw.ExpanderRow(title=release.tag, subtitle=br_date(release.published))
             expander.add_row(self._text_row(simple_markdown_to_pango(release.body), markup=True))
-            link = Adw.ActionRow(title=_("Ver no GitHub"), activatable=True)
+            link = Adw.ActionRow(title=_("View on GitHub"), activatable=True)
             link.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))
             link.connect("activated", lambda r, u=release.url: open_uri(r, u))
             expander.add_row(link)
@@ -321,20 +321,20 @@ class UpdatesPage(Gtk.Box):
         if self.monitor.overall == "disk-missing":
             confirm(
                 self,
-                _("Conecte o disco das fotos"),
-                _("A atualização precisa do servidor ligado."),
-                _("Entendi"),
+                _("Connect the photo disk"),
+                _("The update needs the server to be on."),
+                _("Got it"),
                 lambda: None,
             )
             return
         confirm(
             self,
-            _("Atualizar para a {v}?").format(v=target),
+            _("Update to {v}?").format(v=target),
             _(
-                "O servidor fica fora do ar por alguns minutos. Antes, fazemos backup do banco; "
-                "se algo der errado, tudo volta sozinho para a {cur}."
+                "The server will be offline for a few minutes. First we back up the database; if "
+                "something goes wrong, everything goes back to {cur} by itself."
             ).format(cur=info.current),
-            _("Atualizar"),
+            _("Update"),
             lambda: self._run_update(target),
         )
 
