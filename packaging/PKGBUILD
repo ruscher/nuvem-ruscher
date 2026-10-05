@@ -6,7 +6,7 @@
 # Makefile, a mesma usada pelo Nix: nada é duplicado aqui.
 
 pkgname=nuvem-ruscher
-pkgver=1.0.0
+pkgver=2.0.0
 pkgrel=1
 pkgdesc="Instala, configura e cuida do Immich (alternativa livre ao Google Fotos) no BigLinux"
 arch=('any')
@@ -29,6 +29,7 @@ depends=(
   'python'
   'python-gobject'
   'python-qrcode'
+  'rsync'
   'shadow'
   'systemd'
   'util-linux'
@@ -41,7 +42,9 @@ checkdepends=(
 )
 optdepends=(
   'exfatprogs: discos exFAT'
+  'mdadm: RAID por software (redundância)'
   'ntfs-3g: discos formatados no Windows (NTFS)'
+  'smartmontools: saúde dos discos (SMART)'
   'tailscale: acesso às fotos fora de casa'
   'ufw: firewall com liberação automática da porta'
 )

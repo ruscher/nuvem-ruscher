@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 from conftest import FIXTURES, ROOT
 
+from nuvem_ruscher import VERSION
 from nuvem_ruscher.core import fstab as py_fstab
 from nuvem_ruscher.core.helper_protocol import parse_line
 
@@ -292,7 +293,7 @@ class TestValidation:
 
     def test_version_needs_no_root(self, sim):
         proc = sim.run("version")
-        assert proc.returncode == 0 and proc.stdout.strip() == "1.0.0"
+        assert proc.returncode == 0 and proc.stdout.strip() == VERSION
 
     def test_no_recursive_removal_except_snapshot(self):
         text = HELPER.read_text()

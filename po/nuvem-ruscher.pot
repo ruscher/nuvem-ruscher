@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: nuvem-ruscher 1.0.0\n"
+"Project-Id-Version: nuvem-ruscher 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ruscher/nuvem-ruscher/issues\n"
-"POT-Creation-Date: 2026-10-05 07:54-0300\n"
+"POT-Creation-Date: 2026-10-05 08:09-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,7 +36,7 @@ msgid ""
 "It is the program that runs the photo server. Installation is automatic."
 msgstr ""
 
-#: nuvem_ruscher/backend/base.py:372 nuvem_ruscher/ui/pages/storage.py:553
+#: nuvem_ruscher/backend/base.py:372 nuvem_ruscher/ui/pages/storage.py:552
 #: nuvem_ruscher/ui/storage_flows.py:580 nuvem_ruscher/ui/wizard/pages.py:606
 msgid "Install"
 msgstr ""
@@ -989,7 +989,7 @@ msgid ""
 msgstr ""
 
 #: nuvem_ruscher/ui/accounts_ui.py:202 nuvem_ruscher/ui/pages/home.py:183
-#: nuvem_ruscher/ui/pages/home.py:201 nuvem_ruscher/ui/pages/storage.py:382
+#: nuvem_ruscher/ui/pages/home.py:201 nuvem_ruscher/ui/pages/storage.py:381
 #: nuvem_ruscher/ui/shell.py:31 nuvem_ruscher/ui/wizard/pages.py:255
 #: nuvem_ruscher/ui/wizard/pages.py:256
 msgid "Storage"
@@ -1313,7 +1313,7 @@ msgstr ""
 
 #: nuvem_ruscher/ui/common.py:140 nuvem_ruscher/ui/pages/updates.py:85
 #: nuvem_ruscher/ui/storage_flows.py:467 nuvem_ruscher/ui/storage_flows.py:506
-#: nuvem_ruscher/ui/storage_flows.py:516 nuvem_ruscher/ui/storage_flows.py:800
+#: nuvem_ruscher/ui/storage_flows.py:516 nuvem_ruscher/ui/storage_flows.py:801
 #: nuvem_ruscher/ui/wizard/pages.py:1159
 msgid "Close"
 msgstr ""
@@ -1492,7 +1492,7 @@ msgid "Backup done"
 msgstr ""
 
 #: nuvem_ruscher/ui/pages/home.py:31 nuvem_ruscher/ui/pages/home.py:95
-#: nuvem_ruscher/ui/pages/home.py:311 nuvem_ruscher/ui/pages/storage.py:558
+#: nuvem_ruscher/ui/pages/home.py:311 nuvem_ruscher/ui/pages/storage.py:557
 #: nuvem_ruscher/ui/shell.py:48 nuvem_ruscher/ui/wizard/pages.py:166
 msgid "Checking…"
 msgstr ""
@@ -1638,7 +1638,7 @@ msgstr ""
 msgid "View logs"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/home.py:254 nuvem_ruscher/ui/pages/storage.py:659
+#: nuvem_ruscher/ui/pages/home.py:254 nuvem_ruscher/ui/pages/storage.py:658
 msgid "Turn off"
 msgstr ""
 
@@ -2412,7 +2412,7 @@ msgstr[1] ""
 msgid "Device, status and maintenance"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:282 nuvem_ruscher/ui/pages/storage.py:357
+#: nuvem_ruscher/ui/pages/storage.py:282 nuvem_ruscher/ui/pages/storage.py:356
 #: nuvem_ruscher/ui/storage_flows.py:725
 msgid "Device"
 msgstr ""
@@ -2460,7 +2460,7 @@ msgstr ""
 msgid "Every drive in this computer and what it is used for."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:320 nuvem_ruscher/ui/pages/storage.py:563
+#: nuvem_ruscher/ui/pages/storage.py:320 nuvem_ruscher/ui/pages/storage.py:562
 msgid "Check health"
 msgstr ""
 
@@ -2468,179 +2468,179 @@ msgstr ""
 msgid "Reads the health report of each drive (SMART)"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:354
+#: nuvem_ruscher/ui/pages/storage.py:353
 msgid "Temperature"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:356
+#: nuvem_ruscher/ui/pages/storage.py:355
 msgid "Time powered on"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:356
+#: nuvem_ruscher/ui/pages/storage.py:355
 #, python-brace-format
 msgid "{n} hours"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:358
+#: nuvem_ruscher/ui/pages/storage.py:357
 msgid "Stable name"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:359 nuvem_ruscher/ui/storage_flows.py:726
+#: nuvem_ruscher/ui/pages/storage.py:358 nuvem_ruscher/ui/storage_flows.py:726
 msgid "Serial"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:361
+#: nuvem_ruscher/ui/pages/storage.py:360
 msgid "not mounted"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:373
+#: nuvem_ruscher/ui/pages/storage.py:372
 msgid "Free"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:383
+#: nuvem_ruscher/ui/pages/storage.py:382
 msgid ""
 "Where your photos live, how your drives protect them, and whether they are "
 "healthy."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:392
+#: nuvem_ruscher/ui/pages/storage.py:391
 msgid "Cloud storage"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:392
+#: nuvem_ruscher/ui/pages/storage.py:391
 msgid "The folder that holds every photo and video."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:394
+#: nuvem_ruscher/ui/pages/storage.py:393
 msgid "Open the photo folder"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:395
+#: nuvem_ruscher/ui/pages/storage.py:394
 msgid "Change location…"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:405 nuvem_ruscher/ui/wizard/pages.py:412
+#: nuvem_ruscher/ui/pages/storage.py:404 nuvem_ruscher/ui/wizard/pages.py:412
 msgid "After a restart"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:407
+#: nuvem_ruscher/ui/pages/storage.py:406
 msgid "Mount the photo disk when the computer starts"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:408
+#: nuvem_ruscher/ui/pages/storage.py:407
 msgid "The server works right after a restart, even before anyone logs in."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:473
+#: nuvem_ruscher/ui/pages/storage.py:472
 msgid "The previous location was kept as a copy"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:477 nuvem_ruscher/ui/storage_flows.py:464
+#: nuvem_ruscher/ui/pages/storage.py:476 nuvem_ruscher/ui/storage_flows.py:464
 msgid "Open old location"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:479
+#: nuvem_ruscher/ui/pages/storage.py:478
 msgid "Remove…"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:487
+#: nuvem_ruscher/ui/pages/storage.py:486
 msgid "A move was not finished"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:489
+#: nuvem_ruscher/ui/pages/storage.py:488
 #, python-brace-format
 msgid "Your photos are still in the current location. Partial copy: {path}"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:494
+#: nuvem_ruscher/ui/pages/storage.py:493
 msgid "Resume…"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:505 nuvem_ruscher/ui/storage_flows.py:500
+#: nuvem_ruscher/ui/pages/storage.py:504 nuvem_ruscher/ui/storage_flows.py:500
 msgid "Old copy removed"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:514 nuvem_ruscher/ui/storage_flows.py:484
+#: nuvem_ruscher/ui/pages/storage.py:513 nuvem_ruscher/ui/storage_flows.py:484
 msgid "Remove the old copy?"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:516
+#: nuvem_ruscher/ui/pages/storage.py:515
 #, python-brace-format
 msgid ""
 "This deletes the Immich folders in {path}. Before deleting, the app checks "
 "again that the current location has every file. This cannot be undone."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:519 nuvem_ruscher/ui/storage_flows.py:489
+#: nuvem_ruscher/ui/pages/storage.py:518 nuvem_ruscher/ui/storage_flows.py:489
 msgid "Remove old copy"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:540
+#: nuvem_ruscher/ui/pages/storage.py:539
 msgid "The check started. It runs in the background."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:551
+#: nuvem_ruscher/ui/pages/storage.py:550
 msgid "Install the health tool?"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:552
+#: nuvem_ruscher/ui/pages/storage.py:551
 msgid ""
 "Reading the drives’ health needs smartmontools, from the official "
 "repositories."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:577 nuvem_ruscher/ui/storage_flows.py:174
+#: nuvem_ruscher/ui/pages/storage.py:576 nuvem_ruscher/ui/storage_flows.py:174
 msgid "RAID array"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:582 nuvem_ruscher/ui/wizard/pages.py:345
+#: nuvem_ruscher/ui/pages/storage.py:581 nuvem_ruscher/ui/wizard/pages.py:345
 msgid "System disk"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:584 nuvem_ruscher/ui/wizard/pages.py:343
+#: nuvem_ruscher/ui/pages/storage.py:583 nuvem_ruscher/ui/wizard/pages.py:343
 msgid "External USB disk"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:586 nuvem_ruscher/ui/wizard/pages.py:345
+#: nuvem_ruscher/ui/pages/storage.py:585 nuvem_ruscher/ui/wizard/pages.py:345
 msgid "Internal disk"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:590
+#: nuvem_ruscher/ui/pages/storage.py:589
 msgid "Photo disk"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:603
+#: nuvem_ruscher/ui/pages/storage.py:602
 msgid "Connect the photo disk to see this option."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:608
+#: nuvem_ruscher/ui/pages/storage.py:607
 msgid "Already configured in the system (/etc/fstab), outside Nuvem Ruscher."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:613
+#: nuvem_ruscher/ui/pages/storage.py:612
 msgid "This type of disk cannot be mounted automatically at startup."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:638 nuvem_ruscher/ui/wizard/pages.py:232
+#: nuvem_ruscher/ui/pages/storage.py:637 nuvem_ruscher/ui/wizard/pages.py:232
 msgid "Done!"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:638
+#: nuvem_ruscher/ui/pages/storage.py:637
 msgid "Automatic mounting turned off"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:654
+#: nuvem_ruscher/ui/pages/storage.py:653
 msgid "Turn off automatic mounting?"
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:656
+#: nuvem_ruscher/ui/pages/storage.py:655
 msgid ""
 "After a restart, the server will only start when you log in and the disk "
 "appears. Only the line created by Nuvem Ruscher is removed from /etc/fstab "
 "(with a backup copy)."
 msgstr ""
 
-#: nuvem_ruscher/ui/pages/storage.py:669
+#: nuvem_ruscher/ui/pages/storage.py:668
 msgid "The photo folder is not available right now."
 msgstr ""
 
@@ -3463,7 +3463,7 @@ msgid ""
 "afterwards you can move your photos to it."
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:574 nuvem_ruscher/ui/storage_flows.py:816
+#: nuvem_ruscher/ui/storage_flows.py:574 nuvem_ruscher/ui/storage_flows.py:817
 msgid "RAID protects against some drive failures. RAID is not a backup."
 msgstr ""
 
@@ -3650,29 +3650,29 @@ msgstr ""
 msgid "The RAID array is being created. Please wait."
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:795
+#: nuvem_ruscher/ui/storage_flows.py:796
 msgid "Not created"
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:807 nuvem_ruscher/ui/wizard/pages.py:1197
+#: nuvem_ruscher/ui/storage_flows.py:808 nuvem_ruscher/ui/wizard/pages.py:1197
 msgid "Ready"
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:809
+#: nuvem_ruscher/ui/storage_flows.py:810
 msgid "Your RAID is ready"
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:811
+#: nuvem_ruscher/ui/storage_flows.py:812
 msgid ""
 "It is synchronizing the drives in the background and can already be used. It "
 "is empty: move your photos to it whenever you want."
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:817
+#: nuvem_ruscher/ui/storage_flows.py:818
 msgid "Later"
 msgstr ""
 
-#: nuvem_ruscher/ui/storage_flows.py:818
+#: nuvem_ruscher/ui/storage_flows.py:819
 msgid "Move photos to the RAID…"
 msgstr ""
 
