@@ -27,6 +27,12 @@ CONNECTIVITY_URL: Final = "https://api.github.com/zen"
 
 PLAY_STORE_URL: Final = "https://play.google.com/store/apps/details?id=app.alextran.immich"
 FDROID_URL: Final = "https://f-droid.org/packages/app.alextran.immich/"
+# Link da documentação oficial do Immich (docs/docs/partials/_mobile-app-download.md, v3.2.4).
+# (Que o App Store do iPhone abra na loja do país da conta está no plano de testes, doc 17.)
+APP_STORE_URL: Final = "https://apps.apple.com/us/app/immich/id1613945652"
+# Apps do Tailscale (links de tailscale.com/download/ios e /android).
+TAILSCALE_APP_STORE_URL: Final = "https://apps.apple.com/us/app/tailscale/id1470499037"
+TAILSCALE_PLAY_STORE_URL: Final = "https://play.google.com/store/apps/details?id=com.tailscale.ipn"
 IMMICH_DOCS_URL: Final = "https://docs.immich.app"
 TAILSCALE_DOWNLOAD_URL: Final = "https://tailscale.com/download/linux"
 PROJECT_URL: Final = "https://github.com/ruscher/nuvem-ruscher"

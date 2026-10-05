@@ -22,19 +22,25 @@ def qr_matrix(text: str) -> list[list[bool]]:
 class QrCode(Gtk.Widget):
     __gtype_name__ = "NuvemRuscherQrCode"
 
-    def __init__(self, text: str = "", size: int = 176) -> None:
+    def __init__(self, text: str = "", size: int = 176, description: str = "") -> None:
         super().__init__()
         self._size = size
         self._matrix: list[list[bool]] = []
+        self.text = ""
         self.set_halign(Gtk.Align.CENTER)
         self.set_valign(Gtk.Align.CENTER)
         self.set_accessible_role(Gtk.AccessibleRole.IMG)
         if text:
-            self.set_text(text)
+            self.set_text(text, description)
 
-    def set_text(self, text: str) -> None:
+    def set_text(self, text: str, description: str = "") -> None:
+        """``description`` diz para que serve o código (leitores de tela); o texto vai junto."""
+        self.text = text
         self._matrix = qr_matrix(text)
-        self.update_property([Gtk.AccessibleProperty.LABEL], [_("QR code for {text}").format(text=text)])
+        label = _("QR code for {text}").format(text=text)
+        if description:
+            label = _("{description}: {text}").format(description=description, text=text)
+        self.update_property([Gtk.AccessibleProperty.LABEL], [label])
         self.queue_draw()
 
     def do_measure(self, orientation: Gtk.Orientation, for_size: int) -> tuple[int, int, int, int]:

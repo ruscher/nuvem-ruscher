@@ -284,11 +284,57 @@ def _accounts_tour(app: NuvemApplication, shot: Callable[[str], Callable[[], Non
     ]
 
 
+def _phones_tour(app: NuvemApplication, shot: Callable[[str], Callable[[], None]]) -> list:
+    """Celulares: Android, iPhone, fora de casa, teste da conexão e a parte de baixo da página."""
+
+    def page():  # noqa: ANN202
+        return app.window.shell.page("phones")
+
+    def scroll(fraction: float) -> Callable[[], None]:
+        def go() -> None:
+            adj = page().scroller.get_vadjustment()
+            adj.set_value((adj.get_upper() - adj.get_page_size()) * fraction)
+
+        return go
+
+    def expand_all() -> None:
+        for row in _walk(page().view):
+            if isinstance(row, Adw.ExpanderRow):
+                row.set_expanded(True)
+
+    return [
+        (100, lambda: app.window.shell.show("phones")),
+        (100, lambda: page().view.set_platform("android")),
+        (1200, shot("ph-android")),
+        (100, lambda: page().view.set_platform("ios")),
+        (900, shot("ph-iphone")),
+        (100, lambda: page().view.run_test()),
+        (1500, lambda: page().scroller.get_child().scroll_to(page().view.check, None)),
+        (500, shot("ph-iphone-test")),
+        (100, expand_all),
+        (100, scroll(1.0)),
+        (900, shot("ph-iphone-more")),
+        (100, lambda: page().view.where.set_active_name("away")),
+        (400, scroll(0.0)),
+        (600, shot("ph-iphone-away")),
+        (100, lambda: page().view.where.set_active_name("home")),
+    ]
+
+
+def _walk(widget: Gtk.Widget):  # noqa: ANN202
+    child = widget.get_first_child()
+    while child is not None:
+        yield child
+        yield from _walk(child)
+        child = child.get_next_sibling()
+
+
 # Ações extras (diálogos): nome → passos.
 EXTRAS: dict[str, Callable[..., list[tuple[int, Callable[[], None]]]]] = {
     "migration": _migration_tour,
     "raid": _raid_tour,
     "accounts": _accounts_tour,
+    "phones": _phones_tour,
 }
 
 
