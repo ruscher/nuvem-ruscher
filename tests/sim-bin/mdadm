@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# mdadm falso: "--create" só cria um arquivo no lugar do array.
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+[[ ${SIM_MDADM_FAIL:-0} == 1 ]] && exit 1
+case $1 in
+    --create) mkdir -p "${2%/*}" && : >"$2" ;;
+    --detail) echo "ARRAY /dev/md/nuvem-ruscher metadata=1.2 UUID=11111111:22222222:33333333:44444444 name=sim:nuvem-ruscher" ;;
+esac
+exit 0

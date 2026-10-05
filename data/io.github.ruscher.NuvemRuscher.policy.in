@@ -5,7 +5,8 @@
   Nuvem Ruscher: uma ação polkit por grupo de operações do helper.
   O pkexec escolhe a ação pelo primeiro argumento (org.freedesktop.policykit.exec.argv1).
   Ligar/desligar/reiniciar o servidor não pede senha a quem está na sessão local ativa
-  (quem está no grupo docker já pode parar containers: não há ganho de privilégio).
+  (quem está no grupo docker já pode parar containers: não há ganho de privilégio), nem
+  ler a saúde dos discos (disk-health: só leitura do SMART).
   Todo o resto (fstab, pacotes, configuração, atualização, desinstalação) pede a senha
   de administrador. Veja docs/04-armazenamento-e-seguranca.md.
   O exec.path é preenchido no "make install" com o caminho real do helper no prefixo
@@ -69,5 +70,18 @@
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">@HELPER_PATH@</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">restart</annotate>
+  </action>
+  <action id="io.github.ruscher.NuvemRuscher.health">
+    <description>Read the health of the disks</description>
+    <description xml:lang="pt_BR">Ler a saúde dos discos</description>
+    <message>Authentication is required to read the health of the disks</message>
+    <message xml:lang="pt_BR">Para ler a saúde dos discos, digite a senha de administrador</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">@HELPER_PATH@</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">disk-health</annotate>
   </action>
 </policyconfig>

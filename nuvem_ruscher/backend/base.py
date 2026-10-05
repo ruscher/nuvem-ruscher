@@ -22,9 +22,12 @@ from nuvem_ruscher.constants import (
 )
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.config import AppConfig
+from nuvem_ruscher.core.disks import Disk
 from nuvem_ruscher.core.docker import ContainerState, ContainerStats, GroupAccess
 from nuvem_ruscher.core.helper_protocol import HelperEvent
-from nuvem_ruscher.core.immich_api import ServerStats
+from nuvem_ruscher.core.immich_api import Album, ImmichUser, Person, ServerStats, Session
+from nuvem_ruscher.core.migration import MigrationPlan, MigrationState, Mode
+from nuvem_ruscher.core.raid import RaidArray
 from nuvem_ruscher.core.releases import Release
 from nuvem_ruscher.core.storage import FsWarning, LibraryInfo, Volume, human_size
 from nuvem_ruscher.core.system import GIB, GpuInfo, PortStatus, TailscaleInfo
@@ -188,7 +191,9 @@ class Backend(abc.ABC):
         args: list[str],
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
-    ) -> Operation: ...
+        interactive: bool = False,
+    ) -> Operation:
+        """``interactive``: ``cancel()`` pede o cancelamento ao helper (ele decide se ainda dá)."""
 
     # --- Docker como usuário -----------------------------------------------------
     @abc.abstractmethod
@@ -244,6 +249,85 @@ class Backend(abc.ABC):
     @abc.abstractmethod
     def statistics(self) -> ServerStats | None: ...
 
+    # --- contas e compartilhamento (API do Immich; sessão só na memória) ----------
+    @property
+    @abc.abstractmethod
+    def session(self) -> Session | None: ...
+
+    @abc.abstractmethod
+    def sign_in(self, email: str, password: str) -> Session: ...
+
+    @abc.abstractmethod
+    def sign_out(self) -> None: ...
+
+    @abc.abstractmethod
+    def accounts(self) -> list[ImmichUser]:
+        """Todas as contas (inclusive desativadas), com fotos, vídeos e uso. Só administrador."""
+
+    @abc.abstractmethod
+    def create_account(
+        self, name: str, email: str, password: str, quota: int | None, storage_label: str | None, is_admin: bool
+    ) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def update_account(self, user_id: str, **changes: object) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def reset_account_password(self, user_id: str) -> str: ...
+
+    @abc.abstractmethod
+    def disable_account(self, user_id: str) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def restore_account(self, user_id: str) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def people(self) -> list[Person]: ...
+
+    @abc.abstractmethod
+    def shared_albums(self) -> tuple[list[Album], list[Album]]:
+        """(compartilhados pela conta conectada, compartilhados com ela)."""
+
+    @abc.abstractmethod
+    def create_shared_album(self, name: str, members: list[tuple[str, str]]) -> Album: ...
+
+    @abc.abstractmethod
+    def add_album_members(self, album_id: str, members: list[tuple[str, str]]) -> Album: ...
+
+    @abc.abstractmethod
+    def set_album_role(self, album_id: str, user_id: str, role: str) -> None: ...
+
+    @abc.abstractmethod
+    def remove_album_member(self, album_id: str, user_id: str) -> None: ...
+
+    @abc.abstractmethod
+    def partners(self) -> tuple[list[Person], list[Person]]:
+        """(com quem a conta conectada compartilha a biblioteca, quem compartilha com ela)."""
+
+    @abc.abstractmethod
+    def add_partner(self, user_id: str) -> None: ...
+
+    @abc.abstractmethod
+    def remove_partner(self, user_id: str) -> None: ...
+
+    # --- discos, RAID e troca de local -----------------------------------------------
+    @abc.abstractmethod
+    def disks(self) -> list[Disk]: ...
+
+    @abc.abstractmethod
+    def raid_arrays(self) -> list[RaidArray]: ...
+
+    @abc.abstractmethod
+    def tool_available(self, name: str) -> bool:
+        """rsync | mdadm | smartctl"""
+
+    @abc.abstractmethod
+    def plan_migration(self, dest: str, mode: Mode | None = None) -> MigrationPlan:
+        """Bloqueante: conta os arquivos da biblioteca (pode levar alguns segundos)."""
+
+    @abc.abstractmethod
+    def migration_state(self) -> MigrationState | None: ...
+
     # --- diversos -----------------------------------------------------------------
     @abc.abstractmethod
     def backups(self) -> list[BackupFile]: ...
@@ -279,134 +363,137 @@ class Backend(abc.ABC):
         if check_id == "docker_installed":
             installed, version, _running = self.fact_docker()
             if installed:
-                return CheckResult(check_id, CheckStatus.OK, _("Docker instalado"), _("Versão {v}").format(v=version))
+                return CheckResult(check_id, CheckStatus.OK, _("Docker installed"), _("Version {v}").format(v=version))
             return CheckResult(
                 check_id,
                 CheckStatus.ERROR,
-                _("O Docker não está instalado"),
-                _("É o programa que roda o servidor de fotos. A instalação é automática."),
-                Fix(_("Instalar"), "install-docker"),
+                _("Docker is not installed"),
+                _("It is the program that runs the photo server. Installation is automatic."),
+                Fix(_("Install"), "install-docker"),
             )
         if check_id == "docker_running":
             installed, _version, running = self.fact_docker()
             if not installed:
-                return CheckResult(check_id, CheckStatus.SKIP, _("Docker ligado"), _("Aguardando a instalação"))
+                return CheckResult(check_id, CheckStatus.SKIP, _("Docker running"), _("Waiting for the installation"))
             if running:
-                return CheckResult(check_id, CheckStatus.OK, _("Docker ligado"))
+                return CheckResult(check_id, CheckStatus.OK, _("Docker running"))
             return CheckResult(
                 check_id,
                 CheckStatus.ERROR,
-                _("O Docker está desligado"),
-                _("Vamos ligá-lo agora e deixá-lo ligando junto com o computador."),
-                Fix(_("Ligar"), "enable-docker"),
+                _("Docker is turned off"),
+                _("We will turn it on now and have it start with the computer."),
+                Fix(_("Turn on"), "enable-docker"),
             )
         if check_id == "docker_group":
             access = self.docker_access()
             if access is GroupAccess.ACTIVE:
-                return CheckResult(check_id, CheckStatus.OK, _("Seu usuário pode usar o Docker"))
+                return CheckResult(check_id, CheckStatus.OK, _("Your user can use Docker"))
             if access is GroupAccess.PENDING:
                 return CheckResult(
                     check_id,
                     CheckStatus.OK,
-                    _("Permissão concedida"),
-                    _("Já funciona. Quando puder, saia e entre na sessão para completar o ajuste."),
+                    _("Permission granted"),
+                    _("It already works. When you can, log out and back in to complete the change."),
                 )
             if access is GroupAccess.NO_GROUP:
                 return CheckResult(
                     check_id,
                     CheckStatus.SKIP,
-                    _("Permissão para usar o Docker"),
-                    _("Aguardando a instalação"),
+                    _("Permission to use Docker"),
+                    _("Waiting for the installation"),
                 )
             return CheckResult(
                 check_id,
                 CheckStatus.ERROR,
-                _("Seu usuário ainda não pode usar o Docker"),
-                _("Precisamos colocar “{user}” no grupo docker.").format(user=self.user_name()),
-                Fix(_("Permitir"), "add-docker-group"),
+                _("Your user cannot use Docker yet"),
+                _("We need to add “{user}” to the docker group.").format(user=self.user_name()),
+                Fix(_("Allow"), "add-docker-group"),
             )
         if check_id == "memory":
             ram = self.fact_memory()
-            text = _("Memória: {size}").format(size=human_size(ram, binary=True))
+            text = _("Memory: {size}").format(size=human_size(ram, binary=True))
             # /proc/meminfo mostra um pouco menos que o pente instalado; 5 % de folga.
             if ram >= MIN_RAM_GIB * GIB * 0.95:
-                return CheckResult(check_id, CheckStatus.OK, text, _("O mínimo é {n} GB").format(n=MIN_RAM_GIB))
+                return CheckResult(check_id, CheckStatus.OK, text, _("The minimum is {n} GB").format(n=MIN_RAM_GIB))
             if ram >= ML_OFF_RAM_GIB * GIB * 0.95:
                 return CheckResult(
                     check_id,
                     CheckStatus.WARNING,
                     text,
-                    _("Abaixo do recomendado. Vamos desligar o reconhecimento de rostos para caber."),
+                    _("Below the recommended amount. We will turn off face recognition so it fits."),
                 )
             return CheckResult(
                 check_id,
                 CheckStatus.ERROR,
                 text,
-                _("O Immich precisa de pelo menos {n} GB de memória.").format(n=ML_OFF_RAM_GIB),
+                _("Immich needs at least {n} GB of memory.").format(n=ML_OFF_RAM_GIB),
             )
         if check_id == "cpu":
             cores, v2 = self.fact_cpu()
-            title = _("Processador: {n} núcleos").format(n=cores)
+            title = _("Processor: {n} cores").format(n=cores)
             if not v2:
                 return CheckResult(
                     check_id,
                     CheckStatus.WARNING,
                     title,
-                    _("Processador antigo: a inteligência artificial ficará desligada."),
+                    _("Old processor: artificial intelligence will be turned off."),
                 )
             if cores < 2:
-                return CheckResult(check_id, CheckStatus.WARNING, title, _("Vai funcionar, mas devagar."))
+                return CheckResult(check_id, CheckStatus.WARNING, title, _("It will work, but slowly."))
             return CheckResult(check_id, CheckStatus.OK, title)
         if check_id == "disk_system":
             free = self.fact_docker_free()
             need = MIN_DOCKER_FREE_GIB * GIB
-            title = _("Espaço no disco do sistema: {size} livres").format(size=human_size(free))
+            title = _("Space on the system disk: {size} free").format(size=human_size(free))
             if free >= need:
-                return CheckResult(check_id, CheckStatus.OK, title, _("Os componentes ocupam cerca de 5 GB"))
+                return CheckResult(check_id, CheckStatus.OK, title, _("The components take up about 5 GB"))
             return CheckResult(
                 check_id,
                 CheckStatus.ERROR,
-                _("Falta espaço no disco do sistema"),
-                _("Libere mais {size} para baixar os componentes.").format(size=human_size(need - free)),
+                _("Not enough space on the system disk"),
+                _("Free up {size} more to download the components.").format(size=human_size(need - free)),
             )
         if check_id == "port":
             port, ours = self.fact_port()
             if port.free:
-                return CheckResult(check_id, CheckStatus.OK, _("Porta {p} livre").format(p=IMMICH_PORT))
+                return CheckResult(check_id, CheckStatus.OK, _("Port {p} is free").format(p=IMMICH_PORT))
             if ours:
-                return CheckResult(check_id, CheckStatus.OK, _("Porta {p} já é do seu Immich").format(p=IMMICH_PORT))
-            owner = _(" (usada por {name})").format(name=port.owner) if port.owner else ""
+                return CheckResult(
+                    check_id, CheckStatus.OK, _("Port {p} already belongs to your Immich").format(p=IMMICH_PORT)
+                )
+            if port.owner:
+                hint = _("It is used by “{name}”. Close that program or stop the other Immich, then check again.")
+                hint = hint.format(name=port.owner)
+            else:
+                hint = _("Close that program or stop the other Immich, then check again.")
             return CheckResult(
-                check_id,
-                CheckStatus.ERROR,
-                _("Outro programa está usando a porta {p}").format(p=IMMICH_PORT),
-                _("Feche esse programa ou pare o outro Immich e verifique de novo.") + owner,
+                check_id, CheckStatus.ERROR, _("Another program is using port {p}").format(p=IMMICH_PORT), hint
             )
         if check_id == "internet":
             if self.fact_internet():
-                return CheckResult(check_id, CheckStatus.OK, _("Conectado à internet"))
+                return CheckResult(check_id, CheckStatus.OK, _("Connected to the internet"))
             return CheckResult(
                 check_id,
                 CheckStatus.ERROR,
-                _("Sem conexão com a internet"),
-                _("Ela só é necessária agora, para baixar os componentes."),
+                _("No internet connection"),
+                _("It is only needed now, to download the components."),
             )
         if check_id == "firewall":
             name = self.fact_firewall()
             if not name:
-                return CheckResult(check_id, CheckStatus.OK, _("Nenhum firewall bloqueando"))
+                return CheckResult(check_id, CheckStatus.OK, _("No firewall blocking"))
             if self.state_get("firewall_allowed"):
                 return CheckResult(
                     check_id,
                     CheckStatus.OK,
-                    _("Firewall liberado para a rede de casa"),
-                    _("Porta {p} aberta só para redes locais e Tailscale").format(p=IMMICH_PORT),
+                    _("Firewall open to the home network"),
+                    _("Port {p} open only to local networks and Tailscale").format(p=IMMICH_PORT),
                 )
             return CheckResult(
                 check_id,
                 CheckStatus.INFO,
-                _("Firewall ativo ({name})").format(name=name),
-                _("Libere a porta {p} para que o celular encontre o servidor na rede de casa.").format(p=IMMICH_PORT),
-                Fix(_("Liberar"), "firewall-allow"),
+                _("Firewall active ({name})").format(name=name),
+                _("Open port {p} so the phone can find the server on the home network.").format(p=IMMICH_PORT),
+                Fix(_("Open port"), "firewall-allow"),
             )
         raise ValueError(check_id)

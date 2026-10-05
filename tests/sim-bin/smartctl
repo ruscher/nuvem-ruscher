@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# smartctl falso: SIM_SMART_JSON (uma linha) ou um disco saudável.
+# shellcheck source=_common.sh
+source "${0%/*}/_common.sh"
+sim_log "$@"
+healthy='{"smart_status":{"passed":true},"temperature":{"current":33}}'
+printf '%s\n' "${SIM_SMART_JSON:-$healthy}"

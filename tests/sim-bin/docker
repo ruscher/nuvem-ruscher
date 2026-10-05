@@ -6,6 +6,7 @@ sim_log "$@"
 case "$1 $2" in
     "inspect -f") echo true ;;
     "exec immich_postgres") head -c 6000 /dev/urandom | base64 ;;
+    "exec immich_server") [[ ${SIM_CONFIRM_FAIL:-0} == 1 ]] && exit 1 ;;
     "compose --project-directory")
         if [[ " $* " == *" config --images "* ]]; then
             printf '%s\n' ghcr.io/immich-app/immich-server:v3.2.4 docker.io/valkey/valkey:9

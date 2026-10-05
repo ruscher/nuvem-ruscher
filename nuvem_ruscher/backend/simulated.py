@@ -26,6 +26,8 @@ from nuvem_ruscher.backend.base import (
     HelperResult,
     StorageReport,
 )
+from nuvem_ruscher.backend.simulated_cloud import CLOUD_ACTIONS, SimulatedCloud
+from nuvem_ruscher.backend.timeline import Timeline
 from nuvem_ruscher.constants import CONTAINERS, STACK_DIR
 from nuvem_ruscher.core import fstab, storage
 from nuvem_ruscher.core.compose import PullProgress
@@ -36,52 +38,105 @@ from nuvem_ruscher.core.immich_api import ApiError, ServerStats
 from nuvem_ruscher.core.releases import Release
 from nuvem_ruscher.core.system import GIB, GpuInfo, PortStatus, TailscaleInfo
 from nuvem_ruscher.core.validation import ValidationError, validate_photo_path
+from nuvem_ruscher.i18n import N_
 
 SCENARIOS: dict[str, dict[str, object]] = {
-    "feliz": {},
-    "instalado": {"installed": True, "initialized": True},
-    "atualizacao": {"installed": True, "initialized": True, "version": "v3.0.3"},
-    "atualizacao-falha": {"installed": True, "initialized": True, "version": "v3.0.3", "update_fail": True},
-    "sem-docker": {"docker_installed": False, "docker_running": False, "group": GroupAccess.NO_GROUP},
-    "docker-parado": {"docker_running": False},
-    "sem-grupo": {"group": GroupAccess.MISSING},
-    "grupo-pendente": {"group": GroupAccess.PENDING},
-    "disco-ausente": {"disk": False},
+    "fresh": {},
+    "installed": {"installed": True, "initialized": True},
+    "update-available": {"installed": True, "initialized": True, "version": "v3.0.3"},
+    "update-fails": {"installed": True, "initialized": True, "version": "v3.0.3", "update_fail": True},
+    "no-docker": {"docker_installed": False, "docker_running": False, "group": GroupAccess.NO_GROUP},
+    "docker-stopped": {"docker_running": False},
+    "no-docker-group": {"group": GroupAccess.MISSING},
+    "docker-group-pending": {"group": GroupAccess.PENDING},
+    "disk-missing": {"disk": False},
     "ntfs": {},
     "fat32": {"fstype": "vfat"},
     "ext4": {"fstype": "ext4"},
-    "porta-ocupada": {"port_busy": True},
-    "sem-internet": {"internet": False},
-    "pouca-ram": {"ram_gib": 5},
-    "biblioteca-existente": {"library": True, "initialized": True},
-    "falha-download": {"pull_fail": True},
-    "lento": {"slow": True},
+    "port-busy": {"port_busy": True},
+    "offline": {"internet": False},
+    "low-memory": {"ram_gib": 5},
+    "existing-library": {"library": True, "initialized": True},
+    "download-fails": {"pull_fail": True},
+    "slow-server": {"slow": True},
     "firewall": {"firewall": "ufw"},
-    "fstab-configurado": {"fstab": "ours"},
+    "fstab-configured": {"fstab": "ours"},
+    # v2: várias contas, compartilhamento, RAID e troca de local
+    "family": {"installed": True, "initialized": True, "family": True},
+    "quota-exceeded": {"installed": True, "initialized": True, "family": True, "quota_exceeded": True},
+    "user-create-fails": {"installed": True, "initialized": True, "family": True, "create_fails": True},
+    "api-unavailable": {"installed": True, "initialized": True, "api_down": True},
+    "raid-healthy": {"installed": True, "initialized": True, "family": True, "raid": "healthy"},
+    "raid-degraded": {"installed": True, "initialized": True, "raid": "degraded"},
+    "raid-rebuilding": {"installed": True, "initialized": True, "raid": "rebuilding"},
+    "raid-failed": {"installed": True, "initialized": True, "raid": "failed"},
+    "migration": {"installed": True, "initialized": True, "migration": "ready"},
+    "migration-no-space": {"installed": True, "initialized": True, "migration": "no-space"},
+    "migration-interrupted": {"installed": True, "initialized": True, "migration": "interrupted"},
+    "migration-verify-fails": {"installed": True, "initialized": True, "migration": "verify-fails"},
+}
+
+# Nomes da primeira versão (pt-BR), aceitos para não quebrar comandos documentados.
+LEGACY_SCENARIOS = {
+    "feliz": "fresh",
+    "instalado": "installed",
+    "atualizacao": "update-available",
+    "atualizacao-falha": "update-fails",
+    "sem-docker": "no-docker",
+    "docker-parado": "docker-stopped",
+    "sem-grupo": "no-docker-group",
+    "grupo-pendente": "docker-group-pending",
+    "disco-ausente": "disk-missing",
+    "porta-ocupada": "port-busy",
+    "sem-internet": "offline",
+    "pouca-ram": "low-memory",
+    "biblioteca-existente": "existing-library",
+    "falha-download": "download-fails",
+    "lento": "slow-server",
+    "fstab-configurado": "fstab-configured",
 }
 
 SCENARIO_HELP = {
-    "feliz": "primeira instalação, tudo certo (padrão)",
-    "instalado": "abre direto no painel",
-    "atualizacao": "painel com atualização disponível (com mudanças incompatíveis)",
-    "atualizacao-falha": "atualização que falha e volta sozinha",
-    "sem-docker": "Docker ausente",
-    "docker-parado": "Docker instalado, mas desligado",
-    "sem-grupo": "usuário fora do grupo docker",
-    "grupo-pendente": "acabou de entrar no grupo docker (sessão antiga)",
-    "disco-ausente": "disco das fotos desconectado",
-    "ntfs": "disco NTFS (como nesta máquina)",
-    "fat32": "disco FAT32 (limite de 4 GB)",
-    "ext4": "disco ext4 (sem avisos)",
-    "porta-ocupada": "porta 2283 ocupada",
-    "sem-internet": "sem internet",
-    "pouca-ram": "5 GB de memória",
-    "biblioteca-existente": "reinstalação com fotos e conta existentes",
-    "falha-download": "download das imagens falha no meio",
-    "lento": "servidor demora a ficar pronto",
-    "firewall": "firewall ufw ativo",
-    "fstab-configurado": "montagem automática já configurada",
+    "fresh": N_("first installation, everything fine (default)"),
+    "installed": N_("opens straight on the dashboard"),
+    "update-available": N_("dashboard with an update available (with breaking changes)"),
+    "update-fails": N_("update that fails and rolls back by itself"),
+    "no-docker": N_("Docker missing"),
+    "docker-stopped": N_("Docker installed but turned off"),
+    "no-docker-group": N_("user not in the docker group"),
+    "docker-group-pending": N_("just joined the docker group (old session)"),
+    "disk-missing": N_("photo disk disconnected"),
+    "ntfs": N_("NTFS disk (like this machine)"),
+    "fat32": N_("FAT32 disk (4 GB limit)"),
+    "ext4": N_("ext4 disk (no warnings)"),
+    "port-busy": N_("port 2283 in use"),
+    "offline": N_("no internet"),
+    "low-memory": N_("5 GB of memory"),
+    "existing-library": N_("reinstallation with existing photos and account"),
+    "download-fails": N_("image download fails halfway"),
+    "slow-server": N_("server takes long to become ready"),
+    "firewall": N_("ufw firewall active"),
+    "fstab-configured": N_("automatic mounting already configured"),
+    "family": N_("four accounts, quotas and shared folders"),
+    "quota-exceeded": N_("an account over its storage quota"),
+    "user-create-fails": N_("creating an account fails on the server"),
+    "api-unavailable": N_("the Immich API does not answer"),
+    "raid-healthy": N_("photos on a healthy RAID 1"),
+    "raid-degraded": N_("RAID 1 with a failed drive"),
+    "raid-rebuilding": N_("RAID 1 rebuilding onto a new drive"),
+    "raid-failed": N_("RAID array stopped"),
+    "migration": N_("a second disk ready to receive the photos"),
+    "migration-no-space": N_("second disk without enough space"),
+    "migration-interrupted": N_("an interrupted copy to resume"),
+    "migration-verify-fails": N_("the copy fails verification and everything goes back"),
 }
+
+
+def resolve_scenario(name: str) -> str | None:
+    """Nome canônico do cenário (aceita os nomes antigos), ou ``None`` se não existir."""
+    name = LEGACY_SCENARIOS.get(name, name)
+    return name if name in SCENARIOS else None
+
 
 FAKE_RELEASES = [
     (
@@ -94,72 +149,38 @@ FAKE_RELEASES = [
         "2026-09-15",
         "## What's Changed\n### 🐛 Bug fixes\n* fix(server): memory leak in thumbnail job",
     ),
-    ("v3.2.0", "2026-09-10", "## Highlights\n* Novo editor de álbuns\n* Busca por texto nas fotos (OCR)"),
+    ("v3.2.0", "2026-09-10", "## Highlights\n* New album editor\n* Text search in photos (OCR)"),
     (
         "v3.1.0",
         "2026-07-29",
-        "## Highlights\n* Pastas compartilhadas\n### 🚨 Breaking Changes\n"
-        "* A variável `IMMICH_MEDIA_LOCATION` foi removida; use `UPLOAD_LOCATION`.",
+        "## Highlights\n* Shared folders\n### 🚨 Breaking Changes\n"
+        "* The `IMMICH_MEDIA_LOCATION` variable was removed; use `UPLOAD_LOCATION`.",
     ),
-    ("v3.0.3", "2026-07-15", "## What's Changed\n* fix: várias correções"),
+    ("v3.0.3", "2026-07-15", "## What's Changed\n* fix: several fixes"),
 ]
 
 LOG_LINES = [
-    "[Nest] 7  - {ts}     LOG [Microservices:MetadataService] Processando metadados de IMG_{n}.jpg",
-    "[Nest] 7  - {ts}     LOG [Microservices:MediaService] Miniatura gerada para IMG_{n}.jpg",
+    "[Nest] 7  - {ts}     LOG [Microservices:MetadataService] Processing metadata of IMG_{n}.jpg",
+    "[Nest] 7  - {ts}     LOG [Microservices:MediaService] Thumbnail generated for IMG_{n}.jpg",
     "[Nest] 7  - {ts}     LOG [Api:LoggingInterceptor] GET /api/server/ping 200 1.2ms",
-    "[Nest] 7  - {ts}    WARN [Microservices:JobService] Fila de miniaturas com {n} itens",
-    "[Nest] 7  - {ts}     LOG [Api:AssetService] Upload recebido de Pixel 8 (IMG_{n}.jpg)",
-    "[Nest] 7  - {ts}   ERROR [Microservices:MetadataService] Não foi possível ler EXIF de VID_{n}.mp4",
+    "[Nest] 7  - {ts}    WARN [Microservices:JobService] Thumbnail queue has {n} items",
+    "[Nest] 7  - {ts}     LOG [Api:AssetService] Upload received from Pixel 8 (IMG_{n}.jpg)",
+    "[Nest] 7  - {ts}   ERROR [Microservices:MetadataService] Could not read EXIF of VID_{n}.mp4",
 ]
 
 
-class _Timeline(Operation):
-    """Sequência de passos com atrasos, cancelável."""
-
-    def __init__(
-        self, steps: list[tuple[int, Callable[[], None]]], on_cancel: Callable[[], None] | None = None
-    ) -> None:
-        self._steps = list(steps)
-        self._source = 0
-        self._running = True
-        self._on_cancel = on_cancel
-        self._next()
-
-    @property
-    def running(self) -> bool:
-        return self._running
-
-    def _next(self) -> None:
-        if not self._steps:
-            self._running = False
-            return
-        delay, action = self._steps.pop(0)
-
-        def fire() -> bool:
-            self._source = 0
-            action()
-            self._next()
-            return GLib.SOURCE_REMOVE
-
-        self._source = GLib.timeout_add(max(delay, 1), fire)
-
-    def cancel(self) -> None:
-        if self._source:
-            GLib.source_remove(self._source)
-            self._source = 0
-        if self._running:
-            self._running = False
-            if self._on_cancel:
-                self._on_cancel()
+# Nome antigo, usado no resto deste módulo.
+_Timeline = Timeline
 
 
-class SimulatedBackend(Backend):
+class SimulatedBackend(SimulatedCloud, Backend):
     simulated = True
 
-    def __init__(self, scenario: str = "feliz") -> None:
-        if scenario not in SCENARIOS:
+    def __init__(self, scenario: str = "fresh") -> None:
+        resolved = resolve_scenario(scenario)
+        if resolved is None:
             raise ValueError(scenario)
+        scenario = resolved
         self.scenario = scenario
         opts = SCENARIOS[scenario]
         self._user = "ruscher"
@@ -192,6 +213,7 @@ class SimulatedBackend(Backend):
         self.photo_path = f"{self.mountpoint}/immich-{self._user}"
         if self.installed:
             self._state["wizard_done"] = True
+        self._init_cloud(opts)
 
     # --- básico ---------------------------------------------------------------------
     def user_name(self) -> str:
@@ -263,6 +285,37 @@ class SimulatedBackend(Backend):
         return self.photo_path
 
     def _volume(self, path: str) -> storage.Volume:
+        if self.mountpoint == "/mnt/nuvem-ruscher-raid":
+            total, used, free = self.disk_usage(path)
+            return storage.Volume(
+                path,
+                self.mountpoint,
+                "/dev/md127",
+                "ext4",
+                "5c1d9e7a-41b2-4f4e-9d0b-1f2a3b4c5d6e",
+                "nuvem-ruscher",
+                total,
+                free,
+                used,
+                model="RAID 1",
+            )
+        if self.mountpoint.startswith("/run/media/ruscher/Backup HD"):
+            total, used, free = self.disk_usage(path)
+            return storage.Volume(
+                path,
+                self.mountpoint,
+                "/dev/sde1",
+                "ext4",
+                "8e7d6c5b-0000-4a1b-9c2d-3e4f5a6b7c8d",
+                "Backup HD",
+                total,
+                free,
+                used,
+                hotplug=True,
+                transport="usb",
+                model="Seagate Expansion HDD",
+                rotational=True,
+            )
         return storage.Volume(
             path=path,
             mountpoint=self.mountpoint,
@@ -330,7 +383,7 @@ class SimulatedBackend(Backend):
     def releases(self, force: bool = False) -> list[Release]:
         self._sleep(0.6)
         if not self.internet:
-            raise OSError("sem internet (simulado)")
+            raise OSError("no internet (simulated)")
         out = []
         for tag, date, body in FAKE_RELEASES:
             major, minor, patch = (int(x) for x in tag[1:].split("."))
@@ -357,7 +410,10 @@ class SimulatedBackend(Backend):
         args: list[str],
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
+        interactive: bool = False,
     ) -> Operation:
+        if action in CLOUD_ACTIONS:
+            return self.cloud_helper(action, args, on_event, on_done)
         result = HelperResult(ok=True)
         steps: list[tuple[int, Callable[[], None]]] = []
         slow = 2 if self.slow else 1
@@ -386,11 +442,11 @@ class SimulatedBackend(Backend):
 
             return go
 
-        script: list[tuple[int, Callable[[], None]]] = [(250, log(f"[simulado] pkexec nuvem-ruscher-helper {action}"))]
+        script: list[tuple[int, Callable[[], None]]] = [(250, log(f"[simulated] pkexec nuvem-ruscher-helper {action}"))]
         if action == "install-docker":
             script += [
                 (400, emit("step", value="install")),
-                (900, log("resolvendo dependências... docker docker-compose")),
+                (900, log("resolving dependencies... docker docker-compose")),
                 (1300, emit("step", value="enable")),
                 (500, self._do(lambda: setattr(self, "docker_installed", True))),
                 (10, self._do(lambda: setattr(self, "docker_running", True))),
@@ -428,7 +484,7 @@ class SimulatedBackend(Backend):
             if not self.disk:
                 script += [
                     (400, emit("step", value="storage")),
-                    (300, emit("error", "storage-missing", "disco ausente")),
+                    (300, emit("error", "storage-missing", "disk missing")),
                 ]
             else:
                 version = args[0] if args else KNOWN_GOOD_VERSION
@@ -436,7 +492,7 @@ class SimulatedBackend(Backend):
                     (400 * slow, emit("step", value="storage")),
                     (300, emit("result", "mountpoint", self.mountpoint)),
                     (500 * slow, emit("step", value="download")),
-                    (600 * slow, log("baixando docker-compose.yml da release " + version)),
+                    (600 * slow, log("downloading docker-compose.yml of release " + version)),
                     (400 * slow, emit("step", value="env")),
                     (400 * slow, emit("step", value="service")),
                     (300, self._do(lambda: self._mark_installed(version))),
@@ -444,7 +500,7 @@ class SimulatedBackend(Backend):
                 ]
         elif action in ("start", "restart"):
             if not self.disk:
-                script += [(300, emit("error", "storage-missing", "disco não montado"))]
+                script += [(300, emit("error", "storage-missing", "disk not mounted"))]
             else:
                 script += [(500, emit("step", value=action)), (200, self._do(self._start_service))]
         elif action == "stop":
@@ -468,7 +524,7 @@ class SimulatedBackend(Backend):
                 (600, emit("step", value="snapshot")),
                 (600, emit("step", value="switch")),
                 (400, emit("step", value="start")),
-                (1800, log("aguardando o servidor responder (0s, serviço: active)")),
+                (1800, log("waiting for the server to respond (0s, service: active)")),
             ]
             if self.update_fail:
                 script += [
@@ -479,7 +535,7 @@ class SimulatedBackend(Backend):
                         emit(
                             "error",
                             "update-rolled-back",
-                            f"a nova versão não ficou saudável; tudo voltou para {old}",
+                            f"the new version did not become healthy; everything went back to {old}",
                         ),
                     ),
                 ]
@@ -498,7 +554,7 @@ class SimulatedBackend(Backend):
                 (10, emit("result", "kept-photos", self.photo_path)),
             ]
         else:
-            script += [(100, emit("error", "invalid-argument", f"ação desconhecida: {action}"))]
+            script += [(100, emit("error", "invalid-argument", f"unknown action: {action}"))]
         steps.extend(script)
         steps.append((150, lambda: on_done(result)))
         return _Timeline(steps)
@@ -793,6 +849,9 @@ class SimulatedBackend(Backend):
         return TailscaleInfo(True, True, "100.100.184.97", "ruscher-big.tail9c419a.ts.net")
 
     def disk_usage(self, path: str) -> tuple[int, int, int]:
+        for mount, (_fs, total, free, _rm, _sys) in self._sim_mounts().items():
+            if path == mount or path.startswith(mount + "/"):
+                return total, total - free, free
         return 2_000_397_795_328, 214_000_000_000, 1_786_397_795_328
 
     def is_mounted(self, path: str) -> bool:

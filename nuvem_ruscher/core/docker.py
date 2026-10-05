@@ -81,17 +81,17 @@ class ContainerState:
 
 
 CONTAINER_LABELS = {
-    "immich_server": N_("Servidor"),
-    "immich_machine_learning": N_("Inteligência artificial"),
-    "immich_postgres": N_("Banco de dados"),
+    "immich_server": N_("Server"),
+    "immich_machine_learning": N_("Artificial intelligence"),
+    "immich_postgres": N_("Database"),
     "immich_redis": N_("Cache"),
 }
 
 CONTAINER_DESCRIPTIONS = {
-    "immich_server": N_("Site, aplicativo e envio de fotos"),
-    "immich_machine_learning": N_("Rostos e busca inteligente"),
-    "immich_postgres": N_("Álbuns, pessoas e informações das fotos"),
-    "immich_redis": N_("Fila de tarefas"),
+    "immich_server": N_("Website, app and photo uploads"),
+    "immich_machine_learning": N_("Faces and smart search"),
+    "immich_postgres": N_("Albums, people and photo information"),
+    "immich_redis": N_("Task queue"),
 }
 
 

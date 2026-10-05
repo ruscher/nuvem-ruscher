@@ -1,15 +1,34 @@
 #!/usr/bin/env bash
-# findmnt falso para "-T" (ponto de montagem simulado); o resto usa o findmnt real.
+# findmnt falso para "-T": SIM_MOUNTS="alvo|tipo|opções;…" escolhe o ponto de montagem mais
+# específico; sem ele, vale o SIM_MOUNTPOINT de sempre. O resto usa o findmnt real.
 # shellcheck source=_common.sh
 source "${0%/*}/_common.sh"
 sim_log "$@"
 if [[ " $* " == *" -T "* ]]; then
+    path=${*: -1}
+    target=${SIM_MOUNTPOINT} fstype=${SIM_FSTYPE:-fuseblk} options=${SIM_OPTIONS:-rw,nosuid,nodev}
+    best=""
+    IFS=';' read -ra mounts <<<"${SIM_MOUNTS:-}"
+    for entry in "${mounts[@]}"; do
+        IFS='|' read -r t f o <<<"$entry"
+        if [[ -n $t && ($path == "$t" || $path == "$t"/*) && ${#t} -gt ${#best} ]]; then
+            best=$t target=$t fstype=$f options=${o:-rw}
+        fi
+    done
     case " $* " in
-        *" TARGET "*) echo "${SIM_MOUNTPOINT}" ;;
-        *" FSTYPE "*) echo "${SIM_FSTYPE:-fuseblk}" ;;
-        *" OPTIONS "*) echo "${SIM_OPTIONS:-rw,nosuid,nodev}" ;;
+        *" TARGET "*) echo "$target" ;;
+        *" FSTYPE "*) echo "$fstype" ;;
+        *" OPTIONS "*) echo "$options" ;;
         *" SOURCE "*) echo "/dev/sim1" ;;
     esac
+    exit 0
+fi
+if [[ " $* " == *" -rn -o TARGET -S "* ]]; then
+    # SIM_MOUNTED_UUIDS="u1 u2": sistemas de arquivos montados em outro disco.
+    source_tag=${*: -1}
+    for uuid in ${SIM_MOUNTED_UUIDS:-}; do
+        [[ $source_tag == "UUID=${uuid}" ]] && echo /mnt/sim-other
+    done
     exit 0
 fi
 if [[ " $* " == *" --verify "* ]]; then

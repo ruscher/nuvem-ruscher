@@ -28,6 +28,10 @@
       <li>QR codes to connect your Android phone</li>
       <li xml:lang="pt_BR">QR codes para conectar o celular Android</li>
       <li>Live dashboard, logs, database backups and safe updates with automatic rollback</li>
+      <li>Accounts for every person, storage quotas and shared folders</li>
+      <li xml:lang="pt_BR">Contas para cada pessoa, quotas de espaço e pastas compartilhadas</li>
+      <li>Move the library to another disk with a verified copy, and protect it with RAID</li>
+      <li xml:lang="pt_BR">Leve a biblioteca para outro disco com cópia verificada e proteja com RAID</li>
       <li xml:lang="pt_BR">Painel ao vivo, registros, backups do banco e atualização segura com volta automática</li>
     </ul>
   </description>
@@ -36,19 +40,29 @@
   <url type="bugtracker">https://github.com/ruscher/nuvem-ruscher/issues</url>
   <screenshots>
     <screenshot type="default">
-      <caption>Welcome</caption>
-      <caption xml:lang="pt_BR">Boas-vindas</caption>
-      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/01-boas-vindas.png</image>
+      <caption>Your cloud at a glance</caption>
+      <caption xml:lang="pt_BR">Sua nuvem num relance</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/v2/en/p-home-signed-family.png</image>
     </screenshot>
     <screenshot>
-      <caption>Dashboard</caption>
-      <caption xml:lang="pt_BR">Painel</caption>
-      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/09-painel.png</image>
+      <caption>Accounts for the whole family</caption>
+      <caption xml:lang="pt_BR">Contas para a família inteira</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/v2/en/p-users-family.png</image>
     </screenshot>
     <screenshot>
-      <caption>Connect your phone</caption>
-      <caption xml:lang="pt_BR">Conecte o celular</caption>
-      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/07-celular.png</image>
+      <caption>Shared folders</caption>
+      <caption xml:lang="pt_BR">Pastas compartilhadas</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/v2/en/p-sharing-family.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Storage, RAID and drive health</caption>
+      <caption xml:lang="pt_BR">Armazenamento, RAID e saúde dos discos</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/v2/en/p-storage-raid-healthy.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Move the library to another disk</caption>
+      <caption xml:lang="pt_BR">Leve a biblioteca para outro disco</caption>
+      <image>https://raw.githubusercontent.com/ruscher/nuvem-ruscher/main/screenshots/v2/en/d-move-2-summary-migration.png</image>
     </screenshot>
   </screenshots>
   <content_rating type="oars-1.1"/>
@@ -65,6 +79,18 @@
     <color type="primary" scheme_preference="dark">#1a5fb4</color>
   </branding>
   <releases>
+    <release version="2.0.0" date="2026-10-05">
+      <description>
+        <p>Accounts for the whole family, shared folders, a safe way to move the photos to another disk, software RAID and drive health.</p>
+        <p xml:lang="pt_BR">Contas para a família inteira, pastas compartilhadas, um jeito seguro de levar as fotos para outro disco, RAID por software e saúde dos discos.</p>
+        <ul>
+          <li>New look with a sidebar, light and dark styles</li>
+          <li xml:lang="pt_BR">Visual novo com barra lateral, estilos claro e escuro</li>
+          <li>The interface is now written in English and translated to Brazilian Portuguese</li>
+          <li xml:lang="pt_BR">A interface agora é escrita em inglês e traduzida para o português do Brasil</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-10-04">
       <description>
         <p>First release: guided Immich setup, dashboard, backups and safe updates.</p>

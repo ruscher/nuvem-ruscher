@@ -5,7 +5,7 @@
 ```bash
 cd packaging
 makepkg -si          # gera e instala
-makepkg -f           # só gera nuvem-ruscher-1.0.0-1-any.pkg.tar (o BigLinux usa PKGEXT sem compressão)
+makepkg -f           # só gera nuvem-ruscher-2.0.0-1-any.pkg.tar (o BigLinux usa PKGEXT sem compressão)
 ```
 
 ## Como o PKGBUILD funciona
@@ -53,7 +53,7 @@ Tudo em `/usr`, nada em `/etc` nem `/var` (verificado por teste):
 /usr/share/applications/io.github.ruscher.NuvemRuscher.desktop
 /usr/share/metainfo/io.github.ruscher.NuvemRuscher.metainfo.xml
 /usr/share/icons/hicolor/{scalable,symbolic}/apps/io.github.ruscher.NuvemRuscher*.svg
-/usr/share/locale/en/LC_MESSAGES/nuvem-ruscher.mo         inglês (o texto-fonte é pt-BR)
+/usr/share/locale/pt_BR/LC_MESSAGES/nuvem-ruscher.mo      português (o texto-fonte é inglês)
 /usr/share/licenses/nuvem-ruscher/LICENSE
 ```
 

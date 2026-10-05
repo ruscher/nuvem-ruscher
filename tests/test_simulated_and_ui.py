@@ -37,7 +37,7 @@ def test_simulated_backend_never_runs_commands(no_processes, scenario):
     try:
         backend.releases()
     except OSError:
-        assert scenario == "sem-internet"
+        assert scenario == "offline"
     backend.containers()
     backend.stats()
     backend.backups()
@@ -48,12 +48,12 @@ def test_simulated_backend_never_runs_commands(no_processes, scenario):
 
 
 def test_scenarios_produce_expected_problems(no_processes):
-    assert SimulatedBackend("sem-docker").check("docker_installed").status is CheckStatus.ERROR
-    assert SimulatedBackend("porta-ocupada").check("port").status is CheckStatus.ERROR
-    assert SimulatedBackend("pouca-ram").check("memory").status is CheckStatus.WARNING
-    assert SimulatedBackend("sem-grupo").check("docker_group").fix.action == "add-docker-group"
+    assert SimulatedBackend("no-docker").check("docker_installed").status is CheckStatus.ERROR
+    assert SimulatedBackend("port-busy").check("port").status is CheckStatus.ERROR
+    assert SimulatedBackend("low-memory").check("memory").status is CheckStatus.WARNING
+    assert SimulatedBackend("no-docker-group").check("docker_group").fix.action == "add-docker-group"
     assert SimulatedBackend("firewall").check("firewall").status is CheckStatus.INFO
-    assert SimulatedBackend("disco-ausente").inspect_storage("/run/media/ruscher/X/immich").disk_missing
+    assert SimulatedBackend("disk-missing").inspect_storage("/run/media/ruscher/X/immich").disk_missing
     fat = SimulatedBackend("fat32").inspect_storage("/run/media/ruscher/Novo volume/immich-ruscher")
     assert fat.warnings[0].level == "error"
 
@@ -69,12 +69,24 @@ UI_MODULES = [
     "nuvem_ruscher.ui.widgets.phone",
     "nuvem_ruscher.ui.wizard",
     "nuvem_ruscher.ui.wizard.pages",
-    "nuvem_ruscher.ui.dashboard",
-    "nuvem_ruscher.ui.dashboard.overview",
-    "nuvem_ruscher.ui.dashboard.logs",
-    "nuvem_ruscher.ui.dashboard.backups",
-    "nuvem_ruscher.ui.dashboard.updates",
-    "nuvem_ruscher.ui.dashboard.more",
+    "nuvem_ruscher.ui.shell",
+    "nuvem_ruscher.ui.monitor",
+    "nuvem_ruscher.ui.page",
+    "nuvem_ruscher.ui.format",
+    "nuvem_ruscher.ui.pages",
+    "nuvem_ruscher.ui.pages.home",
+    "nuvem_ruscher.ui.pages.phones",
+    "nuvem_ruscher.ui.pages.storage",
+    "nuvem_ruscher.ui.pages.backups",
+    "nuvem_ruscher.ui.pages.network",
+    "nuvem_ruscher.ui.pages.updates",
+    "nuvem_ruscher.ui.pages.logs",
+    "nuvem_ruscher.ui.pages.system",
+    "nuvem_ruscher.ui.pages.users",
+    "nuvem_ruscher.ui.pages.sharing",
+    "nuvem_ruscher.ui.flow",
+    "nuvem_ruscher.ui.storage_flows",
+    "nuvem_ruscher.ui.accounts_ui",
 ]
 
 

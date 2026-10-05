@@ -110,12 +110,14 @@ def update_info(current: str, releases: list[Release]) -> UpdateInfo:
     return UpdateInfo(current, releases[0], pending)
 
 
-def br_date(iso: str) -> str:
-    """'2026-09-28' → '28/09/2026' (mantém o texto se não for uma data)."""
-    parts = iso.split("-")
-    if len(parts) == 3 and all(p.isdigit() for p in parts):
-        return f"{parts[2]}/{parts[1]}/{parts[0]}"
-    return iso
+def local_date(iso: str) -> str:
+    """'2026-09-28' → data no formato do idioma do usuário (mantém o texto se não for uma data)."""
+    import datetime
+
+    try:
+        return datetime.date.fromisoformat(iso[:10]).strftime("%x")
+    except ValueError:
+        return iso
 
 
 def simple_markdown_to_pango(text: str, limit: int = 6000) -> str:

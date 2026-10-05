@@ -25,7 +25,7 @@ PUBLIC_ENV_KEYS = (
 
 def env_quote(value: str) -> str:
     if any(c in value for c in '"$`\\\n'):
-        raise ValueError(f"valor impróprio para .env: {value!r}")
+        raise ValueError(f"value not allowed in .env: {value!r}")
     return f'"{value}"'
 
 
@@ -35,7 +35,7 @@ def write_pull_plan(dest: Path, compose_text: str, override_text: str, env: dict
     os.chmod(dest, 0o700)
     (dest / "docker-compose.yml").write_text(compose_text, encoding="utf-8")
     (dest / "docker-compose.override.yml").write_text(override_text, encoding="utf-8")
-    lines = ["# Cópia sem segredos, usada apenas para baixar as imagens."]
+    lines = ["# Copy without secrets, used only to download the images."]
     for key in PUBLIC_ENV_KEYS:
         if key in env:
             lines.append(f"{key}={env_quote(env[key])}")

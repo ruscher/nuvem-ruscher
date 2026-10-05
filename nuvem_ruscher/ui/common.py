@@ -10,12 +10,12 @@ from nuvem_ruscher.core.helper_protocol import human_error
 from nuvem_ruscher.i18n import N_, _
 
 STATUS_ICONS = {
-    "ok": ("nr-status-ok-symbolic", N_("Concluído")),
-    "warning": ("nr-status-warning-symbolic", N_("Atenção")),
-    "error": ("nr-status-error-symbolic", N_("Problema")),
-    "info": ("nr-status-info-symbolic", N_("Informação")),
-    "skip": ("nr-status-pending-symbolic", N_("Aguardando")),
-    "pending": ("nr-status-pending-symbolic", N_("Aguardando")),
+    "ok": ("nr-status-ok-symbolic", N_("Done")),
+    "warning": ("nr-status-warning-symbolic", N_("Warning")),
+    "error": ("nr-status-error-symbolic", N_("Problem")),
+    "info": ("nr-status-info-symbolic", N_("Information")),
+    "skip": ("nr-status-pending-symbolic", N_("Waiting")),
+    "pending": ("nr-status-pending-symbolic", N_("Waiting")),
 }
 
 
@@ -111,7 +111,7 @@ def toast(widget: Gtk.Widget, text: str, timeout: int = 3) -> None:
 
 
 def details_expander(text: str, title: str | None = None) -> Gtk.Expander:
-    expander = Gtk.Expander(label=title or _("Detalhes técnicos"))
+    expander = Gtk.Expander(label=title or _("Technical details"))
     content = label(text, css=("monospace", "caption"), selectable=True)
     content.set_margin_top(6)
     scroller = Gtk.ScrolledWindow(
@@ -135,13 +135,13 @@ def show_error(
     """Erro humano: o que aconteceu, o que fazer, e os detalhes técnicos recolhidos."""
     title, hint = human_error(code)
     dialog = Adw.AlertDialog(heading=title, body=hint)
-    technical = "\n".join(([f"código: {code}", detail] if detail else [f"código: {code}"]) + (log or [])[-40:])
+    technical = "\n".join(([f"code: {code}", detail] if detail else [f"code: {code}"]) + (log or [])[-40:])
     dialog.set_extra_child(details_expander(technical))
-    dialog.add_response("close", _("Fechar"))
+    dialog.add_response("close", _("Close"))
     if alternative:
         dialog.add_response("alternative", alternative[0])
     if retry:
-        dialog.add_response("retry", _("Tentar novamente"))
+        dialog.add_response("retry", _("Try again"))
         dialog.set_response_appearance("retry", Adw.ResponseAppearance.SUGGESTED)
         dialog.set_default_response("retry")
 
@@ -168,7 +168,7 @@ def confirm(
     dialog = Adw.AlertDialog(heading=heading, body=body, body_use_markup=body_markup)
     if extra is not None:
         dialog.set_extra_child(extra)
-    dialog.add_response("cancel", _("Cancelar"))
+    dialog.add_response("cancel", _("Cancel"))
     dialog.add_response("confirm", confirm_label)
     dialog.set_response_appearance(
         "confirm", Adw.ResponseAppearance.DESTRUCTIVE if destructive else Adw.ResponseAppearance.SUGGESTED

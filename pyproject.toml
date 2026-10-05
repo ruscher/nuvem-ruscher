@@ -1,6 +1,6 @@
 [project]
 name = "nuvem-ruscher"
-version = "1.0.0"
+version = "2.0.0"
 description = "Instala, configura e cuida do Immich no BigLinux"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
@@ -30,11 +30,16 @@ ignore = [
 "tests/*" = ["S101", "ANN", "S108", "PLC0415", "S105", "S106", "S314"]  # S314: XML do próprio projeto
 "nuvem_ruscher/ui/*" = ["ANN"]
 "nuvem_ruscher/backend/simulated.py" = ["S311", "S105"]  # dados fictícios
+"nuvem_ruscher/backend/simulated_cloud.py" = ["S105"]  # senhas fictícias do simulador
 "nuvem_ruscher/core/validation.py" = ["S108"]   # lista de pastas proibidas
 "nuvem_ruscher/core/compose.py" = ["S105"]      # senha fictícia, documentada
 "nuvem_ruscher/ui/widgets/confetti.py" = ["S311"]
+"tools/tour.py" = ["PLW0108"]  # o diálogo só existe quando o passo roda
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-filterwarnings = ["ignore:GLib.unix_signal_add_full is deprecated"]
+filterwarnings = [
+    "ignore:GLib.unix_signal_add_full is deprecated",
+    "ignore::DeprecationWarning:gi.events",  # PyGObject × asyncio do Python 3.14, fora do app
+]

@@ -35,6 +35,12 @@ FORBIDDEN_PREFIXES = (
     "/var/tmp",
 )
 
+# Pastas que só agrupam outras pastas: escolher a própria pasta é quase sempre um engano
+# (as fotos ficariam misturadas com as pastas de outras pessoas ou do sistema).
+GROUPING_FOLDERS = ("/home", "/mnt", "/media", "/opt", "/srv", "/var", "/var/lib", "/run/media")
+# Aqui, o primeiro nível é a casa de um usuário ou a pasta de discos de um usuário.
+ONE_LEVEL_GROUPING = ("/home", "/run/media")
+
 VERSION_RE = re.compile(r"^v(\d{1,3})\.(\d{1,3})\.(\d{1,4})$")
 UUID_RE = re.compile(r"^[A-Za-z0-9-]{4,36}$")
 TIMEZONE_RE = re.compile(r"^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+){0,2}$")
@@ -59,29 +65,36 @@ def validate_photo_path(path: str) -> str:
     Levanta ``ValidationError`` com uma explicação humana.
     """
     if not path:
-        raise ValidationError(_("Escolha uma pasta para as fotos."))
+        raise ValidationError(_("Choose a folder for the photos."))
     path = normalize_path(path)
     if not path.startswith("/"):
-        raise ValidationError(_("O caminho da pasta precisa começar com “/”."))
+        raise ValidationError(_("The folder path must start with “/”."))
     if len(path) > 1024:
-        raise ValidationError(_("O caminho da pasta é longo demais."))
+        raise ValidationError(_("The folder path is too long."))
     if any(unicodedata.category(c) == "Cc" for c in path):
-        raise ValidationError(_("O nome da pasta tem caracteres invisíveis não suportados."))
+        raise ValidationError(_("The folder name has unsupported invisible characters."))
     bad = sorted(FORBIDDEN_PATH_CHARS.intersection(path))
     if bad:
-        raise ValidationError(_("O nome da pasta não pode conter os caracteres: {chars}").format(chars=" ".join(bad)))
+        raise ValidationError(_("The folder name cannot contain the characters: {chars}").format(chars=" ".join(bad)))
     parts = path.split("/")[1:]
     if any(p in ("", ".", "..") for p in parts):
-        raise ValidationError(_("O caminho da pasta não pode ter “.”, “..” ou barras duplas."))
+        raise ValidationError(_("The folder path cannot contain “.”, “..” or double slashes."))
     if path == "/":
-        raise ValidationError(_("Escolha uma pasta, não a raiz do sistema."))
+        raise ValidationError(_("Choose a folder, not the system root."))
     for prefix in FORBIDDEN_PREFIXES:
         if path == prefix or path.startswith(prefix + "/"):
             raise ValidationError(
-                _("Essa pasta pertence ao sistema ({prefix}). Escolha uma pasta sua.").format(prefix=prefix)
+                _("This folder belongs to the system ({prefix}). Choose a folder of your own.").format(prefix=prefix)
             )
     if path == "/run" or (path.startswith("/run/") and not path.startswith("/run/media/")):
-        raise ValidationError(_("Pastas em /run são temporárias. Escolha um disco de verdade."))
+        raise ValidationError(_("Folders in /run are temporary. Choose a real disk."))
+    parent = path.rsplit("/", 1)[0]
+    if path in GROUPING_FOLDERS or parent in ONE_LEVEL_GROUPING:
+        raise ValidationError(
+            _("“{path}” holds other folders of the system or of other people. Choose a folder inside it.").format(
+                path=path
+            )
+        )
     return path
 
 
@@ -92,7 +105,7 @@ def is_valid_version(tag: str) -> bool:
 def parse_version(tag: str) -> tuple[int, int, int]:
     match = VERSION_RE.match(tag)
     if not match:
-        raise ValidationError(_("Versão inválida: {tag}").format(tag=tag))
+        raise ValidationError(_("Invalid version: {tag}").format(tag=tag))
     major, minor, patch = (int(g) for g in match.groups())
     return major, minor, patch
 
@@ -143,11 +156,11 @@ def password_strength(password: str) -> PasswordStrength:
         score = 0
     score = min(score, 4)
     labels = {
-        0: _("muito fraca"),
-        1: _("fraca"),
-        2: _("razoável"),
-        3: _("boa"),
-        4: _("excelente"),
+        0: _("very weak"),
+        1: _("weak"),
+        2: _("fair"),
+        3: _("good"),
+        4: _("excellent"),
     }
     return PasswordStrength(score, labels[score])
 

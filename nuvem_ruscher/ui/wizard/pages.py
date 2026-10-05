@@ -23,7 +23,7 @@ from nuvem_ruscher.constants import HEALTH_TIMEOUT_S
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.helper_protocol import HelperEvent, human_error
 from nuvem_ruscher.core.immich_api import ApiError
-from nuvem_ruscher.core.releases import Release, br_date
+from nuvem_ruscher.core.releases import Release, local_date
 from nuvem_ruscher.core.storage import human_size
 from nuvem_ruscher.core.validation import is_valid_email, password_strength
 from nuvem_ruscher.i18n import N_, _
@@ -62,60 +62,60 @@ class WelcomePage(WizardPage):
     step = None
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Bem-vindo"), "welcome")
+        super().__init__(wizard, _("Welcome"), "welcome")
         self.header.set_show_title(False)
         self.actions.set_visible(False)
         self.body.set_valign(Gtk.Align.CENTER)
         self.body.set_spacing(18)
         self.body.append(illustration("nuvem-ruscher-welcome", 300))
-        title = label(_("Suas fotos, na sua casa."), css=("hero-title",), xalign=0.5)
+        title = label(_("Your photos, at your home."), css=("hero-title",), xalign=0.5)
         title.set_accessible_role(Gtk.AccessibleRole.HEADING)
         self.body.append(title)
         self.body.append(
             label(
                 _(
-                    "Vamos transformar este computador num “Google Fotos” só seu, com o Immich. "
-                    "Leva poucos minutos, e nada do que já está nos seus discos será apagado."
+                    "Let’s turn this computer into a “Google Photos” of your own, with Immich. It takes a "
+                    "few minutes, and nothing already on your disks will be deleted."
                 ),
                 css=("lead", "dim-label"),
                 xalign=0.5,
             )
         )
-        start = pill_button(_("Começar"), lambda *_: self.wizard.go("checks"), suggested=True)
+        start = pill_button(_("Get started"), lambda *_: self.wizard.go("checks"), suggested=True)
         start.set_margin_top(12)
         self._default_button = start
         self.body.append(start)
-        more = Gtk.Button(label=_("O que vai ser instalado?"), halign=Gtk.Align.CENTER)
+        more = Gtk.Button(label=_("What will be installed?"), halign=Gtk.Align.CENTER)
         more.add_css_class("flat")
         more.connect("clicked", self._explain)
         self.body.append(more)
 
     def _explain(self, button: Gtk.Button) -> None:
         dialog = Adw.AlertDialog(
-            heading=_("O que o Nuvem Ruscher faz"),
+            heading=_("What Nuvem Ruscher does"),
             body=_(
-                "• Instala o Docker, se faltar, e roda o Immich oficial dentro dele.\n"
-                "• Guarda as fotos na pasta que você escolher (nada é apagado ou movido).\n"
-                "• Guarda o banco de dados no disco interno, como recomenda o Immich.\n"
-                "• Registra um serviço que liga o servidor só quando o disco das fotos está presente.\n"
-                "• Pede sua senha de administrador apenas para as etapas que mexem no sistema."
+                "• Installs Docker, if missing, and runs the official Immich inside it.\n• Stores the "
+                "photos in the folder you choose (nothing is deleted or moved).\n• Stores the database "
+                "on the internal disk, as Immich recommends.\n• Registers a service that starts the "
+                "server only when the photo disk is present.\n• Asks for your administrator password "
+                "only for the steps that change the system."
             ),
         )
-        dialog.add_response("ok", _("Entendi"))
+        dialog.add_response("ok", _("Got it"))
         dialog.present(self.get_root())
 
 
 # --- 2. Verificação ------------------------------------------------------------------------
 
 CHECK_PLACEHOLDERS = {
-    "docker_installed": N_("Docker instalado"),
-    "docker_running": N_("Docker ligado"),
-    "docker_group": N_("Permissão para usar o Docker"),
-    "memory": N_("Memória"),
-    "cpu": N_("Processador"),
-    "disk_system": N_("Espaço no disco do sistema"),
-    "port": N_("Porta 2283 livre"),
-    "internet": N_("Conexão com a internet"),
+    "docker_installed": N_("Docker installed"),
+    "docker_running": N_("Docker running"),
+    "docker_group": N_("Permission to use Docker"),
+    "memory": N_("Memory"),
+    "cpu": N_("Processor"),
+    "disk_system": N_("Space on the system disk"),
+    "port": N_("Port 2283 free"),
+    "internet": N_("Internet connection"),
     "firewall": N_("Firewall"),
 }
 
@@ -124,12 +124,12 @@ class ChecksPage(WizardPage):
     step = 0
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Verificação"), "checks")
-        self.set_header_title(_("Verificação"))
+        super().__init__(wizard, _("Check"), "checks")
+        self.set_header_title(_("Check"))
         self.body.append(
             page_heading(
-                _("Preparando o terreno"),
-                _("Conferimos se este computador tem tudo o que o servidor de fotos precisa."),
+                _("Getting ready"),
+                _("We check that this computer has everything the photo server needs."),
             )
         )
         group = Adw.PreferencesGroup()
@@ -142,10 +142,10 @@ class ChecksPage(WizardPage):
         self.summary = label("", css=("dim-label",), xalign=0.5)
         self.body.append(self.summary)
 
-        self.again = Gtk.Button(label=_("Verificar de novo"))
+        self.again = Gtk.Button(label=_("Check again"))
         self.again.connect("clicked", lambda *_: self.run_checks())
         self.add_action(self.again, start=True)
-        self.next = Gtk.Button(label=_("Continuar"), sensitive=False)
+        self.next = Gtk.Button(label=_("Continue"), sensitive=False)
         self.next.add_css_class("suggested-action")
         self.next.connect("clicked", lambda *_: self.wizard.go("storage"))
         self.add_action(self.next, default=True)
@@ -163,7 +163,7 @@ class ChecksPage(WizardPage):
         self._results.clear()
         self.next.set_sensitive(False)
         self.again.set_sensitive(False)
-        self.summary.set_text(_("Verificando…"))
+        self.summary.set_text(_("Checking…"))
         for check_id, row in self.rows.items():
             row.set_result("pending", _(CHECK_PLACEHOLDERS[check_id]), "")
         self._run_one(list(CHECK_IDS), generation)
@@ -209,11 +209,9 @@ class ChecksPage(WizardPage):
         blocking = [r for r in self._results.values() if r.blocking]
         self.next.set_sensitive(not blocking)
         if blocking:
-            self.summary.set_text(
-                _("Resolva os itens marcados para continuar. Cada um tem um botão que faz isso por você.")
-            )
+            self.summary.set_text(_("Fix the marked items to continue. Each one has a button that does it for you."))
         else:
-            self.summary.set_text(_("Tudo certo! Pode continuar."))
+            self.summary.set_text(_("All good! You can continue."))
 
     def _apply_fix(self, fix: Fix) -> None:
         if self._busy:
@@ -222,7 +220,7 @@ class ChecksPage(WizardPage):
         for row in self.rows.values():
             row.fix_button.set_sensitive(False)
         self.again.set_sensitive(False)
-        self.summary.set_text(_("Aplicando a correção… (pode ser pedida a senha de administrador)"))
+        self.summary.set_text(_("Applying the fix… (the administrator password may be requested)"))
 
         def done(result: HelperResult) -> None:
             self._busy = False
@@ -231,7 +229,7 @@ class ChecksPage(WizardPage):
             if result.ok:
                 if fix.action == "firewall-allow":
                     self.backend.state_set("firewall_allowed", True)
-                self.toast(_("Pronto!"))
+                self.toast(_("Done!"))
                 self.run_checks()
             else:
                 self.again.set_sensitive(True)
@@ -254,12 +252,12 @@ class StoragePage(WizardPage):
     step = 1
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Armazenamento"), "storage")
-        self.set_header_title(_("Armazenamento"))
+        super().__init__(wizard, _("Storage"), "storage")
+        self.set_header_title(_("Storage"))
         self.body.append(
             page_heading(
-                _("Onde suas fotos vão morar"),
-                _("Escolhemos o disco com mais espaço. Você pode trocar se quiser."),
+                _("Where your photos will live"),
+                _("We chose the disk with the most space. You can change it if you want."),
             )
         )
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, vhomogeneous=False)
@@ -267,20 +265,20 @@ class StoragePage(WizardPage):
         spinner = Adw.Spinner()
         spinner.set_size_request(32, 32)
         loading.append(spinner)
-        loading.append(label(_("Procurando o disco…"), css=("dim-label",), xalign=0.5))
+        loading.append(label(_("Looking for the disk…"), css=("dim-label",), xalign=0.5))
         self.stack.add_named(loading, "loading")
         self.missing = StatusBlock("drive-harddisk-usb-symbolic")
-        retry = pill_button(_("Procurar de novo"), lambda *_: self.inspect(self.ctx.photo_path), suggested=True)
+        retry = pill_button(_("Look again"), lambda *_: self.inspect(self.ctx.photo_path), suggested=True)
         self.missing.set_child(retry)
         self.stack.add_named(self.missing, "missing")
         self.ready = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
         self.stack.add_named(self.ready, "ready")
         self.body.append(self.stack)
 
-        choose = Gtk.Button(label=_("Escolher outra pasta…"))
+        choose = Gtk.Button(label=_("Choose another folder…"))
         choose.connect("clicked", self._choose)
         self.add_action(choose, start=True)
-        self.next = Gtk.Button(label=_("Continuar"), sensitive=False)
+        self.next = Gtk.Button(label=_("Continue"), sensitive=False)
         self.next.add_css_class("suggested-action")
         self.next.connect("clicked", self._continue)
         self.add_action(self.next, default=True)
@@ -302,15 +300,15 @@ class StoragePage(WizardPage):
         self.ctx.photo_path = report.path
         if report.error:
             self.missing.set_icon_name("folder-symbolic")
-            self.missing.set_title(_("Essa pasta não serve"))
+            self.missing.set_title(_("This folder will not work"))
             self.missing.set_description(report.error)
             self.stack.set_visible_child_name("missing")
             return
         if report.disk_missing or report.volume is None:
             self.missing.set_icon_name("drive-harddisk-usb-symbolic")
-            self.missing.set_title(_("O disco não está conectado"))
+            self.missing.set_title(_("The disk is not connected"))
             self.missing.set_description(
-                _("Não encontramos {path}. Conecte o disco (ou escolha outra pasta) e procure de novo.").format(
+                _("We could not find {path}. Connect the disk (or choose another folder) and look again.").format(
                     path=report.path
                 )
             )
@@ -342,9 +340,9 @@ class StoragePage(WizardPage):
         info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True)
         info.append(label(volume.display_name, css=("title-3",)))
         parts = [
-            _("Disco externo USB")
+            _("External USB disk")
             if volume.transport == "usb"
-            else (_("Disco do sistema") if volume.is_system_disk else _("Disco interno"))
+            else (_("System disk") if volume.is_system_disk else _("Internal disk"))
         ]
         if volume.model and volume.model != volume.display_name:
             parts.append(volume.model)
@@ -355,11 +353,11 @@ class StoragePage(WizardPage):
         bar.remove_offset_value(Gtk.LEVEL_BAR_OFFSET_HIGH)
         bar.remove_offset_value(Gtk.LEVEL_BAR_OFFSET_FULL)
         bar.set_margin_top(4)
-        bar.update_property([Gtk.AccessibleProperty.LABEL], [_("Espaço usado no disco")])
+        bar.update_property([Gtk.AccessibleProperty.LABEL], [_("Disk space used")])
         info.append(bar)
         info.append(
             label(
-                _("{free} livres de {total}").format(free=human_size(volume.available), total=human_size(volume.size)),
+                _("{free} free of {total}").format(free=human_size(volume.available), total=human_size(volume.size)),
                 css=("caption", "numeric"),
             )
         )
@@ -367,13 +365,13 @@ class StoragePage(WizardPage):
         self.ready.append(card)
 
         folder = Adw.PreferencesGroup()
-        path_row = Adw.ActionRow(title=_("Pasta das fotos"), subtitle=GLib.markup_escape_text(report.path))
+        path_row = Adw.ActionRow(title=_("Photo folder"), subtitle=GLib.markup_escape_text(report.path))
         path_row.set_subtitle_selectable(True)
         path_row.add_prefix(Gtk.Image.new_from_icon_name("folder-pictures-symbolic"))
         if os.path.isdir(report.path):
             open_button = Gtk.Button.new_from_icon_name("folder-open-symbolic")
-            open_button.set_tooltip_text(_("Abrir a pasta"))
-            open_button.update_property([Gtk.AccessibleProperty.LABEL], [_("Abrir a pasta")])
+            open_button.set_tooltip_text(_("Open the folder"))
+            open_button.update_property([Gtk.AccessibleProperty.LABEL], [_("Open the folder")])
             open_button.add_css_class("flat")
             open_button.set_valign(Gtk.Align.CENTER)
             open_button.connect("clicked", lambda b: open_folder(b, report.path))
@@ -381,8 +379,8 @@ class StoragePage(WizardPage):
         folder.add(path_row)
         if report.library and report.library.exists:
             lib_row = Adw.ActionRow(
-                title=_("Encontramos fotos de uma instalação anterior"),
-                subtitle=_("Elas serão reaproveitadas — nada será apagado."),
+                title=_("We found photos from a previous installation"),
+                subtitle=_("They will be reused — nothing will be deleted."),
             )
             lib_row.set_subtitle_lines(3)
             lib_row.add_prefix(status_icon("info"))
@@ -411,33 +409,32 @@ class StoragePage(WizardPage):
         self.boot_switch = None
         if volume.needs_boot_mount:
             boot = Adw.PreferencesGroup(
-                title=_("Depois de reiniciar"),
+                title=_("After a restart"),
                 description=_(
-                    "Este disco hoje só aparece quando você entra na sessão. Sem a opção abaixo, "
-                    "o servidor liga sozinho assim que você entrar e o disco aparecer."
+                    "Today this disk only appears when you log in. Without the option below, the server "
+                    "starts by itself as soon as you log in and the disk appears."
                 ),
             )
             if report.fstab_state == "none":
                 self.boot_switch = Adw.SwitchRow(
-                    title=_("Ligar o disco junto com o computador (recomendado)"),
+                    title=_("Mount the disk when the computer starts (recommended)"),
                     subtitle=_(
-                        "O servidor funciona logo depois de reiniciar, mesmo antes de você entrar. "
-                        "O disco continua aparecendo no mesmo lugar. Se ele não estiver conectado, "
-                        "o computador liga normalmente."
+                        "The server works right after a restart, even before you log in. The disk keeps "
+                        "appearing in the same place. If it is not connected, the computer starts normally."
                     ),
                 )
                 self.boot_switch.set_subtitle_lines(5)
                 boot.add(self.boot_switch)
-                tech = Adw.ExpanderRow(title=_("Detalhes técnicos"))
+                tech = Adw.ExpanderRow(title=_("Technical details"))
                 box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
                 for margin in ("top", "bottom", "start", "end"):
                     getattr(box, f"set_margin_{margin}")(12)
                 box.append(
                     label(
                         _(
-                            "Esta linha será adicionada ao /etc/fstab, montando o disco pelo UUID no mesmo "
-                            "caminho de hoje. Antes, uma cópia do arquivo é guardada; o resultado é "
-                            "validado com “findmnt --verify” e, se algo falhar, o original volta sozinho."
+                            "This line will be added to /etc/fstab, mounting the disk by UUID at the same path as "
+                            "today. First a copy of the file is saved; the result is validated with “findmnt "
+                            "--verify” and, if anything fails, the original comes back by itself."
                         ),
                         css=("caption",),
                     )
@@ -448,22 +445,22 @@ class StoragePage(WizardPage):
                 boot.add(tech)
             elif report.fstab_state == "ours":
                 row = Adw.ActionRow(
-                    title=_("O disco já liga junto com o computador"),
-                    subtitle=_("Montagem automática configurada pelo Nuvem Ruscher."),
+                    title=_("The disk already mounts when the computer starts"),
+                    subtitle=_("Automatic mounting configured by Nuvem Ruscher."),
                 )
                 row.add_prefix(status_icon("ok"))
                 boot.add(row)
             elif report.fstab_state == "foreign":
                 row = Adw.ActionRow(
-                    title=_("Este disco já é montado pelo sistema"),
-                    subtitle=_("Há uma regra para ele no /etc/fstab. Nada será alterado."),
+                    title=_("This disk is already mounted by the system"),
+                    subtitle=_("There is a rule for it in /etc/fstab. Nothing will be changed."),
                 )
                 row.add_prefix(status_icon("ok"))
                 boot.add(row)
             else:
                 row = Adw.ActionRow(
-                    title=_("Este tipo de disco não pode ligar automaticamente"),
-                    subtitle=_("O servidor vai ligar quando você entrar na sessão e o disco aparecer."),
+                    title=_("This type of disk cannot be mounted automatically at startup"),
+                    subtitle=_("The server will start when you log in and the disk appears."),
                 )
                 row.add_prefix(status_icon("info"))
                 boot.add(row)
@@ -473,14 +470,14 @@ class StoragePage(WizardPage):
         note.append(Gtk.Image.new_from_icon_name("security-high-symbolic"))
         note.append(
             label(
-                _("O banco de dados (álbuns, pessoas, informações) fica no disco interno do computador."),
+                _("The database (albums, people, information) stays on the computer’s internal disk."),
                 css=("dim-label", "caption"),
             )
         )
         self.ready.append(note)
 
     def _choose(self, _button: Gtk.Button) -> None:
-        dialog = Gtk.FileDialog(title=_("Escolha a pasta das fotos"), modal=True)
+        dialog = Gtk.FileDialog(title=_("Choose the photo folder"), modal=True)
         current = self.ctx.photo_path
         start = current if os.path.isdir(current) else os.path.dirname(current)
         if os.path.isdir(start):
@@ -513,9 +510,9 @@ class StoragePage(WizardPage):
 
             confirm(
                 self,
-                _("Usar mesmo assim?"),
-                _("Vídeos maiores que 4 GB não poderão ser guardados neste disco."),
-                _("Usar este disco"),
+                _("Use it anyway?"),
+                _("Videos larger than 4 GB cannot be stored on this disk."),
+                _("Use this disk"),
                 accept,
             )
             return
@@ -530,13 +527,13 @@ class StoragePage(WizardPage):
         if volume is None:
             return
         self.next.set_sensitive(False)
-        self.next.set_label(_("Configurando…"))
+        self.next.set_label(_("Configuring…"))
 
         def done(result: HelperResult) -> None:
             self.next.set_sensitive(True)
-            self.next.set_label(_("Continuar"))
+            self.next.set_label(_("Continue"))
             if result.ok:
-                self.toast(_("Pronto! O disco vai ligar junto com o computador."))
+                self.toast(_("Done! The disk will mount when the computer starts."))
                 report.fstab_state = "ours"
                 self._build_ready(report)
                 self.wizard.go("configure")
@@ -547,7 +544,7 @@ class StoragePage(WizardPage):
                 result.error_detail,
                 result.log,
                 retry=lambda: self._enable_boot_mount(report),
-                alternative=(_("Continuar sem isso"), lambda: self.wizard.go("configure")),
+                alternative=(_("Continue without it"), lambda: self.wizard.go("configure")),
             )
 
         self.backend.helper("fstab-add", [volume.uuid, volume.mountpoint], None, done)
@@ -556,10 +553,10 @@ class StoragePage(WizardPage):
 # --- 4. Ajustes -------------------------------------------------------------------------------
 
 ML_LABELS = {
-    "cpu": N_("Processador"),
-    "openvino": N_("Placa Intel (OpenVINO)"),
-    "rocm": N_("Placa AMD (ROCm) — download grande"),
-    "cuda": N_("Placa NVIDIA (CUDA)"),
+    "cpu": N_("Processor"),
+    "openvino": N_("Intel graphics (OpenVINO)"),
+    "rocm": N_("AMD graphics (ROCm) — large download"),
+    "cuda": N_("NVIDIA graphics (CUDA)"),
 }
 VENDOR_LABELS = {"amd": "AMD", "intel": "Intel", "nvidia": "NVIDIA"}
 
@@ -568,34 +565,36 @@ class ConfigurePage(WizardPage):
     step = 2
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Ajustes"), "configure")
-        self.set_header_title(_("Ajustes finais"))
-        self.body.append(page_heading(_("Ajustes finais"), _("Já deixamos tudo no ponto. Mude só se quiser.")))
+        super().__init__(wizard, _("Settings"), "configure")
+        self.set_header_title(_("Final settings"))
+        self.body.append(
+            page_heading(_("Final settings"), _("We have set everything up already. Change only if you want."))
+        )
         group = Adw.PreferencesGroup()
-        self.timezone = Adw.ComboRow(title=_("Fuso horário"), subtitle=_("Detectado do sistema"))
+        self.timezone = Adw.ComboRow(title=_("Time zone"), subtitle=_("Detected from the system"))
         self.timezone.set_enable_search(True)
         self.timezone.set_expression(Gtk.PropertyExpression.new(Gtk.StringObject, None, "string"))
         group.add(self.timezone)
-        self.version = Adw.ComboRow(title=_("Versão do Immich"), subtitle=_("Buscando versões…"))
+        self.version = Adw.ComboRow(title=_("Immich version"), subtitle=_("Looking for versions…"))
         self.version.set_sensitive(False)
         group.add(self.version)
         self.body.append(group)
 
         advanced = Adw.PreferencesGroup()
         self.expander = Adw.ExpanderRow(
-            title=_("Opções avançadas"), subtitle=_("Placa de vídeo e inteligência artificial")
+            title=_("Advanced options"), subtitle=_("Graphics card and artificial intelligence")
         )
-        self.transcode = Adw.SwitchRow(title=_("Vídeos mais rápidos com a placa de vídeo"))
+        self.transcode = Adw.SwitchRow(title=_("Faster videos with the graphics card"))
         self.transcode.set_subtitle_lines(3)
         self.ml = Adw.SwitchRow(
-            title=_("Reconhecimento de rostos e busca inteligente"),
-            subtitle=_("Encontre fotos escrevendo “praia” ou “cachorro”. Usa cerca de 1 a 2 GB de memória."),
+            title=_("Face recognition and smart search"),
+            subtitle=_("Find photos by typing “beach” or “dog”. Uses about 1 to 2 GB of memory."),
             active=True,
         )
         self.ml.set_subtitle_lines(3)
         self.ml_accel = Adw.ComboRow(
-            title=_("Acelerar a inteligência artificial com"),
-            subtitle=_("O processador é o mais compatível e o recomendado"),
+            title=_("Speed up artificial intelligence with"),
+            subtitle=_("The processor is the most compatible and recommended choice"),
         )
         self.ml_accel.set_subtitle_lines(2)
         self.ml.connect("notify::active", lambda *_: self.ml_accel.set_sensitive(self.ml.get_active()))
@@ -604,7 +603,7 @@ class ConfigurePage(WizardPage):
         advanced.add(self.expander)
         self.body.append(advanced)
 
-        self.install = Gtk.Button(label=_("Instalar"), sensitive=False)
+        self.install = Gtk.Button(label=_("Install"), sensitive=False)
         self.install.add_css_class("suggested-action")
         self.install.connect("clicked", self._install)
         self.add_action(self.install, default=True)
@@ -629,16 +628,16 @@ class ConfigurePage(WizardPage):
         if gpu.transcode != "cpu":
             vendors = ", ".join(VENDOR_LABELS.get(v, v) for v in gpu.vendors)
             self.transcode.set_subtitle(
-                _("Placa detectada: {vendor}. Converte vídeos para o celular bem mais rápido.").format(vendor=vendors)
+                _("Card detected: {vendor}. Converts videos for the phone much faster.").format(vendor=vendors)
             )
             self.transcode.set_active(True)
             self.ctx.extras["transcode_mode"] = gpu.transcode
         else:
-            self.transcode.set_subtitle(_("Nenhuma placa compatível encontrada; o processador fará o trabalho."))
+            self.transcode.set_subtitle(_("No compatible card found; the processor will do the work."))
             self.transcode.set_sensitive(False)
         if not defaults.ml_recommended:
             self.ml.set_active(False)
-            self.ml.set_subtitle(_("Desligado para caber na memória deste computador. Você pode ligar depois."))
+            self.ml.set_subtitle(_("Turned off to fit in this computer’s memory. You can turn it on later."))
         self._ml_options = list(gpu.ml_options)
         self.ml_accel.set_model(Gtk.StringList.new([_(ML_LABELS[o]) for o in self._ml_options]))
         self.ml_accel.set_selected(0)
@@ -652,12 +651,12 @@ class ConfigurePage(WizardPage):
         labels = []
         for index, release in enumerate(stable):
             if index == 0:
-                labels.append(_("{tag} — mais recente").format(tag=release.tag))
+                labels.append(_("{tag} — latest").format(tag=release.tag))
             else:
-                labels.append(f"{release.tag} ({br_date(release.published)})")
+                labels.append(f"{release.tag} ({local_date(release.published)})")
         self.version.set_model(Gtk.StringList.new(labels))
         self.version.set_selected(0)
-        self.version.set_subtitle(_("Recomendamos a mais recente"))
+        self.version.set_subtitle(_("We recommend the latest one"))
         self.version.set_sensitive(True)
         self._loaded |= 2
         self._update()
@@ -665,7 +664,7 @@ class ConfigurePage(WizardPage):
     def _no_releases(self, _exc: BaseException) -> None:
         self._releases = [KNOWN_GOOD_VERSION]
         self.version.set_model(Gtk.StringList.new([KNOWN_GOOD_VERSION]))
-        self.version.set_subtitle(_("Sem acesso ao GitHub agora: usaremos a versão testada"))
+        self.version.set_subtitle(_("No access to GitHub right now: we will use the tested version"))
         self._loaded |= 2
         self._update()
 
@@ -688,18 +687,18 @@ class ConfigurePage(WizardPage):
 # --- 5. Instalação ------------------------------------------------------------------------------
 
 STEP_TITLES = {
-    "prepare": N_("Preparando a configuração"),
-    "download": N_("Baixando os componentes"),
-    "start": N_("Ligando o servidor"),
-    "health": N_("Aguardando o servidor ficar pronto"),
+    "prepare": N_("Preparing the configuration"),
+    "download": N_("Downloading the components"),
+    "start": N_("Starting the server"),
+    "health": N_("Waiting for the server to be ready"),
 }
 HELPER_STEP_TEXT = {
-    "storage": N_("Conferindo o disco das fotos"),
-    "download": N_("Baixando a configuração oficial do Immich"),
-    "env": N_("Criando a senha do banco de dados"),
-    "service": N_("Registrando o serviço no sistema"),
-    "start": N_("Ligando…"),
-    "restart": N_("Religando com a nova configuração…"),
+    "storage": N_("Checking the photo disk"),
+    "download": N_("Downloading the official Immich configuration"),
+    "env": N_("Creating the database password"),
+    "service": N_("Registering the service in the system"),
+    "start": N_("Starting…"),
+    "restart": N_("Restarting with the new configuration…"),
 }
 ORDER = ("prepare", "download", "start", "health")
 
@@ -708,12 +707,12 @@ class InstallPage(WizardPage):
     step = 3
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Instalação"), "install")
-        self.set_header_title(_("Instalação"))
+        super().__init__(wizard, _("Installation"), "install")
+        self.set_header_title(_("Installation"))
         self.body.append(
             page_heading(
-                _("Instalando sua nuvem"),
-                _("Leva alguns minutos, conforme a internet. Pode usar o computador normalmente."),
+                _("Installing your cloud"),
+                _("It takes a few minutes, depending on the internet. You can keep using the computer."),
             )
         )
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -743,17 +742,17 @@ class InstallPage(WizardPage):
         self.log_scroller = Gtk.ScrolledWindow(min_content_height=200, max_content_height=260, child=log_view)
         self.log_scroller.add_css_class("card")
         self.log_scroller.add_css_class("log-frame")
-        expander = Gtk.Expander(label=_("Detalhes técnicos"), child=self.log_scroller)
+        expander = Gtk.Expander(label=_("Technical details"), child=self.log_scroller)
         self.body.append(expander)
 
-        self.cancel = Gtk.Button(label=_("Cancelar"))
+        self.cancel = Gtk.Button(label=_("Cancel"))
         self.cancel.connect("clicked", self._cancel)
         self.add_action(self.cancel, start=True)
-        self.retry = Gtk.Button(label=_("Tentar novamente"), visible=False)
+        self.retry = Gtk.Button(label=_("Try again"), visible=False)
         self.retry.add_css_class("suggested-action")
         self.retry.connect("clicked", lambda *_: self.run(self._failed_step or "prepare"))
         self.add_action(self.retry)
-        self.next = Gtk.Button(label=_("Continuar"), visible=False)
+        self.next = Gtk.Button(label=_("Continue"), visible=False)
         self.next.add_css_class("suggested-action")
         self.next.connect("clicked", lambda *_: self._advance())
         self.add_action(self.next, default=True)
@@ -810,7 +809,7 @@ class InstallPage(WizardPage):
                 self.steps[key].set_state("pending", "")
             elif self.steps[key].state != "ok":
                 # Retomando: o que veio antes já foi feito numa execução anterior.
-                self.steps[key].set_state("ok", _("Já feito"))
+                self.steps[key].set_state("ok", _("Already done"))
         self.backend.state_set("install_step", step)
         getattr(self, f"_step_{step}")()
 
@@ -826,15 +825,15 @@ class InstallPage(WizardPage):
         for line in log or []:
             if line.startswith("@@ERROR"):
                 self.log(line)
-        self.retry.set_label(_("Tentar novamente"))
+        self.retry.set_label(_("Try again"))
         self.retry.set_visible(True)
         self.cancel.set_visible(False)
         self.set_can_pop(True)
 
     def _pause(self, step: str) -> None:
         self._failed_step = step
-        self.steps[step].set_state("warning", _("Pausado. Você pode continuar de onde parou."))
-        self.retry.set_label(_("Continuar"))
+        self.steps[step].set_state("warning", _("Paused. You can continue where you left off."))
+        self.retry.set_label(_("Continue"))
         self.retry.set_visible(True)
         self.cancel.set_visible(False)
         self.set_can_pop(True)
@@ -852,7 +851,7 @@ class InstallPage(WizardPage):
     # -- etapas
     def _step_prepare(self) -> None:
         step = self.steps["prepare"]
-        step.set_state("running", _("Pedindo autorização… digite sua senha de administrador, se pedida"))
+        step.set_state("running", _("Requesting authorization… type your administrator password, if asked"))
         args = [
             self.ctx.version or KNOWN_GOOD_VERSION,
             self.ctx.photo_path,
@@ -873,7 +872,7 @@ class InstallPage(WizardPage):
                 self._fail("prepare", result.error_code, result.error_detail, result.log)
                 return
             self._restart_needed = result.results.get("restart-needed") == "1"
-            step.set_state("ok", _("Configuração pronta"))
+            step.set_state("ok", _("Configuration ready"))
             self.backend.state_set("install_step", "download")
             self._step_download()
 
@@ -881,7 +880,7 @@ class InstallPage(WizardPage):
 
     def _step_download(self) -> None:
         step = self.steps["download"]
-        step.set_state("running", _("Preparando o download…"))
+        step.set_state("running", _("Preparing the download…"))
         step.set_fraction(0)
         self.backend.state_set("install_step", "download")
         last_log = {"t": 0.0}
@@ -889,10 +888,10 @@ class InstallPage(WizardPage):
         def progress(p: PullProgress, line: str) -> None:
             step.set_fraction(p.fraction)
             if p.unpacking:
-                step.set_detail(_("Descompactando os componentes…"))
+                step.set_detail(_("Unpacking the components…"))
             elif p.total:
                 speed = p.speed()
-                text = _("{percent}% · {done} baixados").format(
+                text = _("{percent}% · {done} downloaded").format(
                     percent=int(p.fraction * 100), done=human_size(p.downloaded)
                 )
                 if speed > 0:
@@ -914,9 +913,9 @@ class InstallPage(WizardPage):
             step.set_fraction(1)
             step.set_state(
                 "ok",
-                _("Componentes baixados ({size})").format(size=human_size(p.total))
+                _("Components downloaded ({size})").format(size=human_size(p.total))
                 if p.total
-                else _("Componentes prontos"),
+                else _("Components ready"),
             )
             self._step_start()
 
@@ -927,7 +926,7 @@ class InstallPage(WizardPage):
 
     def _step_start(self) -> None:
         step = self.steps["start"]
-        step.set_state("running", _("Ligando…"))
+        step.set_state("running", _("Starting…"))
         self.backend.state_set("install_step", "start")
         action = "restart" if self._restart_needed else "start"
 
@@ -936,14 +935,14 @@ class InstallPage(WizardPage):
             if not result.ok:
                 self._fail("start", result.error_code, result.error_detail, result.log)
                 return
-            step.set_state("ok", _("Servidor ligado"))
+            step.set_state("ok", _("Server on"))
             self._step_health()
 
         self._op = self.backend.helper(action, [], None, done)
 
     def _step_health(self) -> None:
         step = self.steps["health"]
-        step.set_state("running", _("O servidor está acordando…"))
+        step.set_state("running", _("The server is waking up…"))
         self.backend.state_set("install_step", "health")
         self._health_started = time.monotonic()
         self._health_tick()
@@ -960,16 +959,18 @@ class InstallPage(WizardPage):
                 return
             healthy, ready, total = result
             if healthy:
-                step.set_state("ok", _("Tudo pronto!"))
+                step.set_state("ok", _("All set!"))
                 self._finished()
                 return
             if elapsed > HEALTH_TIMEOUT_S:
-                self._fail("health", "service-failed", f"sem resposta em {HEALTH_TIMEOUT_S}s")
+                self._fail("health", "service-failed", f"no response after {HEALTH_TIMEOUT_S}s")
                 return
-            text = _("{ready} de {total} componentes prontos").format(ready=ready, total=total) if total else ""
+            text = _("{ready} of {total} components ready").format(ready=ready, total=total) if total else ""
             if elapsed > 60:
-                text = (text + " · " if text else "") + _("Na primeira vez demora mais: o banco está sendo preparado.")
-            step.set_detail(text or _("O servidor está acordando…"))
+                text = (text + " · " if text else "") + _(
+                    "The first time takes longer: the database is being prepared."
+                )
+            step.set_detail(text or _("The server is waking up…"))
             self._health_source = GLib.timeout_add(2000, self._health_tick)
 
         def probe() -> tuple[bool, int, int]:
@@ -985,7 +986,7 @@ class InstallPage(WizardPage):
         self.backend.state_set("install_step", "done")
         self.cancel.set_visible(False)
         self.next.set_visible(True)
-        self.toast(_("Servidor no ar!"))
+        self.toast(_("Server is up!"))
         GLib.timeout_add(900, lambda: self._advance() or False)
 
     def _advance(self) -> None:
@@ -1000,8 +1001,8 @@ class AccountPage(WizardPage):
     step = 4
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Conta"), "account", can_pop=False)
-        self.set_header_title(_("Conta"))
+        super().__init__(wizard, _("Account"), "account", can_pop=False)
+        self.set_header_title(_("Account"))
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, vhomogeneous=False)
         loading = Adw.Spinner()
         loading.set_size_request(32, 32)
@@ -1011,15 +1012,15 @@ class AccountPage(WizardPage):
         form = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
         form.append(
             page_heading(
-                _("Crie sua conta de administrador"),
-                _("É com ela que você entra no app do celular e no site. Guarde bem a senha."),
+                _("Create your administrator account"),
+                _("You use it to sign in to the phone app and the website. Keep the password safe."),
             )
         )
         group = Adw.PreferencesGroup()
-        self.name = Adw.EntryRow(title=_("Seu nome"))
-        self.email = Adw.EntryRow(title=_("E-mail"), input_purpose=Gtk.InputPurpose.EMAIL)
-        self.password = Adw.PasswordEntryRow(title=_("Senha (mínimo de 8 caracteres)"))
-        self.confirm = Adw.PasswordEntryRow(title=_("Confirmar a senha"))
+        self.name = Adw.EntryRow(title=_("Your name"))
+        self.email = Adw.EntryRow(title=_("Email"), input_purpose=Gtk.InputPurpose.EMAIL)
+        self.password = Adw.PasswordEntryRow(title=_("Password (at least 8 characters)"))
+        self.confirm = Adw.PasswordEntryRow(title=_("Confirm the password"))
         for row in (self.name, self.email, self.password, self.confirm):
             row.connect("changed", lambda *_: self._validate())
             row.connect("entry-activated", lambda *_: self._create())
@@ -1027,7 +1028,7 @@ class AccountPage(WizardPage):
         form.append(group)
         strength_box = Gtk.Box(spacing=12)
         self.strength_bar = Gtk.LevelBar(min_value=0, max_value=4, hexpand=True, valign=Gtk.Align.CENTER)
-        self.strength_bar.update_property([Gtk.AccessibleProperty.LABEL], [_("Força da senha")])
+        self.strength_bar.update_property([Gtk.AccessibleProperty.LABEL], [_("Password strength")])
         self.strength_label = label("", css=("caption", "dim-label"), wrap=False)
         strength_box.append(self.strength_bar)
         strength_box.append(self.strength_label)
@@ -1037,14 +1038,14 @@ class AccountPage(WizardPage):
         form.append(self.hint)
         stats_group = Adw.PreferencesGroup()
         self.stats = Adw.SwitchRow(
-            title=_("Mostrar quantas fotos e vídeos você tem no painel"),
-            subtitle=_("Cria uma chave que só lê estatísticas. Sua senha não é guardada."),
+            title=_("Show how many photos and videos you have on the dashboard"),
+            subtitle=_("Creates a key that only reads statistics. Your password is not stored."),
             active=True,
         )
         self.stats.set_subtitle_lines(3)
         stats_group.add(self.stats)
         form.append(stats_group)
-        browser = Gtk.Button(label=_("Prefiro criar a conta no navegador"), halign=Gtk.Align.CENTER)
+        browser = Gtk.Button(label=_("I prefer to create the account in the browser"), halign=Gtk.Align.CENTER)
         browser.add_css_class("flat")
         browser.connect("clicked", self._browser)
         form.append(browser)
@@ -1052,21 +1053,24 @@ class AccountPage(WizardPage):
 
         exists = StatusBlock(
             "avatar-default-symbolic",
-            _("Sua conta já existe"),
-            _("Encontramos a conta da instalação anterior. Use o mesmo e-mail e senha no app do celular e no site."),
+            _("Your account already exists"),
+            _(
+                "We found the account from the previous installation. Use the same email and password "
+                "in the phone app and on the website."
+            ),
         )
         exists_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, halign=Gtk.Align.CENTER)
-        self.connect_button = pill_button(_("Mostrar contagem de fotos no painel"), self._connect_stats)
+        self.connect_button = pill_button(_("Show photo count on the dashboard"), self._connect_stats)
         exists_box.append(self.connect_button)
         exists.set_child(exists_box)
         self.stack.add_named(exists, "exists")
         self.body.append(self.stack)
 
-        self.create = Gtk.Button(label=_("Criar conta"), sensitive=False)
+        self.create = Gtk.Button(label=_("Create account"), sensitive=False)
         self.create.add_css_class("suggested-action")
         self.create.connect("clicked", lambda *_: self._create())
         self.add_action(self.create, default=True)
-        self.skip = Gtk.Button(label=_("Continuar"), visible=False)
+        self.skip = Gtk.Button(label=_("Continue"), visible=False)
         self.skip.add_css_class("suggested-action")
         self.skip.connect("clicked", lambda *_: self.wizard.go("phone"))
         self.add_action(self.skip)
@@ -1103,14 +1107,14 @@ class AccountPage(WizardPage):
         problems = []
         if email and not is_valid_email(email):
             self.email.add_css_class("error")
-            problems.append(_("Confira o e-mail."))
+            problems.append(_("Check the email."))
         else:
             self.email.remove_css_class("error")
         if password and len(password) < 8:
-            problems.append(_("A senha precisa de pelo menos 8 caracteres."))
+            problems.append(_("The password needs at least 8 characters."))
         if again and again != password:
             self.confirm.add_css_class("error")
-            problems.append(_("As senhas não são iguais."))
+            problems.append(_("The passwords do not match."))
         else:
             self.confirm.remove_css_class("error")
         self.hint.set_text(" ".join(problems))
@@ -1124,7 +1128,7 @@ class AccountPage(WizardPage):
             return
         self._busy = True
         self.create.set_sensitive(False)
-        self.create.set_label(_("Criando…"))
+        self.create.set_label(_("Creating…"))
         args = (
             self.name.get_text().strip(),
             self.email.get_text().strip(),
@@ -1138,21 +1142,21 @@ class AccountPage(WizardPage):
             self._busy = False
             self.password.set_text("")
             self.confirm.set_text("")
-            self.toast(_("Conta criada!"))
+            self.toast(_("Account created!"))
             self.wizard.go("phone")
 
         def failed(exc: BaseException) -> None:
             self._busy = False
-            self.create.set_label(_("Criar conta"))
+            self.create.set_label(_("Create account"))
             self._validate()
             message = exc.message if isinstance(exc, ApiError) else str(exc)
             dialog = Adw.AlertDialog(
-                heading=_("Não foi possível criar a conta"),
-                body=_("O servidor respondeu: {msg}").format(msg=message)
+                heading=_("Could not create the account"),
+                body=_("The server responded: {msg}").format(msg=message)
                 if isinstance(exc, ApiError) and exc.status
-                else _("O servidor não respondeu. Espere alguns segundos e tente de novo."),
+                else _("The server did not respond. Wait a few seconds and try again."),
             )
-            dialog.add_response("ok", _("Fechar"))
+            dialog.add_response("ok", _("Close"))
             dialog.present(self.get_root())
 
         run_async(self.backend.create_admin, *args, on_done=done, on_error=failed)
@@ -1174,10 +1178,10 @@ class PhonePage(WizardPage):
     step = 5
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Celular"), "phone")
-        self.set_header_title(_("Celular"))
+        super().__init__(wizard, _("Phone"), "phone")
+        self.set_header_title(_("Phone"))
         self.body.append(PhoneView(self.backend))
-        done = Gtk.Button(label=_("Concluir"))
+        done = Gtk.Button(label=_("Finish"))
         done.add_css_class("suggested-action")
         done.connect("clicked", lambda *_: self.wizard.go_replace("done"))
         self.add_action(done, default=True)
@@ -1190,25 +1194,28 @@ class DonePage(WizardPage):
     step = None
 
     def __init__(self, wizard: Wizard) -> None:
-        super().__init__(wizard, _("Pronto"), "done", can_pop=False)
+        super().__init__(wizard, _("Ready"), "done", can_pop=False)
         self.header.set_show_title(False)
         self.actions.set_visible(False)
         self.body.set_valign(Gtk.Align.CENTER)
         self.body.set_spacing(16)
         self.body.append(illustration("nuvem-ruscher-done", 280))
-        title = label(_("Sua nuvem está no ar!"), css=("hero-title",), xalign=0.5)
+        title = label(_("Your cloud is up!"), css=("hero-title",), xalign=0.5)
         title.set_accessible_role(Gtk.AccessibleRole.HEADING)
         self.body.append(title)
         self.body.append(
             label(
-                _("Abra o app Immich no celular e as fotos começam a chegar. Este computador cuida do resto."),
+                _(
+                    "Open the Immich app on the phone and the photos start arriving. This computer takes "
+                    "care of the rest."
+                ),
                 css=("lead", "dim-label"),
                 xalign=0.5,
             )
         )
         buttons = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER, margin_top=12)
-        open_button = pill_button(_("Abrir o Immich"), lambda b: open_uri(b, self.backend.local_url), suggested=True)
-        panel = pill_button(_("Ir para o painel"), lambda *_: self.wizard.finish())
+        open_button = pill_button(_("Open Immich"), lambda b: open_uri(b, self.backend.local_url), suggested=True)
+        panel = pill_button(_("Go to the dashboard"), lambda *_: self.wizard.finish())
         buttons.append(open_button)
         buttons.append(panel)
         self.body.append(buttons)

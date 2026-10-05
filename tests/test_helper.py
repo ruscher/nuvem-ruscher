@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 from conftest import FIXTURES, ROOT
 
+from nuvem_ruscher import VERSION
 from nuvem_ruscher.core import fstab as py_fstab
 from nuvem_ruscher.core.helper_protocol import parse_line
 
@@ -59,10 +60,16 @@ class Sim:
     def fstab(self) -> Path:
         return self.root / "etc" / "fstab"
 
-    def run(self, *args: str, **extra_env: str) -> subprocess.CompletedProcess:
+    def run(self, *args: str, stdin: str = "", **extra_env: str) -> subprocess.CompletedProcess:
         env = {**self.env, **extra_env}
         return subprocess.run(
-            ["bash", str(HELPER), *args], capture_output=True, text=True, env=env, timeout=120, check=False
+            ["bash", str(HELPER), *args],
+            input=stdin,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=180,
+            check=False,
         )
 
     def events(self, proc: subprocess.CompletedProcess):
@@ -103,7 +110,7 @@ def test_sandbox_refuses_real_commands(tmp_path):
         stub.chmod(0o644)
     proc = sim.run("setup", "v3.2.4", sim.photos, "America/Sao_Paulo", "cpu", "cpu")
     assert proc.returncode == 1
-    assert "sandbox incompleta" in proc.stdout
+    assert "incomplete sandbox" in proc.stdout
     assert not (sim.root / "var").exists()
 
 
@@ -245,6 +252,11 @@ class TestValidation:
             ("setup", "v3.2.4", "{root}/run/media/x/$(id)", "America/Sao_Paulo", "cpu", "cpu"),
             ("setup", "v3.2.4", "{root}/run/media/x/../../../etc", "America/Sao_Paulo", "cpu", "cpu"),
             ("setup", "v3.2.4", "{root}/etc/fotos", "America/Sao_Paulo", "cpu", "cpu"),
+            ("setup", "v3.2.4", "{root}/home", "America/Sao_Paulo", "cpu", "cpu"),
+            ("setup", "v3.2.4", "{root}/home/maria", "America/Sao_Paulo", "cpu", "cpu"),
+            ("setup", "v3.2.4", "{root}/run/media/maria", "America/Sao_Paulo", "cpu", "cpu"),
+            ("setup", "v3.2.4", "{root}/var", "America/Sao_Paulo", "cpu", "cpu"),
+            ("setup", "v3.2.4", "{root}/mnt", "America/Sao_Paulo", "cpu", "cpu"),
             ("setup", "v3.2.4", "/fora/da/raiz", "America/Sao_Paulo", "cpu", "cpu"),
             ("setup", "v3.2.4", "{photos}", "../../etc/passwd", "cpu", "cpu"),
             ("setup", "v3.2.4", "{photos}", "America/Sao_Paulo", "rm -rf /", "cpu"),
@@ -281,14 +293,20 @@ class TestValidation:
 
     def test_version_needs_no_root(self, sim):
         proc = sim.run("version")
-        assert proc.returncode == 0 and proc.stdout.strip() == "1.0.0"
+        assert proc.returncode == 0 and proc.stdout.strip() == VERSION
 
     def test_no_recursive_removal_except_snapshot(self):
         text = HELPER.read_text()
         assert "rm -rf" not in text
         assert "rm -fr" not in text
-        recursive = [line for line in text.splitlines() if re.search(r"\brm\b.*\s-r\b", line)]
-        assert recursive == ['    rm -r --one-file-system --preserve-root=all -- "$SNAPSHOT_DIR"']
+        recursive = [line.strip() for line in text.splitlines() if re.search(r"\brm\b.*\s-r\b", line)]
+        # Só duas remoções recursivas, ambas restritas a um sistema de arquivos e a caminhos
+        # que o próprio helper conhece: o snapshot anterior do banco e as pastas do Immich
+        # da cópia antiga, depois de uma migração verificada (remove-old-copy).
+        assert recursive == [
+            'rm -r --one-file-system --preserve-root=all -- "$SNAPSHOT_DIR"',
+            'rm -r --one-file-system --preserve-root=all -- "./${folder:?}"',
+        ]
         assert "down -v" not in text and "--volumes" not in text
         assert not re.search(r"(^|[;&|]\s*)\s*(eval|source|\.)\s", text, re.MULTILINE), "nada de eval/source"
 

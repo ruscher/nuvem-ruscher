@@ -95,9 +95,10 @@ def prefix(tmp_path_factory) -> Path:
     # do conteúdo das traduções reais (que também são instaladas e testadas abaixo).
     po = (tree / "po" / "nuvem-ruscher.pot").read_text()
     po = po.replace(
-        'msgid "Instala e cuida do Immich no BigLinux."\nmsgstr ""',
-        'msgid "Instala e cuida do Immich no BigLinux."\nmsgstr "Tradução de teste."',
+        'msgid "Installs and looks after Immich on BigLinux."\nmsgstr ""',
+        'msgid "Installs and looks after Immich on BigLinux."\nmsgstr "Tradução de teste."',
     )
+    po = po.replace("nplurals=INTEGER; plural=EXPRESSION;", "nplurals=2; plural=(n != 1);")
     (tree / "po" / "xx.po").write_text(po)
     prefix = tmp_path_factory.mktemp("loja") / "0123-nuvem-ruscher"
     make_install(tree, None, prefix, sys.executable)
@@ -192,15 +193,15 @@ class TestRelocatedPrefix:
     def test_translation_from_prefix(self, prefix):
         assert (prefix / "share/locale/xx/LC_MESSAGES/nuvem-ruscher.mo").is_file()
         assert "Tradução de teste." in self.run(prefix, "--help", LANGUAGE="xx").stdout
-        # Texto-fonte em pt-BR: sem catálogo, e é para onde qualquer idioma sem tradução cai.
-        assert "Instala e cuida do Immich" in self.run(prefix, "--help", LANGUAGE="pt_BR").stdout
-        assert "Instala e cuida do Immich" in self.run(prefix, "--help", LANGUAGE="de").stdout
+        # Texto-fonte em inglês: é para onde qualquer idioma sem catálogo cai.
+        assert "Installs and looks after Immich" in self.run(prefix, "--help", LANGUAGE="en").stdout
+        assert "Installs and looks after Immich" in self.run(prefix, "--help", LANGUAGE="de").stdout
 
     def test_real_catalogs_installed(self, prefix):
         for po in sorted((ROOT / "po").glob("*.po")):
             assert (prefix / f"share/locale/{po.stem}/LC_MESSAGES/nuvem-ruscher.mo").is_file(), po.name
-        if (ROOT / "po/en.po").exists():
-            assert "Installs and looks after Immich" in self.run(prefix, "--help", LANGUAGE="en_US").stdout
+        if (ROOT / "po/pt_BR.po").exists():
+            assert "Instala e cuida do Immich" in self.run(prefix, "--help", LANGUAGE="pt_BR").stdout
 
     def test_helper_and_policy_follow_prefix(self, prefix):
         helper = prefix / "lib/nuvem-ruscher/nuvem-ruscher-helper"
@@ -228,10 +229,13 @@ def test_catalog_complete_and_consistent(po, tmp_path):
     with mo.open("rb") as fp:
         catalog = gettext.GNUTranslations(fp)._catalog
     pot = (ROOT / "po/nuvem-ruscher.pot").read_text()
-    msgids = {k for k in catalog if k}
-    assert len(msgids) == pot.count("\nmsgid ") - 1, "há mensagens sem tradução"
-    for msgid in msgids:
-        msgstr = catalog[msgid]
+    # Plurais aparecem como (msgid, índice) no catálogo compilado.
+    distinct = {k[0] if isinstance(k, tuple) else k for k in catalog if k}
+    assert len(distinct) == pot.count("\nmsgid ") - 1, "há mensagens sem tradução"
+    for key, msgstr in catalog.items():
+        if not key:
+            continue
+        msgid = key[0] if isinstance(key, tuple) else key
         assert sorted(re.findall(r"\{\w+\}", msgid)) == sorted(re.findall(r"\{\w+\}", msgstr)), msgid
         for token in ("\n", "<b>", "</b>"):
             assert msgid.count(token) == msgstr.count(token), msgid
@@ -261,6 +265,6 @@ class TestMetadata:
         assert metainfo.findtext("project_license") == "GPL-3.0-or-later"
         policy = ET.fromstring((ROOT / f"data/{APP_ID}.policy.in").read_text())
         assert {a.get("id") for a in policy.iter("action")} == {
-            f"{APP_ID}.{name}" for name in ("manage", "start", "stop", "restart")
+            f"{APP_ID}.{name}" for name in ("manage", "start", "stop", "restart", "health")
         }
         assert policy.findtext("icon_name") == APP_ID

@@ -65,13 +65,18 @@ stdenv.mkDerivation {
     "PYTHON=${python.interpreter}"
   ];
 
-  # tests/test_helper.py fica de fora: o helper usa as ferramentas do sistema (/usr/bin),
-  # que não existem no sandbox do Nix. Ele roda no "make test" e no check() do PKGBUILD.
+  # Os testes do helper ficam de fora: ele usa as ferramentas do sistema (/usr/bin), que
+  # não existem no sandbox do Nix. Rodam no "make test" e no check() do PKGBUILD.
+  # (Os de interface pulam sozinhos sem tela.)
   doCheck = true;
-  nativeCheckInputs = [ pythonForTests ];
+  nativeCheckInputs = [
+    pythonForTests
+    util-linux
+  ];
   checkPhase = ''
     runHook preCheck
-    ${pythonForTests.interpreter} -m pytest -p no:cacheprovider --ignore=tests/test_helper.py
+    ${pythonForTests.interpreter} -m pytest -p no:cacheprovider \
+      --ignore=tests/test_helper.py --ignore=tests/test_helper_storage.py
     runHook postCheck
   '';
 

@@ -160,9 +160,12 @@ class TestReleases:
         assert releases.update_info("v2.7.5", rels).major_change
         assert not releases.update_info("v3.2.4", rels).available
 
-    def test_br_date(self):
-        assert releases.br_date("2026-09-28") == "28/09/2026"
-        assert releases.br_date("ontem") == "ontem"
+    def test_local_date(self):
+        import datetime
+
+        assert releases.local_date("2026-09-28") == datetime.date(2026, 9, 28).strftime("%x")
+        assert releases.local_date("2026-09-28T10:00:00Z") == datetime.date(2026, 9, 28).strftime("%x")
+        assert releases.local_date("ontem") == "ontem"
 
     def test_markdown_is_escaped(self):
         out = releases.simple_markdown_to_pango("## Novidades\n* <b>x</b> & **forte** `cod`")

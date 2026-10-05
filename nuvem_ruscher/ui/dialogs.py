@@ -17,7 +17,7 @@ class ConnectStatsDialog(Adw.Dialog):
     """Entra uma vez para criar a chave só de estatísticas (a senha não é guardada)."""
 
     def __init__(self, backend: Backend, on_done: Callable[[], None] | None = None) -> None:
-        super().__init__(title=_("Mostrar estatísticas"), content_width=420)
+        super().__init__(title=_("Show statistics"), content_width=420)
         self.backend = backend
         self.on_done = on_done
         toolbar = Adw.ToolbarView()
@@ -29,15 +29,15 @@ class ConnectStatsDialog(Adw.Dialog):
         box.append(
             label(
                 _(
-                    "Entre com a conta de administrador do Immich. Vamos criar uma chave que só lê a "
-                    "contagem de fotos e o uso do disco. Sua senha não fica guardada."
+                    "Sign in with the Immich administrator account. We will create a key that only reads "
+                    "the photo count and disk usage. Your password is not stored."
                 ),
                 css=("dim-label",),
             )
         )
         group = Adw.PreferencesGroup()
-        self.email = Adw.EntryRow(title=_("E-mail"), input_purpose=Gtk.InputPurpose.EMAIL)
-        self.password = Adw.PasswordEntryRow(title=_("Senha"))
+        self.email = Adw.EntryRow(title=_("Email"), input_purpose=Gtk.InputPurpose.EMAIL)
+        self.password = Adw.PasswordEntryRow(title=_("Password"))
         self.password.connect("entry-activated", lambda *_: self._go())
         group.add(self.email)
         group.add(self.password)
@@ -45,7 +45,7 @@ class ConnectStatsDialog(Adw.Dialog):
         self.error = label("", css=("error",))
         self.error.set_visible(False)
         box.append(self.error)
-        self.button = Gtk.Button(label=_("Conectar"), halign=Gtk.Align.CENTER)
+        self.button = Gtk.Button(label=_("Connect"), halign=Gtk.Align.CENTER)
         self.button.add_css_class("pill")
         self.button.add_css_class("suggested-action")
         self.button.connect("clicked", lambda *_: self._go())
@@ -66,9 +66,9 @@ class ConnectStatsDialog(Adw.Dialog):
         def failed(exc: BaseException) -> None:
             self.button.set_sensitive(True)
             if isinstance(exc, ApiError) and exc.status in (400, 401):
-                self.error.set_text(_("E-mail ou senha incorretos."))
+                self.error.set_text(_("Incorrect email or password."))
             else:
-                self.error.set_text(_("O servidor não respondeu. Ele está ligado?"))
+                self.error.set_text(_("The server did not respond. Is it on?"))
             self.error.set_visible(True)
 
         run_async(

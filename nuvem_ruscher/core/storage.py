@@ -9,6 +9,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from nuvem_ruscher.core.numbers import decimal
 from nuvem_ruscher.i18n import _
 
 IMMICH_FOLDERS = ("library", "upload", "thumbs", "encoded-video", "profile", "backups")
@@ -129,7 +130,7 @@ def parse_findmnt(text: str) -> MountInfo:
     """Interpreta ``findmnt -J -T <caminho> -o TARGET,SOURCE,FSTYPE,OPTIONS``."""
     entries = _first(json.loads(text), "filesystems")
     if not entries:
-        raise ValueError("findmnt não retornou sistemas de arquivos")
+        raise ValueError("findmnt returned no file systems")
     fs = entries[0]
     source = str(fs.get("source") or "")
     # btrfs: "/dev/nvme0n1p2[/@home]" → "/dev/nvme0n1p2"
@@ -193,29 +194,26 @@ def fs_warnings(volume: Volume) -> list[FsWarning]:
     """Avisos honestos e amigáveis sobre o sistema de arquivos das fotos."""
     family = volume.family
     db_note = _(
-        "O banco de dados do Immich não fica nesse disco: ele vai para o disco interno, "
-        "como a documentação oficial exige."
+        "The Immich database does not go on this disk: it goes on the internal disk, as the "
+        "official documentation requires."
     )
     safe_remove = _(
-        "Use “Remover com segurança” antes de desconectar o disco (ou desligue o computador). "
-        "Desligamentos bruscos podem corromper arquivos."
+        "Use “Safely remove” before disconnecting the disk (or turn off the computer). Abrupt "
+        "shutdowns can corrupt files."
     )
     if family is FsFamily.NTFS:
         return [
             FsWarning(
                 "warning",
-                _("Disco formatado no Windows (NTFS)"),
-                _("Funciona bem para guardar fotos. Só pedimos três cuidados."),
+                _("Disk formatted on Windows (NTFS)"),
+                _("It works well for storing photos. We only ask for three precautions."),
                 (
                     safe_remove,
                     _(
-                        "Se você usa esse disco no Windows, desative lá a “Inicialização rápida”; "
-                        "senão o Linux pode abri-lo apenas para leitura."
+                        "If you use this disk on Windows, turn off “Fast Startup” there; otherwise Linux may "
+                        "open it as read-only."
                     ),
-                    _(
-                        "Ele é um pouco mais lento que um disco formatado para Linux: "
-                        "as miniaturas podem demorar mais na primeira vez."
-                    ),
+                    _("It is a bit slower than a disk formatted for Linux: thumbnails may take longer the first time."),
                     db_note,
                 ),
             )
@@ -224,11 +222,11 @@ def fs_warnings(volume: Volume) -> list[FsWarning]:
         return [
             FsWarning(
                 "warning",
-                _("Disco no formato exFAT"),
-                _("Funciona para guardar fotos, com dois cuidados."),
+                _("Disk in exFAT format"),
+                _("It works for storing photos, with two precautions."),
                 (
                     safe_remove,
-                    _("O exFAT não tem diário (journal): falhas de energia são mais arriscadas."),
+                    _("exFAT has no journal: power failures are riskier."),
                     db_note,
                 ),
             )
@@ -237,10 +235,10 @@ def fs_warnings(volume: Volume) -> list[FsWarning]:
         return [
             FsWarning(
                 "error",
-                _("Este disco não aceita arquivos maiores que 4 GB"),
+                _("This disk does not accept files larger than 4 GB"),
                 _(
-                    "Ele está no formato FAT32. Fotos funcionam, mas vídeos longos não serão salvos. "
-                    "Se puder, escolha outro disco."
+                    "It is in FAT32 format. Photos work, but long videos will not be saved. If you can, "
+                    "choose another disk."
                 ),
                 (safe_remove, db_note),
             )
@@ -249,8 +247,8 @@ def fs_warnings(volume: Volume) -> list[FsWarning]:
         return [
             FsWarning(
                 "warning",
-                _("Sistema de arquivos pouco comum ({fs})").format(fs=volume.fstype or "?"),
-                _("Não testamos esse formato. Pode funcionar, mas prefira ext4, Btrfs ou NTFS."),
+                _("Uncommon file system ({fs})").format(fs=volume.fstype or "?"),
+                _("We have not tested this format. It may work, but prefer ext4, Btrfs or NTFS."),
                 (db_note,),
             )
         ]
@@ -278,7 +276,7 @@ def detect_library(path: str) -> LibraryInfo:
 
 
 def human_size(num_bytes: float, binary: bool = False) -> str:
-    """Tamanho legível em pt-BR.
+    """Tamanho legível, no formato numérico do idioma do usuário.
 
     Base 1000 para discos (como os gerenciadores de arquivos); ``binary=True`` para
     memória, que o sistema mostra em base 1024 (46 GB, e não 49,4 GB).
@@ -290,8 +288,7 @@ def human_size(num_bytes: float, binary: bool = False) -> str:
         if abs(value) < base or unit == units[-1]:
             if unit == "B":
                 return f"{int(value)} B"
-            text = f"{value:.1f}" if value < 100 else f"{value:.0f}"
-            return f"{text.replace('.', ',')} {unit}"
+            return f"{decimal(value, 1 if value < 100 else 0)} {unit}"
         value /= base
     return f"{value} PB"  # pragma: no cover
 

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# rsync de verdade (a sandbox só tem pastas da sandbox); SIM_RSYNC_DELAY deixa a
+# primeira cópia lenta para testar o cancelamento.
+if [[ -n ${SIM_RSYNC_DELAY:-} && " $* " == *" --info=progress2 "* && " $* " != *" --delete "* ]]; then
+    sleep "$SIM_RSYNC_DELAY"
+fi
+# SIM_RSYNC_COMPARE_FAIL=1: a comparação do remove-old-copy falha sem imprimir nada.
+if [[ ${SIM_RSYNC_COMPARE_FAIL:-0} == 1 && " $* " == *" --size-only "* ]]; then
+    exit 23
+fi
+exec /usr/bin/rsync "$@"

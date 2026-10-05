@@ -37,6 +37,17 @@ class TestPhotoPath:
             "/run/media/a/100%",
             "/run/media/a/linha\nnova",
             "/run/media/a/tab\tx",
+            "/home",
+            "/home/maria",
+            "/home/maria/",
+            "/run/media",
+            "/run/media/maria",
+            "/mnt",
+            "/media",
+            "/var",
+            "/var/lib",
+            "/opt",
+            "/srv",
         ],
     )
     def test_rejected(self, path):
@@ -45,7 +56,14 @@ class TestPhotoPath:
 
     @pytest.mark.parametrize(
         "path",
-        ["/home/ruscher/Imagens/Immich", "/mnt/Dados/immich", "/run/media/r/Ção é/fotos", "/srv/fotos"],
+        [
+            "/home/ruscher/Imagens/Immich",
+            "/mnt/Dados/immich",
+            "/mnt/HD1",
+            "/run/media/r/Ção é/fotos",
+            "/run/media/r/Novo volume",
+            "/srv/fotos",
+        ],
     )
     def test_accepted(self, path):
         assert validation.validate_photo_path(path) == path
