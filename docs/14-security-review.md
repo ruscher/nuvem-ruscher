@@ -41,9 +41,55 @@ Documento de trabalho; o app não lê este arquivo.
    recuperação manual).
 5. Números de série com espaço eram recusados: a interface agora normaliza como o helper.
 
+## Segunda revisão (diff completo `main...feat/v2`)
+
+Três revisões independentes (helper, núcleo/backend, interface). Corrigido:
+
+1. **`remove-old-copy` apagava se a comparação falhasse.** `rsync … | head || true` jogava
+   fora o código de saída: rsync ausente, erro de E/S ou de permissão viravam “sem
+   diferenças”. Agora qualquer falha do rsync recusa, e falta de uma pasta do Immich no
+   local atual também. Teste `test_refuses_when_the_comparison_fails`.
+2. **A mesma pasta por dois caminhos** (bind mount, subvolume montado duas vezes) se
+   comparava consigo mesma. Origem/destino e cópia antiga/atual agora são comparados por
+   dispositivo + inode (`same_dir`), também pasta a pasta no adotar e no remover.
+3. **Retomada podia apagar envios novos.** Depois da verificação, o marcador de cópia
+   retomável sai *antes* da troca: se o servidor chegou a usar a pasta nova e a migração
+   voltou, uma nova tentativa pede para adotar em vez de retomar com `--delete`.
+4. **Disco das fotos desmontado aparecia livre para o RAID** (Python e helper). Agora ficam
+   protegidos, montados ou não: o UUID gravado do disco das fotos e o da cópia antiga
+   (`PHOTO_FS_UUID`, `OLD_PHOTO_FS_UUID`), o rótulo/UUID que o udisks usa em
+   `/run/media/<usuário>/<nome>` (cobre instalações da v1) e todo disco citado no
+   `/etc/fstab`. Membros de ZFS/bcache e discos de um btrfs montado em outro disco (mesmo
+   UUID) também. Se o `lsblk` falhar, recusa (falha fechada).
+5. **A origem sumindo no meio da cópia** (disco caiu) deixaria origem e cópia vazias e
+   “iguais”. As pastas do Immich anotadas no começo precisam continuar existindo na origem e
+   no destino antes da troca, e a confirmação dentro do container exige uma delas.
+6. Remoção da cópia antiga feita de dentro da pasta (`cd -P` + caminhos relativos): trocar
+   o caminho por um link depois da conferência não desvia o `rm`.
+7. Planejamento alinhado ao helper: espaço livre 0/desconhecido bloqueia; adotar com menos
+   de 98% dos arquivos é problema, não aviso. Retomada pede só o espaço que falta.
+8. Interface: o diálogo da conta não gravava nada (argumentos nomeados não chegavam à
+   chamada); “Personalizado” gravava 1 GB na hora; cliques no número viravam várias
+   gravações fora de ordem; o interruptor de administrador não voltava após erro; o papel de
+   um membro não voltava após erro; “Remover cópia antiga” e “Desinstalar” podiam rodar duas
+   vezes; desinstalar com falha deixava o painel parado; desinstalar com sucesso quebrava
+   (atributo renomeado). Testes de fumaça novos para conta, quota e desinstalação.
+9. API: erros de protocolo HTTP e respostas fora do formato viram `ApiError` em vez de
+   derrubar a página Contas. RAID 10 sem um par inteiro aparece como “falhou”.
+
+Conferido contra a OpenAPI v3.2.4 (e mantido): `GET /albums` aceita `isOwned`/`isShared`;
+`AlbumUserRole` inclui `owner`; partners têm `inTimeline` (texto da interface ajustado:
+o parceiro *pode* mostrar as fotos na própria linha do tempo).
+
 ## Fora do escopo / limites conhecidos
 
 - Um administrador que já digitou a senha pode, por definição, fazer o que quiser como root;
   as checagens contra TOCTOU no caminho das fotos são defesa em profundidade, não barreira.
 - O Immich expõe a porta 2283 na rede local (decisão do Immich); a liberação do firewall é
   só para redes locais e Tailscale.
+- Queda de energia ou `SIGKILL` no meio de uma migração deixa o servidor desligado e o
+  estado em `running` (nada se perde; o app mostra a mudança não concluída). Não há
+  recuperação automática no boot.
+- A senha copiada fica na área de transferência até ser substituída.
+- O prazo de exclusão de contas desativadas aparece como 7 dias (padrão do Immich); um
+  servidor com `user.deleteDelay` alterado mostra o número errado.

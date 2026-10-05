@@ -39,17 +39,22 @@ O app só lista discos **inteiros**, identificados por `/dev/disk/by-id/…` + m
 recusa um disco que:
 
 - contenha `/`, `/boot`, `/efi`, swap, ou qualquer partição montada;
-- seja o disco da pasta das fotos atual, do banco (`/var/lib/nuvem-ruscher`) ou do Docker
-  (`/var/lib/docker`);
+- seja o disco da pasta das fotos atual ou da cópia antiga, do banco (`/var/lib/nuvem-ruscher`)
+  ou do Docker (`/var/lib/docker`) — **montado ou não**: o disco das fotos também é
+  reconhecido pelo UUID gravado (`PHOTO_FS_UUID`, `OLD_PHOTO_FS_UUID`) e pelo rótulo/UUID que
+  o udisks usa como nome da pasta em `/run/media/<usuário>/`;
+- apareça no `/etc/fstab` (`UUID=`, `LABEL=`, `PARTUUID=`, `PARTLABEL=` ou `/dev/…`);
 - seja membro de RAID (`linux_raid_member`), volume LVM (`LVM2_member`), LUKS
-  (`crypto_LUKS`), Btrfs com vários dispositivos, ou esteja em uso (holders em `/sys`);
+  (`crypto_LUKS`), ZFS (`zfs_member`), bcache, parte de um sistema de arquivos montado em
+  outro disco (Btrfs de vários dispositivos: mesmo UUID), ou esteja em uso (holders em `/sys`);
+- não possa ser inspecionado (`lsblk` falhou: recusa, falha fechada);
 - seja removível de leitura (`ro`).
 
 Assinaturas existentes (partições, sistemas de arquivos) **não bloqueiam**, mas aparecem
 destacadas ("Contém dados") e entram na confirmação.
 
-A confirmação exige o argumento `--erase=<série1>,<série2>…`: o helper só apaga se a lista
-de séries recebida for exatamente a dos discos escolhidos. A interface só monta esse
+A confirmação é o argumento `<série1>,<série2>…` (`raid-create <nível> <séries> <by-id>…`): o
+helper só apaga se a lista de séries recebida for exatamente a dos discos escolhidos. A interface só monta esse
 argumento depois de o usuário marcar, disco por disco, "Apagar tudo em <modelo> (<série>)"
 e digitar o nome do array.
 

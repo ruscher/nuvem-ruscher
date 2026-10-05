@@ -46,7 +46,11 @@ Por isso a opção fica indisponível, com a explicação, quando o destino não
 4. **stop** — para o serviço (nenhuma gravação nova a partir daqui).
 5. **sync** — segundo `rsync`, com `--delete` **só dentro do destino** (que é dedicado).
 6. **verify** — mesma contagem de arquivos e de bytes; `rsync --dry-run --itemize-changes`
-   sem nenhuma diferença; SHA-256 de uma amostra (os 20 maiores + 200 sorteados).
+   sem nenhuma diferença; SHA-256 de uma amostra (os 20 maiores + 200 sorteados). As pastas
+   do Immich (com `.immich`) anotadas no começo precisam existir na origem e na cópia: um
+   disco que caiu no meio não passa por “origem vazia = cópia vazia”. Depois disso o marcador
+   de cópia retomável sai: se a troca voltar atrás depois de o servidor usar a pasta nova,
+   uma nova tentativa pede para **adotar** (nunca retoma com `--delete` sobre envios novos).
 7. **switch** — `.env` (`UPLOAD_LOCATION`), configuração do app e unidade systemd
    (`BindsTo`/`RequiresMountsFor`/`ExecStartPre=mountpoint` do disco novo) reescritos com
    troca atômica; `daemon-reload`. A origem fica registrada como `OLD_UPLOAD_LOCATION`.
@@ -65,10 +69,12 @@ O app mostra: *"A migração terminou e foi verificada. Manter a cópia antiga c
 removê-la?"* — **Manter** (padrão), **Abrir o local antigo**, **Remover a cópia antiga**.
 
 Remover (`remove-old-copy`) só funciona com o caminho exato registrado em
-`OLD_UPLOAD_LOCATION`, que não pode ser o local atual nem estar dentro dele; refaz a
-comparação (`rsync --dry-run`) antes; apaga só as pastas do Immich que foram copiadas
-(`library`, `upload`, `thumbs`, `encoded-video`, `profile`, `backups`) com
-`rm -r --one-file-system`, e só depois de uma confirmação que mostra o caminho e o tamanho.
+`OLD_UPLOAD_LOCATION`, que não pode ser o local atual nem estar dentro dele — nem ser o
+mesmo diretório por outro caminho (dispositivo + inode, também pasta a pasta); refaz a
+comparação (`rsync --dry-run`) antes, e **qualquer falha do rsync recusa**; apaga só as
+pastas do Immich que foram copiadas (`library`, `upload`, `thumbs`, `encoded-video`,
+`profile`, `backups`) com `rm -r --one-file-system`, de dentro da pasta antiga (`cd -P`), e
+só depois de uma confirmação que mostra o caminho e o tamanho.
 
 ## Rename (mesmo disco)
 

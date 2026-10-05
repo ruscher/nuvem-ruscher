@@ -14,10 +14,10 @@ backend simulado; nenhum RAID real é criado.
 | Discos e SMART | `test_disks.py`, `test_smart.py` | inventário, proteções, by-id estável, swap, saúde ok/aviso/erro/desconhecido, NVMe |
 | Contas e compartilhamento | `test_immich_accounts.py`, `test_simulated_cloud.py` | chamadas exatas da API v3.2.4; quota nula = ilimitado; troca de senha obrigatória; desativar sem `force`; reativar; senha temporária; IDs maliciosos recusados; e-mail inválido/duplicado; falha do servidor; API fora do ar; álbum com papéis; partners |
 | Simulador | `test_simulated_cloud.py` | todos os cenários novos sem executar processos; migração simulada (sucesso, cancelar só na cópia, falha na verificação); RAID simulado |
-| Interface | `test_ui_smoke.py` | todas as páginas em 7 cenários e os diálogos (com captura de exceções em callbacks); caminho de falha da migração |
+| Interface | `test_ui_smoke.py` | todas as páginas em 7 cenários e os diálogos (com captura de exceções em callbacks); caminho de falha da migração; quota personalizada (nada gravado ao escolher, uma gravação para vários cliques); desinstalar volta ao assistente |
 | i18n | `test_i18n.py`, `test_packaging.py` | nenhum texto visível fora do gettext; fonte em inglês; pt_BR completo e coerente (marcadores, plurais) |
 
-Resultado (05/10/2026): **395 passed** no `check()` do PKGBUILD; `make lint` limpo.
+Resultado (05/10/2026, após a segunda revisão): **411 passed**; `make lint` limpo.
 
 ## Revisão visual (`tools/tour.py`)
 
