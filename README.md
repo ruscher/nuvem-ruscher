@@ -19,6 +19,11 @@ que você escolher, uma conta para cada pessoa e os celulares enviando tudo sozi
 
 - **Assistente do primeiro clique ao celular sincronizando:** verificação do sistema com correção em
   um clique, escolha do disco, instalação com progresso real, conta de administrador e QR codes.
+- **Android e iPhone com o mesmo cuidado:** escolha o celular e o app mostra a loja certa (Play
+  Store, F-Droid ou App Store), o endereço para digitar no Immich e os passos daquele sistema —
+  bateria no Android; Background App Refresh, Rede Local e Fotos do iCloud no iPhone. Em casa pelo
+  Wi-Fi, fora de casa pelo Tailscale. Um teste diz se o servidor responde no endereço e, quando
+  não, o que fazer.
 - **Fotos sagradas.** Nada nos seus discos é apagado, formatado ou movido sem você pedir e confirmar.
   O banco de dados fica no disco interno; as fotos, no disco que você escolheu.
 - **Uma conta para cada pessoa** (o modelo do próprio Immich): login, biblioteca, backup do celular e
@@ -48,8 +53,10 @@ que você escolher, uma conta para cada pessoa e os celulares enviando tudo sozi
 | **Trocar o local** — tudo conferido antes de começar | **Concluída e verificada** — a cópia antiga fica até você decidir |
 | ![RAID: discos](screenshots/v2/d-raid-2-disks-migration.png) | ![RAID: confirmação](screenshots/v2/d-raid-3-confirm-migration.png) |
 | **RAID** — discos protegidos aparecem com o motivo | **Confirmação** disco a disco antes de apagar |
-| ![Assistente](screenshots/v2/w3-storage.png) | ![Celular](screenshots/v2/w7-phone.png) |
-| **Instalação** — avisos honestos sobre o disco | **Celular** — QR para o app e para o endereço |
+| ![iPhone](screenshots/v2/p-phones-iphone.png) | ![Conferir a conexão](screenshots/v2/p-phones-iphone-check.png) |
+| **Celulares** — Android ou iPhone, loja e endereço certos | **Passos no app e teste da conexão** |
+| ![Assistente](screenshots/v2/w3-storage.png) | ![Android](screenshots/v2/p-phones-android.png) |
+| **Instalação** — avisos honestos sobre o disco | **Android** — Play Store e F-Droid |
 
 <p align="center">
 <img src="screenshots/v2/p-home-dark-family.png" width="62%" alt="Início no tema escuro">
@@ -90,6 +97,7 @@ app: servidor, fotos, banco de dados e configuração continuam onde estão (vej
 ./bin/nuvem-ruscher --simulate --scenario family        # quatro contas e pastas compartilhadas
 ./bin/nuvem-ruscher --simulate --scenario raid-degraded # RAID com um disco com falha
 ./bin/nuvem-ruscher --simulate --scenario migration     # um segundo disco para receber as fotos
+./bin/nuvem-ruscher --simulate --scenario lan-unreachable # o teste de conexão dos celulares falha
 ```
 
 Os nomes da primeira versão (`--simular`, `--cenario ajuda`, `sem-docker`…) continuam aceitos.
@@ -117,6 +125,7 @@ Interface (usuário comum) ──pkexec──► helper Bash (lista fechada de a
   [contas](docs/10-multi-user.md), [compartilhamento](docs/11-shared-folders.md),
   [interface](docs/12-ui-redesign.md), [idiomas](docs/13-i18n-migration.md),
   [revisão de segurança](docs/14-security-review.md), [testes](docs/15-test-plan-v2.md),
+  [Android e iPhone](docs/16-ios-support.md) ([testes no iPhone](docs/17-ios-test-plan.md)),
   [empacotamento](docs/07-empacotamento.md) ([Arch](docs/packaging-arch.md), [Nix](docs/packaging-nix.md)).
 
 ## Perguntas frequentes
@@ -138,9 +147,17 @@ os discos do RAID ao mesmo tempo. Guarde de vez em quando uma cópia das fotos n
 *Contas → Adicionar conta.* O app mostra o endereço do servidor, o e-mail, a senha inicial e um QR
 para o celular. Cada pessoa vê só as próprias fotos e as pastas compartilhadas com ela.
 
+**Funciona no iPhone?**
+Sim, com o app oficial do Immich da App Store (iOS 15 ou mais novo). Em *Celulares*, escolha
+“iPhone ou iPad”: o app mostra a App Store, o endereço e os ajustes do iOS. O iPhone decide quando
+o backup roda em segundo plano; abrir o Immich de vez em quando ajuda. Quem usa Fotos do iCloud
+encontra ali o que muda (e o cuidado antes de “Liberar espaço”).
+
 **O celular não encontra o servidor.**
-Confirme que está no mesmo Wi-Fi e use o endereço mostrado em *Celulares*. Se houver firewall, use
-*Rede → Liberar a porta 2283 para a rede de casa* (libera só redes locais e Tailscale).
+Em *Celulares → Conferir a conexão*, use *Testar deste computador* e depois aponte a câmera do
+celular para o código do endereço: se a página do Immich abrir, o celular alcança o servidor. No
+iPhone, o Immich também precisa da permissão *Rede Local*. Se houver firewall, use *Rede → Liberar
+a porta 2283 para a rede de casa* (libera só redes locais e Tailscale).
 
 **Quero acessar fora de casa.**
 Instale o [Tailscale](https://tailscale.com/download/linux) aqui e no celular; o app mostra o
@@ -157,7 +174,7 @@ make test       # pytest: núcleo, helper em sandbox, simulado, interface, insta
 make lint       # ruff, shellcheck, desktop-file-validate, appstreamcli
 make pot        # extrai os textos (em inglês) para po/nuvem-ruscher.pot
 make update-po  # leva os textos novos para po/*.po (hoje: pt_BR)
-python3 tools/tour.py build/capturas [--dark] [--narrow] [--scenario NOME] [--extra migration,raid,accounts]
+python3 tools/tour.py build/capturas [--dark] [--narrow] [--scenario NOME] [--extra migration,raid,accounts,phones]
 ```
 
 Python 3 + GTK4 + libadwaita (PyGObject), helper em Bash, Docker via CLI. Sem pip, sem etapa de build.
