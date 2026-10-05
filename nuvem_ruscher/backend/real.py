@@ -32,12 +32,13 @@ from nuvem_ruscher.constants import (
     SERVICE_NAME,
     STACK_DIR,
 )
+from nuvem_ruscher.core import disks as dsk
 from nuvem_ruscher.core import docker as dk
-from nuvem_ruscher.core import fstab, storage, system
+from nuvem_ruscher.core import fstab, migration, raid, storage, system
 from nuvem_ruscher.core.compose import PullProgress, pull_args, write_pull_plan
 from nuvem_ruscher.core.config import ApiKeyStore, AppConfig, UserState, cache_dir, load_conf
 from nuvem_ruscher.core.helper_protocol import parse_line, pkexec_error_code
-from nuvem_ruscher.core.immich_api import ImmichClient, ServerStats
+from nuvem_ruscher.core.immich_api import Album, ApiError, ImmichClient, ImmichUser, Person, ServerStats, Session
 from nuvem_ruscher.core.releases import Release, ReleaseCache, parse_releases
 from nuvem_ruscher.core.validation import ValidationError, validate_photo_path
 from nuvem_ruscher.paths import helper_path
@@ -51,18 +52,25 @@ class HelperCall(Operation):
         argv: list[str],
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
+        interactive: bool = False,
     ) -> None:
         self.result = HelperResult(ok=False)
         self._on_event = on_event
         self._on_done = on_done
-        self._proc = StreamingProcess(argv, self._line, self._exit)
+        self._interactive = interactive
+        self._proc = StreamingProcess(argv, self._line, self._exit, interactive=interactive)
 
     @property
     def running(self) -> bool:
         return self._proc.running
 
     def cancel(self) -> None:
-        self._proc.cancel()
+        # O helper roda como root: não dá para sinalizá-lo. Ele lê o pedido no stdin e só
+        # cancela quando ainda é seguro (ex.: durante a cópia, com o servidor no ar).
+        if self._interactive:
+            self._proc.send("cancel")
+        else:
+            self._proc.cancel()
 
     def _line(self, line: str) -> None:
         event = parse_line(line)
@@ -102,6 +110,7 @@ class RealBackend(Backend):
         self._keys = ApiKeyStore()
         self._api = ImmichClient(f"http://127.0.0.1:{IMMICH_PORT}")
         self._release_cache = ReleaseCache(cache_dir() / "releases.json")
+        self._session: Session | None = None
 
     # --- básico -------------------------------------------------------------------
     def user_name(self) -> str:
@@ -293,12 +302,13 @@ class RealBackend(Backend):
         args: list[str],
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
+        interactive: bool = False,
     ) -> Operation:
         helper = str(helper_path())
         if not os.access(helper, os.X_OK):
             on_done(HelperResult(False, "helper-missing", f"{helper} not found"))
             return _Finished()
-        return HelperCall(["pkexec", helper, action, *args], on_event, on_done)
+        return HelperCall(["pkexec", helper, action, *args], on_event, on_done, interactive=interactive)
 
     # --- Docker ------------------------------------------------------------------------
     def pull(
@@ -397,6 +407,175 @@ class RealBackend(Backend):
         if not key:
             return None
         return self._api.statistics(key)
+
+    # --- contas e compartilhamento ------------------------------------------------------------
+    @property
+    def session(self) -> Session | None:
+        return self._session
+
+    def _token(self, admin: bool = False) -> str:
+        if self._session is None:
+            raise PermissionError("not signed in")
+        if admin and not self._session.is_admin:
+            raise PermissionError("not an administrator")
+        return self._session.token
+
+    def sign_in(self, email: str, password: str) -> Session:
+        self.sign_out()
+        self._session = self._api.session(email, password)
+        return self._session
+
+    def sign_out(self) -> None:
+        if self._session is not None:
+            self._api.logout(self._session.token)
+            self._session = None
+
+    def accounts(self) -> list[ImmichUser]:
+        token = self._token(admin=True)
+        users = self._api.admin_users(token)
+        try:
+            usage = self._api.usage_by_user(token)
+        except ApiError:
+            usage = {}
+        for user in users:
+            photos, videos, _bytes = usage.get(user.id, (0, 0, 0))
+            user.photos, user.videos = photos, videos
+        return users
+
+    def create_account(
+        self, name: str, email: str, password: str, quota: int | None, storage_label: str | None, is_admin: bool
+    ) -> ImmichUser:
+        return self._api.create_user(self._token(admin=True), name, email, password, quota, storage_label, is_admin)
+
+    def update_account(self, user_id: str, **changes: object) -> ImmichUser:
+        return self._api.update_user(self._token(admin=True), user_id, **changes)
+
+    def reset_account_password(self, user_id: str) -> str:
+        return self._api.reset_password(self._token(admin=True), user_id)
+
+    def disable_account(self, user_id: str) -> ImmichUser:
+        return self._api.disable_user(self._token(admin=True), user_id)
+
+    def restore_account(self, user_id: str) -> ImmichUser:
+        return self._api.restore_user(self._token(admin=True), user_id)
+
+    def people(self) -> list[Person]:
+        return self._api.people(self._token())
+
+    def shared_albums(self) -> tuple[list[Album], list[Album]]:
+        token = self._token()
+        return self._api.albums(token, owned=True, shared=True), self._api.albums(token, owned=False)
+
+    def create_shared_album(self, name: str, members: list[tuple[str, str]]) -> Album:
+        return self._api.create_album(self._token(), name, members)
+
+    def add_album_members(self, album_id: str, members: list[tuple[str, str]]) -> Album:
+        return self._api.add_album_members(self._token(), album_id, members)
+
+    def set_album_role(self, album_id: str, user_id: str, role: str) -> None:
+        self._api.set_album_role(self._token(), album_id, user_id, role)
+
+    def remove_album_member(self, album_id: str, user_id: str) -> None:
+        self._api.remove_album_member(self._token(), album_id, user_id)
+
+    def partners(self) -> tuple[list[Person], list[Person]]:
+        token = self._token()
+        return self._api.partners(token, "shared-by"), self._api.partners(token, "shared-with")
+
+    def add_partner(self, user_id: str) -> None:
+        self._api.add_partner(self._token(), user_id)
+
+    def remove_partner(self, user_id: str) -> None:
+        self._api.remove_partner(self._token(), user_id)
+
+    # --- discos, RAID e troca de local -----------------------------------------------------------
+    def disks(self) -> list[dsk.Disk]:
+        code, out = system.run_text(list(dsk.LSBLK_ARGV), timeout=20)
+        if code != 0:
+            return []
+        try:
+            swaps = dsk.parse_swaps(Path("/proc/swaps").read_text())
+        except OSError:
+            swaps = set()
+        conf = self.load_config()
+        lsblk = dsk.parse_lsblk(out)
+        names = [d.get("name", "") for d in lsblk.get("blockdevices") or [] if d.get("type") == "disk"]
+        return dsk.inventory(
+            lsblk,
+            swaps=swaps,
+            by_id=dsk.stable_ids(dsk.read_by_id()),
+            protected={
+                "cloud": conf.upload_location,
+                "database": conf.db_data_location or "/var/lib/nuvem-ruscher",
+                "docker": "/var/lib/docker",
+            },
+            holders_of={name: dsk.holders(name) for name in names},
+        )
+
+    def raid_arrays(self) -> list[raid.RaidArray]:
+        return raid.read_arrays()
+
+    def tool_available(self, name: str) -> bool:
+        if name not in ("rsync", "mdadm", "smartctl"):
+            raise ValueError(name)
+        return bool(shutil.which(name) or shutil.which(name, path="/usr/bin:/usr/sbin:/bin:/sbin"))
+
+    def plan_migration(self, dest: str, mode: migration.Mode | None = None) -> migration.MigrationPlan:
+        conf = self.load_config()
+        source = conf.upload_location
+        stats = migration.scan_tree(source) if source and os.path.isdir(source) else migration.TreeStats()
+        return migration.assess(source, dest, stats, self._destination(source, dest), mode)
+
+    def _destination(self, source: str, dest: str) -> migration.Destination:
+        info = migration.Destination(path=dest)
+        dest = os.path.normpath(dest) if dest.startswith("/") else dest
+        parent = os.path.dirname(dest)
+        info.parent_exists = os.path.isdir(parent)
+        if not info.parent_exists:
+            return info
+        info.symlink_in_path = os.path.realpath(parent) != parent or os.path.islink(dest)
+        info.exists = os.path.lexists(dest)
+        info.is_dir = os.path.isdir(dest)
+        probe = dest if info.is_dir else parent
+        if info.is_dir:
+            try:
+                entries = [e for e in os.listdir(dest) if e != migration.MIGRATION_MARKER]
+            except OSError:
+                entries = ["?"]
+            info.empty = not entries
+            info.markers = {f for f in migration.IMMICH_FOLDERS if os.path.isfile(os.path.join(dest, f, ".immich"))}
+            if info.markers:
+                info.files = migration.scan_tree(dest).files
+            try:
+                marker = Path(dest, migration.MIGRATION_MARKER).read_text(encoding="utf-8").splitlines()
+                if marker and marker[0].startswith("SOURCE="):
+                    info.resumable_from = marker[0].split("=", 1)[1]
+            except OSError:
+                pass
+        code, out = system.run_text(["findmnt", "-J", "-T", probe, "-o", "TARGET,SOURCE,FSTYPE,OPTIONS"])
+        if code == 0:
+            mount = storage.parse_findmnt(out)
+            info.mountpoint = mount.target
+            info.fstype = mount.fstype
+            info.read_only = "ro" in mount.options
+        report = self.inspect_storage(dest)
+        if report.volume is not None:
+            info.fstype = report.volume.fstype or info.fstype
+            info.removable = report.volume.is_external
+            info.system_disk = report.volume.is_system_disk
+        total, _used, free = system.disk_usage(probe)
+        info.total, info.free = total, free
+        if source and os.path.isdir(source):
+            try:
+                same_dev = os.stat(source).st_dev == os.stat(probe).st_dev
+            except OSError:
+                same_dev = False
+            code, out = system.run_text(["findmnt", "-n", "-o", "TARGET", "-T", source])
+            info.same_fs = same_dev and code == 0 and out.strip() == info.mountpoint
+        return info
+
+    def migration_state(self) -> migration.MigrationState | None:
+        return migration.read_state()
 
     # --- diversos --------------------------------------------------------------------------
     def backups(self) -> list[BackupFile]:

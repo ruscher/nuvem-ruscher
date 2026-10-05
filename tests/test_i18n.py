@@ -46,6 +46,7 @@ TEXT_KWARGS = {
 # Nomes próprios, marcas e textos sem palavras (não se traduzem).
 ALLOWED = {"Nuvem Ruscher", "Immich", "Tailscale", "Play Store", "F-Droid", "GitHub", "ruscher"}
 ALLOWED.add("Novo volume")  # rótulo do disco fictício do --simulate (dado, não interface)
+ALLOWED.add("nuvem-ruscher")  # nome técnico do array RAID (identificador)
 WORDS = re.compile(r"[A-Za-zÀ-ÿ]{2,}")
 
 

@@ -22,9 +22,12 @@ from nuvem_ruscher.constants import (
 )
 from nuvem_ruscher.core.compose import PullProgress
 from nuvem_ruscher.core.config import AppConfig
+from nuvem_ruscher.core.disks import Disk
 from nuvem_ruscher.core.docker import ContainerState, ContainerStats, GroupAccess
 from nuvem_ruscher.core.helper_protocol import HelperEvent
-from nuvem_ruscher.core.immich_api import ServerStats
+from nuvem_ruscher.core.immich_api import Album, ImmichUser, Person, ServerStats, Session
+from nuvem_ruscher.core.migration import MigrationPlan, MigrationState, Mode
+from nuvem_ruscher.core.raid import RaidArray
 from nuvem_ruscher.core.releases import Release
 from nuvem_ruscher.core.storage import FsWarning, LibraryInfo, Volume, human_size
 from nuvem_ruscher.core.system import GIB, GpuInfo, PortStatus, TailscaleInfo
@@ -188,7 +191,9 @@ class Backend(abc.ABC):
         args: list[str],
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
-    ) -> Operation: ...
+        interactive: bool = False,
+    ) -> Operation:
+        """``interactive``: ``cancel()`` pede o cancelamento ao helper (ele decide se ainda dá)."""
 
     # --- Docker como usuário -----------------------------------------------------
     @abc.abstractmethod
@@ -243,6 +248,85 @@ class Backend(abc.ABC):
 
     @abc.abstractmethod
     def statistics(self) -> ServerStats | None: ...
+
+    # --- contas e compartilhamento (API do Immich; sessão só na memória) ----------
+    @property
+    @abc.abstractmethod
+    def session(self) -> Session | None: ...
+
+    @abc.abstractmethod
+    def sign_in(self, email: str, password: str) -> Session: ...
+
+    @abc.abstractmethod
+    def sign_out(self) -> None: ...
+
+    @abc.abstractmethod
+    def accounts(self) -> list[ImmichUser]:
+        """Todas as contas (inclusive desativadas), com fotos, vídeos e uso. Só administrador."""
+
+    @abc.abstractmethod
+    def create_account(
+        self, name: str, email: str, password: str, quota: int | None, storage_label: str | None, is_admin: bool
+    ) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def update_account(self, user_id: str, **changes: object) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def reset_account_password(self, user_id: str) -> str: ...
+
+    @abc.abstractmethod
+    def disable_account(self, user_id: str) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def restore_account(self, user_id: str) -> ImmichUser: ...
+
+    @abc.abstractmethod
+    def people(self) -> list[Person]: ...
+
+    @abc.abstractmethod
+    def shared_albums(self) -> tuple[list[Album], list[Album]]:
+        """(compartilhados pela conta conectada, compartilhados com ela)."""
+
+    @abc.abstractmethod
+    def create_shared_album(self, name: str, members: list[tuple[str, str]]) -> Album: ...
+
+    @abc.abstractmethod
+    def add_album_members(self, album_id: str, members: list[tuple[str, str]]) -> Album: ...
+
+    @abc.abstractmethod
+    def set_album_role(self, album_id: str, user_id: str, role: str) -> None: ...
+
+    @abc.abstractmethod
+    def remove_album_member(self, album_id: str, user_id: str) -> None: ...
+
+    @abc.abstractmethod
+    def partners(self) -> tuple[list[Person], list[Person]]:
+        """(com quem a conta conectada compartilha a biblioteca, quem compartilha com ela)."""
+
+    @abc.abstractmethod
+    def add_partner(self, user_id: str) -> None: ...
+
+    @abc.abstractmethod
+    def remove_partner(self, user_id: str) -> None: ...
+
+    # --- discos, RAID e troca de local -----------------------------------------------
+    @abc.abstractmethod
+    def disks(self) -> list[Disk]: ...
+
+    @abc.abstractmethod
+    def raid_arrays(self) -> list[RaidArray]: ...
+
+    @abc.abstractmethod
+    def tool_available(self, name: str) -> bool:
+        """rsync | mdadm | smartctl"""
+
+    @abc.abstractmethod
+    def plan_migration(self, dest: str, mode: Mode | None = None) -> MigrationPlan:
+        """Bloqueante: conta os arquivos da biblioteca (pode levar alguns segundos)."""
+
+    @abc.abstractmethod
+    def migration_state(self) -> MigrationState | None: ...
 
     # --- diversos -----------------------------------------------------------------
     @abc.abstractmethod

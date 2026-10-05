@@ -75,6 +75,7 @@ class StreamingProcess(Operation):
         on_line: Callable[[str], None],
         on_exit: Callable[[int], None],
         env: dict[str, str] | None = None,
+        interactive: bool = False,
     ) -> None:
         self._on_line = on_line
         self._on_exit = on_exit
@@ -88,7 +89,7 @@ class StreamingProcess(Operation):
                 list(argv),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                stdin=subprocess.DEVNULL,
+                stdin=subprocess.PIPE if interactive else subprocess.DEVNULL,
                 text=True,
                 bufsize=1,
                 env=env,
@@ -109,6 +110,17 @@ class StreamingProcess(Operation):
     @property
     def cancelled(self) -> bool:
         return self._cancelled
+
+    def send(self, line: str) -> bool:
+        """Escreve uma linha no stdin do processo (só com ``interactive=True``)."""
+        if not self.running or self._proc is None or self._proc.stdin is None:
+            return False
+        try:
+            self._proc.stdin.write(line + "\n")
+            self._proc.stdin.flush()
+        except (BrokenPipeError, OSError, ValueError):
+            return False
+        return True
 
     def cancel(self) -> None:
         if not self.running or self._proc is None:

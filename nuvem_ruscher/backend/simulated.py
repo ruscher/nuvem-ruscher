@@ -26,6 +26,8 @@ from nuvem_ruscher.backend.base import (
     HelperResult,
     StorageReport,
 )
+from nuvem_ruscher.backend.simulated_cloud import CLOUD_ACTIONS, SimulatedCloud
+from nuvem_ruscher.backend.timeline import Timeline
 from nuvem_ruscher.constants import CONTAINERS, STACK_DIR
 from nuvem_ruscher.core import fstab, storage
 from nuvem_ruscher.core.compose import PullProgress
@@ -59,6 +61,19 @@ SCENARIOS: dict[str, dict[str, object]] = {
     "slow-server": {"slow": True},
     "firewall": {"firewall": "ufw"},
     "fstab-configured": {"fstab": "ours"},
+    # v2: várias contas, compartilhamento, RAID e troca de local
+    "family": {"installed": True, "initialized": True, "family": True},
+    "quota-exceeded": {"installed": True, "initialized": True, "family": True, "quota_exceeded": True},
+    "user-create-fails": {"installed": True, "initialized": True, "family": True, "create_fails": True},
+    "api-unavailable": {"installed": True, "initialized": True, "api_down": True},
+    "raid-healthy": {"installed": True, "initialized": True, "family": True, "raid": "healthy"},
+    "raid-degraded": {"installed": True, "initialized": True, "raid": "degraded"},
+    "raid-rebuilding": {"installed": True, "initialized": True, "raid": "rebuilding"},
+    "raid-failed": {"installed": True, "initialized": True, "raid": "failed"},
+    "migration": {"installed": True, "initialized": True, "migration": "ready"},
+    "migration-no-space": {"installed": True, "initialized": True, "migration": "no-space"},
+    "migration-interrupted": {"installed": True, "initialized": True, "migration": "interrupted"},
+    "migration-verify-fails": {"installed": True, "initialized": True, "migration": "verify-fails"},
 }
 
 # Nomes da primeira versão (pt-BR), aceitos para não quebrar comandos documentados.
@@ -102,6 +117,18 @@ SCENARIO_HELP = {
     "slow-server": N_("server takes long to become ready"),
     "firewall": N_("ufw firewall active"),
     "fstab-configured": N_("automatic mounting already configured"),
+    "family": N_("four accounts, quotas and shared folders"),
+    "quota-exceeded": N_("an account over its storage quota"),
+    "user-create-fails": N_("creating an account fails on the server"),
+    "api-unavailable": N_("the Immich API does not answer"),
+    "raid-healthy": N_("photos on a healthy RAID 1"),
+    "raid-degraded": N_("RAID 1 with a failed drive"),
+    "raid-rebuilding": N_("RAID 1 rebuilding onto a new drive"),
+    "raid-failed": N_("RAID array stopped"),
+    "migration": N_("a second disk ready to receive the photos"),
+    "migration-no-space": N_("second disk without enough space"),
+    "migration-interrupted": N_("an interrupted copy to resume"),
+    "migration-verify-fails": N_("the copy fails verification and everything goes back"),
 }
 
 
@@ -142,47 +169,11 @@ LOG_LINES = [
 ]
 
 
-class _Timeline(Operation):
-    """Sequência de passos com atrasos, cancelável."""
-
-    def __init__(
-        self, steps: list[tuple[int, Callable[[], None]]], on_cancel: Callable[[], None] | None = None
-    ) -> None:
-        self._steps = list(steps)
-        self._source = 0
-        self._running = True
-        self._on_cancel = on_cancel
-        self._next()
-
-    @property
-    def running(self) -> bool:
-        return self._running
-
-    def _next(self) -> None:
-        if not self._steps:
-            self._running = False
-            return
-        delay, action = self._steps.pop(0)
-
-        def fire() -> bool:
-            self._source = 0
-            action()
-            self._next()
-            return GLib.SOURCE_REMOVE
-
-        self._source = GLib.timeout_add(max(delay, 1), fire)
-
-    def cancel(self) -> None:
-        if self._source:
-            GLib.source_remove(self._source)
-            self._source = 0
-        if self._running:
-            self._running = False
-            if self._on_cancel:
-                self._on_cancel()
+# Nome antigo, usado no resto deste módulo.
+_Timeline = Timeline
 
 
-class SimulatedBackend(Backend):
+class SimulatedBackend(SimulatedCloud, Backend):
     simulated = True
 
     def __init__(self, scenario: str = "fresh") -> None:
@@ -222,6 +213,7 @@ class SimulatedBackend(Backend):
         self.photo_path = f"{self.mountpoint}/immich-{self._user}"
         if self.installed:
             self._state["wizard_done"] = True
+        self._init_cloud(opts)
 
     # --- básico ---------------------------------------------------------------------
     def user_name(self) -> str:
@@ -387,7 +379,10 @@ class SimulatedBackend(Backend):
         args: list[str],
         on_event: HelperEventCallback | None,
         on_done: HelperDoneCallback,
+        interactive: bool = False,
     ) -> Operation:
+        if action in CLOUD_ACTIONS:
+            return self.cloud_helper(action, args, on_event, on_done)
         result = HelperResult(ok=True)
         steps: list[tuple[int, Callable[[], None]]] = []
         slow = 2 if self.slow else 1
@@ -823,6 +818,9 @@ class SimulatedBackend(Backend):
         return TailscaleInfo(True, True, "100.100.184.97", "ruscher-big.tail9c419a.ts.net")
 
     def disk_usage(self, path: str) -> tuple[int, int, int]:
+        for mount, (_fs, total, free, _rm, _sys) in self._sim_mounts().items():
+            if path == mount or path.startswith(mount + "/"):
+                return total, total - free, free
         return 2_000_397_795_328, 214_000_000_000, 1_786_397_795_328
 
     def is_mounted(self, path: str) -> bool:
