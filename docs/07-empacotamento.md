@@ -1,5 +1,8 @@
 # 07 — Empacotamento
 
+Detalhes e decisões: [auditoria](packaging-audit.md), [Arch](packaging-arch.md),
+[Nix](packaging-nix.md), [testes](packaging-tests.md).
+
 ## Layout instalado
 
 | Origem | Destino |
@@ -8,41 +11,31 @@
 | `nuvem_ruscher/` | `/usr/share/nuvem-ruscher/nuvem_ruscher/` |
 | `data/illustrations/*.svg`, `style.css` | `/usr/share/nuvem-ruscher/…` |
 | `helper/nuvem-ruscher-helper` | `/usr/lib/nuvem-ruscher/nuvem-ruscher-helper` (755) |
-| `data/io.github.ruscher.NuvemRuscher.policy` | `/usr/share/polkit-1/actions/` |
+| `data/io.github.ruscher.NuvemRuscher.policy.in` | `/usr/share/polkit-1/actions/` (com o caminho do helper) |
 | `data/io.github.ruscher.NuvemRuscher.desktop` | `/usr/share/applications/` |
 | `data/io.github.ruscher.NuvemRuscher.metainfo.xml` | `/usr/share/metainfo/` |
 | ícones | `/usr/share/icons/hicolor/{scalable,symbolic}/apps/` |
 | `po/*.po` → `.mo` | `/usr/share/locale/<lang>/LC_MESSAGES/nuvem-ruscher.mo` |
 
-O lançador descobre se está rodando do código-fonte (pasta `nuvem_ruscher` ao lado)
-ou instalado (`/usr/share/nuvem-ruscher`) e ajusta `sys.path`. Do código-fonte, ele
-usa o helper do repositório **apenas** em `--simular`; para operações reais exige o
-helper instalado em `/usr/lib` (o polkit só confia no caminho instalado).
+A tabela usa `PREFIX=/usr`. Tudo é relativo ao prefixo: o lançador procura
+`<prefixo>/share/nuvem-ruscher` ao lado de si mesmo (ou `nuvem_ruscher/` no repositório) e
+o app acha helper e traduções a partir daí (`nuvem_ruscher/paths.py`). Do código-fonte, o
+backend real usa o helper instalado em `/usr/lib` (o polkit só confia no caminho
+instalado); o `--simular` não chama helper.
 
 ## PKGBUILD (resumo)
 
-```bash
-pkgname=nuvem-ruscher
-pkgver=1.0.0
-pkgrel=1
-arch=('any')
-depends=(python python-gobject gtk4 libadwaita python-qrcode
-         polkit docker docker-compose util-linux systemd curl gzip)
-optdepends=('ntfs-3g: discos NTFS' 'exfatprogs: discos exFAT'
-            'tailscale: acesso fora de casa' 'ufw: firewall')
-makedepends=(gettext)
-install=nuvem-ruscher.install
-package() { make -C "$srcdir/.." DESTDIR="$pkgdir" PREFIX=/usr install; }
-```
-
-`docker`/`docker-compose` são dependências: o assistente ainda oferece instalá-los
-quando o app é usado a partir do código-fonte.
+`packaging/PKGBUILD` empacota a árvore local quando está dentro do repositório e a tag
+`v$pkgver` do GitHub quando copiado para fora; `package()` é só
+`make DESTDIR="$pkgdir" PREFIX=/usr PYTHON=/usr/bin/python3 install`. Dependências e
+justificativas em [packaging-arch.md](packaging-arch.md).
 
 ## `.desktop`
 
-`Categories=GTK;GNOME;Graphics;Photography;System;` · `Keywords` em pt-BR e inglês
+`Categories=GTK;GNOME;Graphics;Photography;` · `Keywords` em pt-BR e inglês
 (fotos, backup, google fotos, immich, nuvem) · `StartupNotify=true` ·
-`DBusActivatable=false` · `Icon=io.github.ruscher.NuvemRuscher`.
+`StartupWMClass=io.github.ruscher.NuvemRuscher` · `Icon=io.github.ruscher.NuvemRuscher`.
+No pacote Nix, `Exec` vira o caminho absoluto em `$out/bin`.
 
 ## Metainfo AppStream
 

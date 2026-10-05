@@ -73,6 +73,14 @@ makepkg -si
 Depois, abra **Nuvem Ruscher** no menu de aplicativos. A senha de administrador é pedida apenas nas
 etapas que mexem no sistema (instalar o Docker, registrar o serviço, editar o fstab).
 
+Atualizar o pacote não reinicia o servidor de fotos, e `sudo pacman -R nuvem-ruscher` remove só o
+app: servidor, fotos, banco de dados e configuração continuam onde estão (veja
+[Como desinstalo?](#perguntas-frequentes)).
+
+> **Nix:** há um `flake.nix` experimental, **ainda não testado**. Nele, o polkit do sistema não
+> conhece o helper, então toda ação pede a senha de administrador. Detalhes em
+> [docs/packaging-nix.md](docs/packaging-nix.md).
+
 ### Experimentar sem mudar nada
 
 ```bash
@@ -101,7 +109,8 @@ Interface (usuário comum) ──pkexec──► helper Bash (lista fechada de a
 - Detalhes em [`docs/`](docs): [pesquisa do Immich](docs/01-pesquisa-immich.md),
   [arquitetura e decisões](docs/02-arquitetura.md), [design](docs/03-design-ux.md),
   [armazenamento e segurança](docs/04-armazenamento-e-seguranca.md),
-  [testes](docs/06-testes-e-qa.md), [empacotamento](docs/07-empacotamento.md).
+  [testes](docs/06-testes-e-qa.md), [empacotamento](docs/07-empacotamento.md)
+  ([Arch](docs/packaging-arch.md), [Nix](docs/packaging-nix.md)).
 
 ## Perguntas frequentes
 
@@ -124,9 +133,10 @@ endereço e o QR certos.
 ## Desenvolvimento
 
 ```bash
-make test     # pytest: núcleo, helper em sandbox, modo simulado
+make test     # pytest: núcleo, helper em sandbox, modo simulado, instalação
 make lint     # ruff, shellcheck, desktop-file-validate, appstreamcli
 make pot      # extrai os textos para po/nuvem-ruscher.pot
+make update-po  # leva os textos novos para po/*.po (hoje: en)
 python3 tools/tour.py /tmp/capturas [--escuro] [--estreito] [--cenario NOME]
 ```
 
